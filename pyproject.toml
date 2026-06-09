@@ -18,3 +18,11 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+
+[tool.coverage.run]
+omit = [
+    "fix_docs.py",
+    "fix_indent.py",
+    "generate_jnp_stubs.py",
+    "scripts/*"
+]

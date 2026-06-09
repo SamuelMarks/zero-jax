@@ -165,11 +165,10 @@ def test_sgdr_and_interpolate_schedules():
     assert sched2(15) == 0.3  # exact halfway between 0.5 and 0.1
     assert sched2(25) == 0.1  # after last bound
 
-    try:
+    import pytest
+
+    with pytest.raises(ValueError):
         schedules.piecewise_interpolate_schedule("cubic", 1.0, bounds)(15)
-        assert False
-    except ValueError:
-        pass
 
 
 def test_inject_hyperparams_exec():
