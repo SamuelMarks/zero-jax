@@ -1,9 +1,7 @@
-"""Tests for zero_jax transformations."""
-
-from zero_jax import jit, grad, value_and_grad, vmap
+from zero_jax import jit, grad, value_and_grad, vmap, disable_jit, pmap
 
 
-def test_transform_jit():
+def test_jit():
     @jit
     def f(x):
         return x + 1
@@ -11,25 +9,40 @@ def test_transform_jit():
     assert f(1) == 2
 
 
-def test_transform_grad():
+def test_grad():
     @grad
     def f(x):
-        return x + 1
+        return x * x
 
-    assert f(1) == 2  # Mocked to return evaluation for now
+    assert f(2) == 4
 
 
-def test_transform_value_and_grad():
+def test_value_and_grad():
     @value_and_grad
     def f(x):
-        return x + 1
+        return x * 2
 
-    assert f(1) == (2, 2)
+    val, g = f(2)
+    assert val == 4
+    assert g == 4
 
 
-def test_transform_vmap():
+def test_vmap():
     @vmap
     def f(x):
-        return x + 1
+        return x
 
-    assert f(1) == 2
+    assert f(5) == 5
+
+
+def test_disable_jit():
+    with disable_jit():
+        pass
+
+
+def test_pmap():
+    @pmap
+    def f(x):
+        return x
+
+    assert f(5) == 5

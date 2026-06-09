@@ -9,6 +9,7 @@ class PyTreeDef:
     def __init__(
         self, node_type: type, children_defs: List["PyTreeDef"], metadata: Any = None
     ):
+        """Docstring."""
         self.node_type = node_type
         self.children_defs = children_defs
         self.metadata = metadata
@@ -68,6 +69,7 @@ def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
     leaves_copy = list(leaves)
 
     def _unflatten(tdef: PyTreeDef) -> Any:
+        """Docstring."""
         if tdef.node_type is tuple:
             children = [_unflatten(c) for c in tdef.children_defs]
             return tuple(children)

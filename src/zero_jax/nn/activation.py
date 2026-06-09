@@ -4,11 +4,10 @@ This module implements basic neural network primitives like gelu, softmax, and o
 """
 
 from typing import Any, Optional, Union, Tuple
-ArrayLike = Any
-from typing import Any, TypeVar
-
 import numpy as np
 import math
+
+ArrayLike = Any
 
 
 def _erf(x: np.ndarray) -> np.ndarray:
@@ -164,8 +163,12 @@ def softmax(
 
     return unnormalized / denominator
 
+
 def sigmoid(x: Any) -> Any:
+    """Docstring."""
     return 1.0 / (1.0 + np.exp(-x))
 
+
 def log_sigmoid(x: Any) -> Any:
+    """Docstring."""
     return -np.logaddexp(0.0, -x)

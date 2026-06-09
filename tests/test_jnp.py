@@ -151,3 +151,47 @@ def test_unary_op_unsupported_eager():
 
     with pytest.raises(NotImplementedError):
         _unary_op(1.0, "UnsupportedOp")
+
+
+def test_unary_op_transpose():
+    import numpy as np
+    from zero_jax.numpy.lax_numpy import _unary_op
+
+    assert np.array_equal(
+        _unary_op(np.array([[1, 2]]), "Transpose"), np.array([[1], [2]])
+    )
+
+
+def test_missing_numpy_methods():
+    import numpy as np
+    from zero_jax import numpy as jnp
+
+    assert jnp.maximum(1, 2) == 2
+    assert jnp.max([1, 2]) == 2
+    assert jnp.sum([1, 2]) == 3
+    assert jnp.array_equal(jnp.zeros_like(np.array([1, 2])), np.array([0, 0]))
+    assert jnp.array_equal(jnp.zeros((2,)), np.array([0.0, 0.0]))
+    assert jnp.abs(-1) == 1
+    assert jnp.mean([1, 3]) == 2.0
+    assert jnp.array_equal(jnp.array([1, 2]), np.array([1, 2]))
+    assert jnp.isfinite(1)
+    assert jnp.allclose(1.0, 1.0)
+    assert jnp.array_equal([1], [1])
+    assert jnp.broadcast_shapes((1,), (1, 2)) == (1, 2)
+
+
+def test_multiply_proxy_y():
+    from zero_jax import numpy as jnp
+    from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
+
+    _tracer.start_tracing()
+    y = ProxyTensor(id="y", shape=(2,))
+    x = 1.0
+    jnp.multiply(x, y)
+    _tracer.stop_tracing()
+
+def test_lax_numpy_missing_cov():
+    import numpy as np
+    from zero_jax import numpy as jnp
+    assert jnp.max([1, 2], where=[True, False], initial=0) == 1
+    assert jnp.sum([1, 2], where=[True, False]) == 1

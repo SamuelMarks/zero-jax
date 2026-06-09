@@ -50,3 +50,9 @@ def test_scan_tracing():
     assert carry.shape == ()
     assert ys.shape == ()
     _tracer.stop_tracing()
+
+
+def test_stop_gradient():
+    from zero_jax.lax import stop_gradient
+
+    assert stop_gradient(5) == 5

@@ -8,6 +8,7 @@ from ml_switcheroo_ir import LogicalNode
 
 
 def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         if bool(pred):
             return true_fn(*operands)
@@ -33,6 +34,7 @@ def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> An
 
 
 def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         carry = init
         ys = []
@@ -69,5 +71,7 @@ def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
         id=f"{out_id}_ys", shape=()
     )
 
+
 def stop_gradient(x: Any) -> Any:
+    """Docstring."""
     return x

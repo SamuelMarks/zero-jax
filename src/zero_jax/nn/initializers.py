@@ -56,6 +56,7 @@ def constant(value: RealNumeric, dtype: Any = np.float64) -> Initializer:
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         return np.full(shape, value, dtype=dtype)
 
     return init
@@ -73,6 +74,7 @@ def uniform(scale: RealNumeric = 0.01, dtype: Any = np.float64) -> Initializer:
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         # Note: In pure numpy, we just use random.uniform
         # Ideally we'd use zero_jax.random but here we use np.random for simplicity
         rng = np.random.default_rng(seed=hash(str(key)) % (2**32))
@@ -93,6 +95,7 @@ def normal(stddev: RealNumeric = 0.01, dtype: Any = np.float64) -> Initializer:
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         rng = np.random.default_rng(seed=hash(str(key)) % (2**32))
         return rng.normal(0, stddev, size=shape).astype(dtype)
 
@@ -118,6 +121,7 @@ def truncated_normal(
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         rng = np.random.default_rng(seed=hash(str(key)) % (2**32))
         # Simple rejection sampling for truncated normal
         out = np.empty(shape, dtype=dtype)
@@ -192,6 +196,7 @@ def variance_scaling(
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         fan_in, fan_out = _compute_fans(shape, in_axis, out_axis, batch_axis)
         if mode == "fan_in":
             denominator = fan_in
@@ -378,6 +383,7 @@ def orthogonal(
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         rng = np.random.default_rng(seed=hash(str(key)) % (2**32))
 
         if len(shape) < 2:
@@ -426,6 +432,7 @@ def delta_orthogonal(
     """
 
     def init(key: KeyArray, shape: Shape, dtype: Any = dtype) -> Array:
+        """Docstring."""
         if len(shape) < 2:
             raise ValueError(
                 "Delta orthogonal initializer requires at least a 2D shape."

@@ -53,3 +53,49 @@ def test_softmax():
     # Test with where
     y2 = softmax(x, where=np.array([True, False, True]))
     assert y2[1] == 0.0
+
+
+def test_sigmoid():
+    from zero_jax.nn.activation import sigmoid
+    import numpy as np
+
+    x = np.array([0.0])
+    assert sigmoid(x) == 0.5
+
+
+def test_log_sigmoid():
+    from zero_jax.nn.activation import log_sigmoid
+    import numpy as np
+
+    x = np.array([0.0])
+    res = log_sigmoid(x)
+    assert res < 0.0
+
+
+def test_gelu_eager_non_approx():
+    from zero_jax.nn.activation import gelu
+    import numpy as np
+
+    x = np.array([0.0, 1.0, -1.0])
+    res2 = gelu(x, approximate=False)
+    assert res2.shape == (3,)
+
+
+def test_logsumexp_eager_extra():
+    from zero_jax.nn.activation import logsumexp
+    import numpy as np
+
+    x = np.array([0.0, 1.0, 2.0])
+    res, sign = logsumexp(
+        x, b=np.array([1, 1, 1]), where=np.array([True, True, False]), return_sign=True
+    )
+    assert sign > 0
+
+
+def test_softmax_eager_extra():
+    from zero_jax.nn.activation import softmax
+    import numpy as np
+
+    x = np.array([0.0, 1.0, 2.0])
+    res2 = softmax(x, where=np.array([True, True, False]))
+    assert res2.shape == (3,)

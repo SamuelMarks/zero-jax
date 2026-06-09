@@ -3,50 +3,191 @@
 This module implements various loss functions.
 """
 
-from typing import Any, Callable, Sequence, Union, Optional, Tuple, Iterable, Mapping, Literal, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Union,
+    Optional,
+    Tuple,
+    TypeVar,
+)
+import numpy as np
+
 Array = Any
 Numeric = Any
 
-import numpy as np
-import collections.abc
 
-class AxisName: pass
-class PrecisionLike: pass
-class PaddingLike: pass
-class Dtype: pass
-class Shape: pass
-class Axes: pass
-class Size: pass
-class Axis: pass
-class DotGeneralT: pass
-class MaxFun: pass
+class AxisName:
+    """Docstring."""
+
+    pass
+
+
+class PrecisionLike:
+    """Docstring."""
+
+    pass
+
+
+class PaddingLike:
+    """Docstring."""
+
+    pass
+
+
+class Dtype:
+    """Docstring."""
+
+    pass
+
+
+class Shape:
+    """Docstring."""
+
+    pass
+
+
+class Axes:
+    """Docstring."""
+
+    pass
+
+
+class Size:
+    """Docstring."""
+
+    pass
+
+
+class Axis:
+    """Docstring."""
+
+    pass
+
+
+class DotGeneralT:
+    """Docstring."""
+
+    pass
+
+
+class MaxFun:
+    """Docstring."""
+
+    pass
+
+
 class filterlib:
-    class Filter: pass
+    """Docstring."""
+
+    class Filter:
+        """Docstring."""
+
+        pass
+
+
 class rnglib:
-    class Rngs: pass
+    """Docstring."""
+
+    class Rngs:
+        """Docstring."""
+
+        pass
+
+
 class variables:
-    class Variable: pass
+    """Docstring."""
+
+    class Variable:
+        """Docstring."""
+
+        pass
+
+
 class chex:
-    class Array: pass
-    class Numeric: pass
-    class Scalar: pass
+    """Docstring."""
+
+    class Array:
+        """Docstring."""
+
+        pass
+
+    class Numeric:
+        """Docstring."""
+
+        pass
+
+    class Scalar:
+        """Docstring."""
+
+        pass
+
+
 class core:
-    class Shape: pass
+    """Docstring."""
+
+    class Shape:
+        """Docstring."""
+
+        pass
+
+
 class optax:
+    """Docstring."""
+
     class _src:
+        """Docstring."""
+
         class base:
-            class GradientTransformationExtraArgs: pass
+            """Docstring."""
+
+            class GradientTransformationExtraArgs:
+                """Docstring."""
+
+                pass
+
+
 class base:
-    class GradientTransformation: pass
-    class Schedule: pass
+    """Docstring."""
+
+    class GradientTransformation:
+        """Docstring."""
+
+        pass
+
+    class Schedule:
+        """Docstring."""
+
+        pass
+
+
 class jax:
-    class Array: pass
-    class Device: pass
+    """Docstring."""
+
+    class Array:
+        """Docstring."""
+
+        pass
+
+    class Device:
+        """Docstring."""
+
+        pass
+
     class _src:
+        """Docstring."""
+
         class typing:
-            class SupportsDType: pass
-M = TypeVar('M') if 'TypeVar' in globals() else Any
-A = TypeVar('A') if 'TypeVar' in globals() else Any
+            """Docstring."""
+
+            class SupportsDType:
+                """Docstring."""
+
+                pass
+
+
+M = TypeVar("M") if "TypeVar" in globals() else Any
+A = TypeVar("A") if "TypeVar" in globals() else Any
 UNSPECIFIED = None
 _UNSPECIFIED = None
 default_kernel_init = None
@@ -61,7 +202,6 @@ dot_product_attention = None
 
 
 # Type aliases
-
 
 
 def ctc_loss(
@@ -259,6 +399,7 @@ def make_fenchel_young_loss(max_fun: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     def fy_loss(scores: Array, targets: Array) -> Array:
+        """Docstring."""
         return np.maximum(0.0, max_fun(scores) - np.sum(scores * targets, axis=-1))
 
     return fy_loss

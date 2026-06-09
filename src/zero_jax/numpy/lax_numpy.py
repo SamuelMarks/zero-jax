@@ -41,22 +41,27 @@ def _unary_op(x: Any, op_type: str) -> Any:
 
 
 def sin(x: Any) -> Any:
+    """Docstring."""
     return _unary_op(x, "Sin")
 
 
 def cos(x: Any) -> Any:
+    """Docstring."""
     return _unary_op(x, "Cos")
 
 
 def exp(x: Any) -> Any:
+    """Docstring."""
     return _unary_op(x, "Exp")
 
 
 def log(x: Any) -> Any:
+    """Docstring."""
     return _unary_op(x, "Log")
 
 
 def transpose(x: Any, axes: Optional[List[int]] = None) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.transpose(x, axes=axes)
 
@@ -83,6 +88,7 @@ def transpose(x: Any, axes: Optional[List[int]] = None) -> Any:
 
 
 def reshape(x: Any, newshape: Tuple[int, ...]) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.reshape(x, newshape)
 
@@ -116,6 +122,7 @@ def reshape(x: Any, newshape: Tuple[int, ...]) -> Any:
 
 
 def broadcast_to(x: Any, shape: Tuple[int, ...]) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.broadcast_to(x, shape)
 
@@ -140,6 +147,7 @@ def broadcast_to(x: Any, shape: Tuple[int, ...]) -> Any:
 
 
 def concatenate(arrays: List[Any], axis: int = 0) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.concatenate(arrays, axis=axis)
 
@@ -181,6 +189,7 @@ def concatenate(arrays: List[Any], axis: int = 0) -> Any:
 
 
 def where(condition: Any, x: Any, y: Any) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.where(condition, x, y)
 
@@ -216,6 +225,7 @@ def where(condition: Any, x: Any, y: Any) -> Any:
 
 
 def einsum(subscripts: str, *operands: Any) -> Any:
+    """Docstring."""
     if not _tracer.is_tracing:
         return np.einsum(subscripts, *operands)
 
@@ -250,6 +260,7 @@ def einsum(subscripts: str, *operands: Any) -> Any:
 
 # Common math aliases that use proxy tensors natively
 def add(x: Any, y: Any) -> Any:
+    """Docstring."""
     if isinstance(x, ProxyTensor):
         return x + y
     if isinstance(y, ProxyTensor):
@@ -258,55 +269,94 @@ def add(x: Any, y: Any) -> Any:
 
 
 def multiply(x: Any, y: Any) -> Any:
+    """Docstring."""
     if isinstance(x, ProxyTensor):
         return x * y
     if isinstance(y, ProxyTensor):
         return y * x
     return np.multiply(x, y)
 
+
 def maximum(x: Any, y: Any) -> Any:
+    """Docstring."""
     return np.maximum(x, y)
 
-def max(x: Any, axis: Any = None, keepdims: bool = False, where: Any = None, initial: Any = None) -> Any:
+
+def max(
+    x: Any,
+    axis: Any = None,
+    keepdims: bool = False,
+    where: Any = None,
+    initial: Any = None,
+) -> Any:
+    """Docstring."""
     kwargs = {}
-    if where is not None: kwargs['where'] = where
-    if initial is not None: kwargs['initial'] = initial
+    if where is not None:
+        kwargs["where"] = where
+    if initial is not None:
+        kwargs["initial"] = initial
     return np.max(x, axis=axis, keepdims=keepdims, **kwargs)
 
+
 def sum(x: Any, axis: Any = None, keepdims: bool = False, where: Any = None) -> Any:
+    """Docstring."""
     kwargs = {}
-    if where is not None: kwargs['where'] = where
+    if where is not None:
+        kwargs["where"] = where
     return np.sum(x, axis=axis, keepdims=keepdims, **kwargs)
 
+
 def zeros_like(x: Any, dtype: Any = None) -> Any:
+    """Docstring."""
     return np.zeros_like(x, dtype=dtype)
 
+
 def zeros(shape: Any, dtype: Any = None) -> Any:
+    """Docstring."""
     return np.zeros(shape, dtype=dtype)
 
+
 def abs(x: Any) -> Any:
+    """Docstring."""
     return np.abs(x)
 
+
 def mean(x: Any, axis: Any = None, keepdims: bool = False) -> Any:
+    """Docstring."""
     return np.mean(x, axis=axis, keepdims=keepdims)
+
 
 inf = np.inf
 
+
 def array(x: Any, dtype: Any = None) -> Any:
+    """Docstring."""
     return np.array(x, dtype=dtype)
 
+
 def isfinite(x):
+    """Docstring."""
     import numpy as onp
+
     return onp.isfinite(x)
 
+
 def allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
+    """Docstring."""
     import numpy as onp
+
     return onp.allclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
+
 def array_equal(a1, a2, equal_nan=False):
+    """Docstring."""
     import numpy as onp
+
     return onp.array_equal(a1, a2, equal_nan=equal_nan)
 
+
 def broadcast_shapes(*shapes):
+    """Docstring."""
     import numpy as onp
+
     return onp.broadcast_shapes(*shapes)

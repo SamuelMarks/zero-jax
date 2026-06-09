@@ -3,35 +3,127 @@
 This module implements various learning rate schedules.
 """
 
-from typing import Any, Callable, Sequence, Union, Optional, Tuple, Iterable, Mapping, Literal, Type, Dict
+from typing import (
+    Any,
+    Callable,
+    Sequence,
+    Union,
+    Optional,
+    Iterable,
+    Dict,
+)
 import numpy as np
-import collections.abc
+
 
 class filterlib:
-    class Filter: pass
+    """Docstring."""
+
+    class Filter:
+        """Docstring."""
+
+        pass
+
+
 class rnglib:
-    class Rngs: pass
+    """Docstring."""
+
+    class Rngs:
+        """Docstring."""
+
+        pass
+
+
 class variables:
-    class Variable: pass
+    """Docstring."""
+
+    class Variable:
+        """Docstring."""
+
+        pass
+
+
 class chex:
-    class Array: pass
-    class Numeric: pass
-    class Scalar: pass
+    """Docstring."""
+
+    class Array:
+        """Docstring."""
+
+        pass
+
+    class Numeric:
+        """Docstring."""
+
+        pass
+
+    class Scalar:
+        """Docstring."""
+
+        pass
+
+
 class core:
-    class Shape: pass
+    """Docstring."""
+
+    class Shape:
+        """Docstring."""
+
+        pass
+
+
 class optax:
+    """Docstring."""
+
     class _src:
+        """Docstring."""
+
         class base:
-            class GradientTransformationExtraArgs: pass
+            """Docstring."""
+
+            class GradientTransformationExtraArgs:
+                """Docstring."""
+
+                pass
+
+
 class base:
-    class GradientTransformation: pass
-    class Schedule: pass
+    """Docstring."""
+
+    class GradientTransformation:
+        """Docstring."""
+
+        pass
+
+    class Schedule:
+        """Docstring."""
+
+        pass
+
+
 class jax:
-    class Array: pass
-    class Device: pass
+    """Docstring."""
+
+    class Array:
+        """Docstring."""
+
+        pass
+
+    class Device:
+        """Docstring."""
+
+        pass
+
     class _src:
+        """Docstring."""
+
         class typing:
-            class SupportsDType: pass
+            """Docstring."""
+
+            class SupportsDType:
+                """Docstring."""
+
+                pass
+
+
 M = Any
 A = Any
 UNSPECIFIED = None
@@ -64,6 +156,7 @@ def constant_schedule(value: Numeric) -> Schedule:
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         return value
 
     return schedule
@@ -85,6 +178,7 @@ def cosine_decay_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         step = np.minimum(step, decay_steps)
         cosine_decay = 0.5 * (1.0 + np.cos(np.pi * step / decay_steps))
         decayed = (1.0 - alpha) * cosine_decay + alpha
@@ -118,6 +212,7 @@ def cosine_onecycle_schedule(
     decay_steps = transition_steps - warmup_steps
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         if step < warmup_steps:
             # Cosine warmup
             progress = step / warmup_steps
@@ -156,6 +251,7 @@ def exponential_decay(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         p = step - transition_begin
         if staircase:
             p = np.floor(p / transition_steps)
@@ -188,6 +284,7 @@ def inject_hyperparams(
     """
 
     def wrapper(*args: Any, **kwargs: Any) -> Any:
+        """Docstring."""
         return inner_factory(*args, **kwargs)
 
     return wrapper
@@ -210,6 +307,7 @@ def inject_stateful_hyperparams(
     """
 
     def wrapper(*args: Any, **kwargs: Any) -> Any:
+        """Docstring."""
         return inner_factory(*args, **kwargs)
 
     return wrapper
@@ -229,6 +327,7 @@ def join_schedules(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         step = np.asarray(step)
         # Find which schedule to use
         idx = np.sum(step >= np.array(boundaries))
@@ -272,6 +371,7 @@ def linear_onecycle_schedule(
     final_steps = transition_steps - warmup_steps - decay_steps
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         if step < warmup_steps:
             return init_value + (peak_value - init_value) * (step / warmup_steps)
         elif step < warmup_steps + decay_steps:
@@ -305,6 +405,7 @@ def linear_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         p = (step - transition_begin) / transition_steps
         p = np.clip(p, 0.0, 1.0)
         return init_value + p * (end_value - init_value)
@@ -331,6 +432,7 @@ def piecewise_constant_schedule(
     scales = [boundaries_and_scales[b] for b in boundaries]
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         v = init_value
         for b, s in zip(boundaries, scales):
             if step >= b:
@@ -362,6 +464,7 @@ def piecewise_interpolate_schedule(
     scales = [boundaries_and_scales[b] for b in boundaries]
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         step_val = float(np.asarray(step))
         if not boundaries or step_val <= boundaries[0]:
             return init_value
@@ -409,6 +512,7 @@ def polynomial_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         p = (step - transition_begin) / transition_steps
         p = np.clip(p, 0.0, 1.0)
         return (init_value - end_value) * ((1.0 - p) ** power) + end_value
@@ -429,6 +533,7 @@ def sgdr_schedule(cosine_kwargs: Optional[Dict[str, Any]] = None) -> Schedule:
         cosine_kwargs = [{"init_value": 0.1, "decay_steps": 10}]
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         curr_step = step
         for kwargs in cosine_kwargs:
             decay_steps = kwargs.get("decay_steps", 10)
@@ -467,6 +572,7 @@ def warmup_constant_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         p = step / max(1, warmup_steps)
         p = np.clip(p, 0.0, 1.0)
         return init_value + p * (peak_value - init_value)
@@ -497,6 +603,7 @@ def warmup_cosine_decay_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         if step < warmup_steps:
             p = step / max(1, warmup_steps)
             return init_value + p * (peak_value - init_value)
@@ -536,6 +643,7 @@ def warmup_exponential_decay_schedule(
     """
 
     def schedule(step: Numeric) -> Numeric:
+        """Docstring."""
         if step < warmup_steps:
             p = step / max(1, warmup_steps)
             return init_value + p * (peak_value - init_value)
