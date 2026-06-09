@@ -190,8 +190,9 @@ def test_multiply_proxy_y():
     jnp.multiply(x, y)
     _tracer.stop_tracing()
 
+
 def test_lax_numpy_missing_cov():
-    import numpy as np
     from zero_jax import numpy as jnp
+
     assert jnp.max([1, 2], where=[True, False], initial=0) == 1
     assert jnp.sum([1, 2], where=[True, False]) == 1
