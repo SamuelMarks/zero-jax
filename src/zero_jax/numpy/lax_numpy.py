@@ -3,7 +3,6 @@
 from typing import Any
 
 from typing import Tuple, List, Optional
-import numpy as np
 import ml_switcheroo.ops as ops
 from ml_switcheroo import Tensor
 import ml_switcheroo
@@ -28,13 +27,13 @@ class ndarray:
 
     def __array__(self) -> Any:
         """__array__ function."""
-        import numpy as np
+        from ml_switcheroo.core import tensor_utils
 
         if hasattr(self._tensor.data, "id"):  # ProxyTensor check
-            return np.zeros(  # pragma: no cover
+            return tensor_utils.zeros(
                 self._tensor.shape
             )  # Return dummy shape for tracing asserts if needed
-        return np.array(self._tensor.data)
+        return tensor_utils.to_array(self._tensor.data)
 
     def __repr__(self) -> Any:
         """__repr__ function."""
@@ -50,7 +49,7 @@ class ndarray:
 
     def __sub__(self, other: Any) -> Any:
         """__sub__ function."""
-        return add(self, multiply(other, -1))  # pragma: no cover
+        return add(self, multiply(other, -1))
 
     def __rsub__(self, other: Any) -> Any:
         """__rsub__ function."""
@@ -72,6 +71,26 @@ class ndarray:
         """__rpow__ function."""
         return power(other, self)
 
+    def __truediv__(self, other: Any) -> Any:
+        """__truediv__."""
+
+        return true_divide(self, other)
+
+    def __rtruediv__(self, other: Any) -> Any:
+        """__rtruediv__."""
+
+        return true_divide(other, self)
+
+    def __floordiv__(self, other: Any) -> Any:
+        """__floordiv__."""
+
+        return floor_divide(self, other)
+
+    def __rfloordiv__(self, other: Any) -> Any:
+        """__rfloordiv__."""
+
+        return floor_divide(other, self)
+
     def __neg__(self) -> Any:
         """__neg__ function."""
         return multiply(self, -1.0)
@@ -92,14 +111,36 @@ class ndarray:
         """__ge__ function."""
         return _wrap(ops.greater_equal(self._tensor, _to_tensor(other)))
 
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """__setitem__."""
+
+        from ml_switcheroo.core.config import config
+
+        if config.eager_mode:
+            val = getattr(value, "_tensor", value)
+            val = getattr(val, "data", val)
+            self._tensor.data[key] = val
+        else:
+            raise NotImplementedError(
+                "Item assignment is only supported in eager mode."
+            )
+
     def __getitem__(self, key: Any) -> Any:
-        """__getitem__ function."""
+        """__getitem__."""
+
         arr = self.__array__()
+        if hasattr(key, "_tensor"):
+            key = key._tensor.data
+        elif isinstance(key, tuple):
+            key = tuple(
+                getattr(getattr(k, "_tensor", k), "data", getattr(k, "_tensor", k))
+                for k in key
+            )
         return _wrap(_to_tensor(arr[key]))
 
     def __eq__(self, other: Any) -> Any:
         """__eq__ function."""
-        return ops.equal(self._tensor, _to_tensor(other))
+        return _wrap(ops.equal(self._tensor, _to_tensor(other)))
 
     def __bool__(self) -> Any:
         """__bool__ function."""
@@ -133,18 +174,16 @@ def _to_tensor(x: Any) -> Any:
     if isinstance(x, ml_switcheroo.Tensor):
         if _tracer.is_tracing and not hasattr(x.data, "id"):
             # lift eager tensor as constant
-            out_id = str(uuid.uuid4())  # pragma: no cover
-            node = LogicalNode(  # pragma: no cover
-                id=out_id,  # pragma: no cover
-                op_type="Constant",  # pragma: no cover
-                attributes={"value": np.array(x.data).tolist()},  # pragma: no cover
-                shape_metadata=x.shape,  # pragma: no cover
-            )  # pragma: no cover
-            _tracer.add_node(node)  # pragma: no cover
-            pt = ProxyTensor(
-                id=out_id, shape=x.shape, dtype=x.dtype.value
-            )  # pragma: no cover
-            return ml_switcheroo.Tensor(  # pragma: no cover
+            out_id = str(uuid.uuid4())
+            node = LogicalNode(
+                id=out_id,
+                op_type="Constant",
+                attributes={"value": getattr(x.data, "tolist", lambda: x.data)()},
+                shape_metadata=x.shape,
+            )
+            _tracer.add_node(node)
+            pt = ProxyTensor(id=out_id, shape=x.shape, dtype=x.dtype.value)
+            return ml_switcheroo.Tensor(
                 data=pt, shape=x.shape, dtype=x.dtype, device=x.device
             )
         return x
@@ -158,7 +197,9 @@ def _to_tensor(x: Any) -> Any:
             device=config.default_device,
         )
 
-    arr = np.array(x)
+    from ml_switcheroo.core import tensor_utils
+
+    arr = tensor_utils.to_array(x)
     if config.eager_mode and not _tracer.is_tracing:
         return ml_switcheroo.Tensor(
             arr, arr.shape, config.default_float_dtype, config.default_device
@@ -182,11 +223,11 @@ def _wrap(t: Any) -> Any:
     """_wrap function."""
     if isinstance(t, Tensor):
         return ndarray(t)
-    elif isinstance(t, tuple):  # pragma: no cover
-        return tuple(_wrap(x) for x in t)  # pragma: no cover
-    elif isinstance(t, list):  # pragma: no cover
-        return list(_wrap(x) for x in t)  # pragma: no cover
-    return t  # pragma: no cover
+    elif isinstance(t, tuple):
+        return tuple(_wrap(x) for x in t)
+    elif isinstance(t, list):
+        return list(_wrap(x) for x in t)
+    return t
 
 
 def sin(x: Any) -> Any:
@@ -265,6 +306,21 @@ def maximum(x: Any, y: Any) -> Any:
     return _wrap(ops.maximum(_to_tensor(x), _to_tensor(y)))
 
 
+def minimum(x: Any, y: Any) -> Any:
+    """Minimum function."""
+    return _wrap(ops.minimum(_to_tensor(x), _to_tensor(y)))
+
+
+def clip(a: Any, a_min: Any, a_max: Any) -> Any:
+    """Clip function."""
+    res = _to_tensor(a)
+    if a_min is not None:
+        res = ops.maximum(res, _to_tensor(a_min))
+    if a_max is not None:
+        res = ops.minimum(res, _to_tensor(a_max))
+    return _wrap(res)
+
+
 def max(
     x: Any,
     axis: Any = None,
@@ -273,12 +329,22 @@ def max(
     initial: Any = None,
 ) -> Any:
     """Max function."""
-    return _wrap(ops.max(_to_tensor(x), axis=axis, keepdims=keepdims))
+    t_x = _to_tensor(x)
+    if where is not None:
+        init_val = initial if initial is not None else float("-inf")
+        t_x = ops.where(_to_tensor(where), t_x, _to_tensor(init_val))
+    res = ops.max(t_x, axis=axis, keepdims=keepdims)
+    if initial is not None:
+        res = ops.maximum(res, _to_tensor(initial))
+    return _wrap(res)
 
 
 def sum(x: Any, axis: Any = None, keepdims: bool = False, where: Any = None) -> Any:
     """Sum function."""
-    return _wrap(ops.sum(_to_tensor(x), axis=axis, keepdims=keepdims))
+    t_x = _to_tensor(x)
+    if where is not None:
+        t_x = ops.where(_to_tensor(where), t_x, _to_tensor(0))
+    return _wrap(ops.sum(t_x, axis=axis, keepdims=keepdims))
 
 
 def zeros_like(x: Any, dtype: Any = None) -> Any:
@@ -301,7 +367,7 @@ def mean(x: Any, axis: Any = None, keepdims: bool = False) -> Any:
     return _wrap(ops.mean(_to_tensor(x), axis=axis, keepdims=keepdims))
 
 
-inf = np.inf
+inf = float("inf")
 
 
 def array(x: Any, dtype: Any = None) -> Any:
@@ -343,19 +409,26 @@ def allclose(
 def array_equal(a1: Any, a2: Any, equal_nan: Any = False) -> Any:
     """array_equal function."""
     res = ops.equal(_to_tensor(a1), _to_tensor(a2))
-    return np.all(res.data) if hasattr(res, "data") else True
+    from ml_switcheroo.core import tensor_utils
+
+    return bool(tensor_utils.to_array(res.data).all()) if hasattr(res, "data") else True
 
 
 def broadcast_shapes(*shapes: Any) -> Any:
     """broadcast_shapes function."""
-    return np.broadcast_shapes(*shapes)
+    from ml_switcheroo.shape import broadcast_shapes as _broadcast_shapes
+    import functools
+
+    if not shapes:
+        return ()
+    return functools.reduce(_broadcast_shapes, shapes)
 
 
 def _unary_op(x: Any, name: Any) -> Any:
     """_unary_op function."""
     if name == "Transpose":
         return transpose(x)
-    raise NotImplementedError()  # pragma: no cover
+    raise NotImplementedError()
 
 
 def ones(shape: Any, dtype: Any = None) -> Any:
@@ -410,9 +483,7 @@ def linspace(
 ) -> Any:
     """Linspace function."""
     if retstep or axis != 0 or not endpoint:
-        raise NotImplementedError(
-            "linspace currently only supports basic usage"
-        )  # pragma: no cover
+        raise NotImplementedError("linspace currently only supports basic usage")
     return _wrap(ops.linspace(start=start, stop=stop, steps=num, dtype=dtype))
 
 
@@ -433,7 +504,7 @@ def logspace(
 def eye(N: int, M: int = None, k: int = 0, dtype: Any = None) -> Any:
     """Eye function."""
     if k != 0:
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
     return _wrap(ops.eye(n=N, m=M, dtype=dtype))
 
 
@@ -447,8 +518,7 @@ def meshgrid(
 ) -> Any:
     """Meshgrid function."""
     if sparse or not copy:
-        raise NotImplementedError()  # pragma: no cover
-    import numpy as np
+        raise NotImplementedError()
 
     tensors = [_to_tensor(x) for x in xi]
 
@@ -541,13 +611,7 @@ def trunc(x: Any) -> Any:
 
 def rint(x: Any) -> Any:
     """Rint function."""
-    # Round to nearest integer. If not in ops, use floor(x + 0.5) roughly or tracing equivalent.
-    # Actually, ONNX has Round which might be mapped to round()
-    if hasattr(ops, "round"):  # pragma: no cover
-        return _wrap(ops.round(_to_tensor(x)))
-    # Fallback to eager numpy if possible or tracing hack
-    t = _to_tensor(x)  # pragma: no cover
-    return _wrap(ops.floor(ops.add(t, _to_tensor(0.5))))  # pragma: no cover
+    return _wrap(ops.round(_to_tensor(x)))
 
 
 def tan(x: Any) -> Any:
@@ -572,27 +636,7 @@ def arctan(x: Any) -> Any:
 
 def arctan2(x1: Any, x2: Any) -> Any:
     """arctan2 function."""
-    # ONNX doesn't have native atan2 uniformly, or it might be in ops.
-    if hasattr(ops, "atan2"):  # pragma: no cover
-        return _wrap(ops.atan2(_to_tensor(x1), _to_tensor(x2)))
-    # Hack/fallback for now if missing
-    import numpy as np  # pragma: no cover
-
-    # pragma: no cover
-    t1, t2 = _to_tensor(x1), _to_tensor(x2)  # pragma: no cover
-    # Simple mathematical approximation or defer to numpy if eager
-    if hasattr(t1, "data") and isinstance(t1.data, np.ndarray):  # pragma: no cover
-        return _wrap(
-            ops.add(
-                ops.multiply(t1, 0.0),
-                ml_switcheroo.Tensor(
-                    np.arctan2(t1.data, t2.data), t1.shape, t1.dtype, t1.device
-                ),
-            )
-        )
-    raise NotImplementedError(  # pragma: no cover
-        "atan2 not natively supported in ONNX/ml-switcheroo ir yet without Eager data"
-    )
+    return _wrap(ops.atan2(_to_tensor(x1), _to_tensor(x2)))
 
 
 def sinh(x: Any) -> Any:
@@ -724,7 +768,7 @@ def ravel(a: Any, order: str = "C") -> Any:
     """Ravel function."""
     # Eager fallback or reshape if order='C'
     if order != "C":
-        raise NotImplementedError("ravel only supports order='C'")  # pragma: no cover
+        raise NotImplementedError("ravel only supports order='C'")
     return reshape(a, (-1,))
 
 
@@ -751,86 +795,46 @@ def stack(arrays: Any, axis: int = 0) -> Any:
 
 def vstack(tup: Any) -> Any:
     """Vstack function."""
-    tensors = [_to_tensor(arr) for arr in tup]
-    # Simple vstack: stack on axis=0 if 1D, else concat on axis=0
-    # For now, let's delegate to eager np if possible, or shape hacks
-    import numpy as np
-
-    t0 = tensors[0]
-    if hasattr(t0, "data") and isinstance(t0.data, np.ndarray):  # pragma: no cover
-        arrs = [t.data for t in tensors]
-        res = np.vstack(arrs)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t0.dtype, t0.device))
-    raise NotImplementedError("vstack strictly eagerly implemented")  # pragma: no cover
+    return _wrap(ops.vstack([_to_tensor(arr) for arr in tup]))
 
 
 def hstack(tup: Any) -> Any:
     """Hstack function."""
-    tensors = [_to_tensor(arr) for arr in tup]
-    import numpy as np
-
-    t0 = tensors[0]
-    if hasattr(t0, "data") and isinstance(t0.data, np.ndarray):  # pragma: no cover
-        arrs = [t.data for t in tensors]
-        res = np.hstack(arrs)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t0.dtype, t0.device))
-    raise NotImplementedError("hstack strictly eagerly implemented")  # pragma: no cover
+    return _wrap(ops.hstack([_to_tensor(arr) for arr in tup]))
 
 
 def dstack(tup: Any) -> Any:
     """Dstack function."""
-    tensors = [_to_tensor(arr) for arr in tup]
-    import numpy as np
-
-    t0 = tensors[0]
-    if hasattr(t0, "data") and isinstance(t0.data, np.ndarray):  # pragma: no cover
-        arrs = [t.data for t in tensors]
-        res = np.dstack(arrs)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t0.dtype, t0.device))
-    raise NotImplementedError("dstack strictly eagerly implemented")  # pragma: no cover
+    return _wrap(ops.dstack([_to_tensor(arr) for arr in tup]))
 
 
 def split(ary: Any, indices_or_sections: Any, axis: int = 0) -> Any:
     """Split function."""
-    t = _to_tensor(ary)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.split(t.data, indices_or_sections, axis=axis)
-        return tuple(
-            _wrap(ml_switcheroo.Tensor(r, r.shape, t.dtype, t.device)) for r in res
-        )
-    raise NotImplementedError("split strictly eagerly implemented")  # pragma: no cover
+    return tuple(
+        _wrap(t) for t in ops.split(_to_tensor(ary), indices_or_sections, axis)
+    )
 
 
 def array_split(ary: Any, indices_or_sections: Any, axis: int = 0) -> Any:
     """array_split function."""
-    t = _to_tensor(ary)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.array_split(t.data, indices_or_sections, axis=axis)
-        return tuple(
-            _wrap(ml_switcheroo.Tensor(r, r.shape, t.dtype, t.device)) for r in res
-        )
-    raise NotImplementedError(
-        "array_split strictly eagerly implemented"
-    )  # pragma: no cover
+    return tuple(
+        _wrap(t) for t in ops.array_split(_to_tensor(ary), indices_or_sections, axis)
+    )
 
 
 def vsplit(ary: Any, indices_or_sections: Any) -> Any:
     """Vsplit function."""
-    return split(ary, indices_or_sections, axis=0)
+    return tuple(_wrap(t) for t in ops.vsplit(_to_tensor(ary), indices_or_sections))
 
 
 def hsplit(ary: Any, indices_or_sections: Any) -> Any:
     """Hsplit function."""
-    return split(ary, indices_or_sections, axis=1)
+    return tuple(_wrap(t) for t in ops.hsplit(_to_tensor(ary), indices_or_sections))
 
 
 def dsplit(ary: Any, indices_or_sections: Any) -> Any:
     """Dsplit function."""
-    return split(ary, indices_or_sections, axis=2)
+    return tuple(_wrap(t) for t in ops.dsplit(_to_tensor(ary), indices_or_sections))
 
 
 def tile(A: Any, reps: Any) -> Any:
@@ -845,94 +849,69 @@ def repeat(a: Any, repeats: Any, axis: Any = None) -> Any:
 
 def pad(array: Any, pad_width: Any, mode: str = "constant", **kwargs: Any) -> Any:
     """Pad function."""
-    if mode != "constant":
-        raise NotImplementedError(
-            "pad only supports constant mode for now"
-        )  # pragma: no cover
-    t = _to_tensor(array)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.pad(t.data, pad_width, mode=mode, **kwargs)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError("pad strictly eagerly implemented")  # pragma: no cover
+    return _wrap(ops.pad(_to_tensor(array), pad_width, mode=mode, **kwargs))
 
 
 def take(a: Any, indices: Any, axis: int = None, mode: str = None) -> Any:
     """Take function."""
-    # Gather / take equivalent. Use ops.take if exists or ops.gather
-    if hasattr(ops, "take") and axis is None:  # pragma: no cover
-        return _wrap(ops.take(_to_tensor(a), _to_tensor(indices)))
-    # Fallback to eager numpy
-    import numpy as np  # pragma: no cover
-
-    # pragma: no cover
-    t_a = _to_tensor(a)  # pragma: no cover
-    t_idx = _to_tensor(indices)  # pragma: no cover
-    if hasattr(t_a, "data") and isinstance(t_a.data, np.ndarray):  # pragma: no cover
-        res = np.take(t_a.data, t_idx.data, axis=axis, mode=mode or "raise")
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t_a.dtype, t_a.device))
-    raise NotImplementedError("take purely eager fallback")  # pragma: no cover
+    return _wrap(ops.take(_to_tensor(a), _to_tensor(indices)))
 
 
 def take_along_axis(arr: Any, indices: Any, axis: int) -> Any:
     """take_along_axis function."""
-    if hasattr(ops, "take_along_axis"):  # pragma: no cover
-        return _wrap(
-            ops.take_along_axis(_to_tensor(arr), _to_tensor(indices), axis=axis)
-        )
-    import numpy as np
-
-    t_a = _to_tensor(arr)
-    t_idx = _to_tensor(indices)
-    if hasattr(t_a, "data") and isinstance(t_a.data, np.ndarray):  # pragma: no cover
-        res = np.take_along_axis(t_a.data, t_idx.data, axis=axis)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t_a.dtype, t_a.device))
-    raise NotImplementedError(
-        "take_along_axis purely eager fallback"
-    )  # pragma: no cover
+    return _wrap(ops.take_along_axis(_to_tensor(arr), _to_tensor(indices), axis=axis))
 
 
 def vdot(a: Any, b: Any) -> Any:
     """Vdot function."""
-    # dot product of flattened arrays
-    return dot(ravel(a), ravel(b))
+    return _wrap(ops.vdot(_to_tensor(a), _to_tensor(b)))
 
 
 def inner(a: Any, b: Any) -> Any:
     """Inner function."""
-    import numpy as np
-
-    t_a = _to_tensor(a)
-    t_b = _to_tensor(b)
-    if hasattr(t_a, "data") and isinstance(t_a.data, np.ndarray):  # pragma: no cover
-        res = np.inner(t_a.data, t_b.data)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t_a.dtype, t_a.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(ops.inner(_to_tensor(a), _to_tensor(b)))
 
 
 def outer(a: Any, b: Any) -> Any:
     """Outer function."""
-    # outer product
-    a = ravel(a)
-    b = ravel(b)
-    # a[:, None] * b[None, :]
-    a_exp = expand_dims(a, 1)
-    b_exp = expand_dims(b, 0)
-    return multiply(a_exp, b_exp)
+    return _wrap(ops.outer(_to_tensor(a), _to_tensor(b)))
 
 
 def tensordot(a: Any, b: Any, axes: Any = 2) -> Any:
     """Tensordot function."""
-    # Native tensordot might not be in ops natively.
-    if hasattr(ops, "tensordot"):  # pragma: no cover
-        return _wrap(ops.tensordot(_to_tensor(a), _to_tensor(b), axes=axes))
-    import numpy as np  # pragma: no cover
+    return _wrap(ops.tensordot(_to_tensor(a), _to_tensor(b), axes=axes))
 
-    # pragma: no cover
-    t_a = _to_tensor(a)  # pragma: no cover
-    t_b = _to_tensor(b)  # pragma: no cover
-    if hasattr(t_a, "data") and isinstance(t_a.data, np.ndarray):  # pragma: no cover
-        res = np.tensordot(t_a.data, t_b.data, axes=axes)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t_a.dtype, t_a.device))
-    raise NotImplementedError()  # pragma: no cover
+
+def shape(a: Any) -> Any:
+    """Return the shape of an array."""
+    return asarray(a).shape
+
+
+def sqrt(x: Any) -> Any:
+    """sqrt."""
+
+    return _wrap(ops.sqrt(_to_tensor(x)))
+
+
+def square(x: Any) -> Any:
+    """square."""
+
+    return _wrap(ops.square(_to_tensor(x)))
+
+
+def isnan(x: Any) -> Any:
+    """isnan."""
+
+    return _wrap(ops.isnan(_to_tensor(x)))
+
+
+nan = float("nan")
+
+pi = 3.14159265358979323846
+
+
+def cumsum(a: Any, axis: Any = None, dtype: Any = None) -> Any:
+    """Cumsum function."""
+    return _wrap(
+        ops.cumsum(_to_tensor(a), axis=axis, dtype=getattr(dtype, "value", dtype))
+    )

@@ -11,6 +11,7 @@ import math
 from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
 import ml_switcheroo.ops as ops
 import ml_switcheroo.ops.creation as creation
+import ml_switcheroo.nn as nn
 
 ArrayLike = Any
 
@@ -22,17 +23,7 @@ def _erf(x: Any) -> Any:
 
 def gelu(x: ArrayLike, approximate: bool = False) -> Any:
     """Gelu function."""
-    x_t = _to_tensor(x)
-    # x * 0.5 * (1.0 + erf(x / sqrt(2.0)))
-    half = creation.full_like(x_t, 0.5)
-    one = creation.full_like(x_t, 1.0)
-    sqrt2 = creation.full_like(x_t, math.sqrt(2.0))
-
-    x_div_sqrt2 = ops.divide(x_t, sqrt2)
-    erf_val = ops.erf(x_div_sqrt2)
-    one_plus_erf = ops.add(one, erf_val)
-    x_half = ops.multiply(x_t, half)
-    return _wrap(ops.multiply(x_half, one_plus_erf))
+    return _wrap(nn.gelu(_to_tensor(x), approximate="tanh" if approximate else "none"))
 
 
 def logsumexp(
@@ -136,8 +127,7 @@ def log_sigmoid(x: Any) -> Any:
 
 def relu(x: ArrayLike) -> Any:
     """Relu function."""
-    x = _to_tensor(x)
-    return _wrap(ops.maximum(x, _to_tensor(0.0)))
+    return _wrap(nn.relu(_to_tensor(x)))
 
 
 def relu6(x: ArrayLike) -> Any:
@@ -168,70 +158,29 @@ def hard_tanh(x: ArrayLike) -> Any:
 
 def swish(x: ArrayLike) -> Any:
     """Swish function."""
-    # x * sigmoid(x)
-    return _wrap(ops.multiply(_to_tensor(x), _to_tensor(sigmoid(x))))
+    return _wrap(nn.swish(_to_tensor(x)))
 
 
 def silu(x: ArrayLike) -> Any:
     """Silu function."""
-    return swish(x)
+    return _wrap(nn.swish(_to_tensor(x)))
 
 
 def elu(x: ArrayLike, alpha: float = 1.0) -> Any:
     """Elu function."""
-    x = _to_tensor(x)
-    # alpha * (exp(x) - 1) for x < 0, x for x >= 0
-    # ONNX has Elu natively or we compose
-    if hasattr(ops, "elu"):  # pragma: no cover
-        return _wrap(ops.elu(x, alpha=alpha))
-    import numpy as np
-
-    if hasattr(x, "data") and isinstance(x.data, np.ndarray):
-        res = np.where(x.data > 0, x.data, alpha * (np.exp(x.data) - 1.0))
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, x.dtype, x.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(nn.elu(_to_tensor(x), alpha=alpha))
 
 
 def celu(x: ArrayLike, alpha: float = 1.0) -> Any:
     """Celu function."""
-    x = _to_tensor(x)
-    if hasattr(ops, "celu"):  # pragma: no cover
-        return _wrap(ops.celu(x, alpha=alpha))
-    import numpy as np
-
-    if hasattr(x, "data") and isinstance(x.data, np.ndarray):
-        res = np.maximum(0, x.data) + np.minimum(
-            0, alpha * (np.exp(x.data / alpha) - 1.0)
-        )
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, x.dtype, x.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(nn.celu(_to_tensor(x), alpha=alpha))
 
 
 def selu(x: ArrayLike) -> Any:
     """Selu function."""
-    x = _to_tensor(x)
-    if hasattr(ops, "selu"):  # pragma: no cover
-        return _wrap(ops.selu(x))
-    import numpy as np
-
-    alpha = 1.6732632423543772848170429916717
-    scale = 1.0507009873554804934193349852946
-    if hasattr(x, "data") and isinstance(x.data, np.ndarray):
-        res = scale * np.where(x.data > 0, x.data, alpha * (np.exp(x.data) - 1.0))
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, x.dtype, x.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(nn.selu(_to_tensor(x)))
 
 
 def log_softmax(x: ArrayLike, axis: int = -1) -> Any:
     """log_softmax function."""
-    x = _to_tensor(x)
-    if hasattr(ops, "log_softmax"):  # pragma: no cover
-        return _wrap(ops.log_softmax(x, axis=axis))
-    # log(softmax(x)) eagerly
-    import numpy as np
-    import scipy.special
-
-    if hasattr(x, "data") and isinstance(x.data, np.ndarray):
-        res = scipy.special.log_softmax(x.data, axis=axis)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, x.dtype, x.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(nn.log_softmax(_to_tensor(x), dim=axis))

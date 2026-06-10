@@ -33,7 +33,7 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
         from ml_switcheroo.interpreter import evaluate_graph
         from zero_jax.numpy.lax_numpy import _to_tensor, array
         import uuid
-        import numpy as np
+        from ml_switcheroo.core import tensor_utils
 
         t_args = [
             a if hasattr(a, "__call__") or hasattr(a, "state") else _to_tensor(a)
@@ -81,7 +81,10 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
         bwd_graph = ir_grad(graph, wrt=[input_ids[argnums]], output_id=out_id)
 
         valid_t_args = [a for a in t_args if not hasattr(a, "state")]
-        inputs = {in_id: np.array(a.data) for in_id, a in zip(input_ids, valid_t_args)}
+        inputs = {
+            in_id: tensor_utils.to_array(a.data)
+            for in_id, a in zip(input_ids, valid_t_args)
+        }
         res = evaluate_graph(bwd_graph, inputs)
 
         grad_arr = res[bwd_graph.outputs[0]]

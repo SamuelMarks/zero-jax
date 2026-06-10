@@ -1,10 +1,17 @@
+"""schedules."""
+
+
 def linear_schedule(
     init_value: float,
     end_value: float,
     transition_steps: int,
     transition_begin: int = 0,
 ):
+    """linear_schedule."""
+
     def schedule(count):
+        """schedule."""
+
         import numpy as np
         import zero_jax.numpy as jnp
 

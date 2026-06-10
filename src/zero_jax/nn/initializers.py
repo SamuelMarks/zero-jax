@@ -9,7 +9,8 @@ from ml_switcheroo.core.dtype import DType
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 import ml_switcheroo.ops.creation as creation
 
-Array = np.ndarray
+from zero_jax.numpy.lax_numpy import ndarray as Array
+
 KeyArray = Any
 Shape = Sequence[int]
 Initializer = Callable[[KeyArray, Shape, Any], Array]
@@ -98,7 +99,7 @@ def _compute_fans(
 ) -> Tuple[int, int]:
     """_compute_fans function."""
     # Dummy implementation for tests
-    return 10, 10  # pragma: no cover
+    return 10, 10
 
 
 def variance_scaling(

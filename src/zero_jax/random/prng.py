@@ -31,9 +31,9 @@ def uniform(
     """Uniform function."""
     from ml_switcheroo.core.config import config
 
-    if dtype is None:  # pragma: no cover
-        dtype = config.default_float_dtype  # pragma: no cover
-    return _wrap(  # pragma: no cover
+    if dtype is None:
+        dtype = config.default_float_dtype
+    return _wrap(
         random.uniform(
             _to_tensor(key), shape=shape, dtype=dtype, minval=minval, maxval=maxval
         )
@@ -44,20 +44,18 @@ def normal(key: Any, shape: Any, dtype: Any = None) -> Any:
     """Normal function."""
     from ml_switcheroo.core.config import config
 
-    if dtype is None:  # pragma: no cover
-        dtype = config.default_float_dtype  # pragma: no cover
-    return _wrap(
-        random.normal(_to_tensor(key), shape=shape, dtype=dtype)
-    )  # pragma: no cover
+    if dtype is None:
+        dtype = config.default_float_dtype
+    return _wrap(random.normal(_to_tensor(key), shape=shape, dtype=dtype))
 
 
 def randint(key: Any, shape: Any, minval: int, maxval: int, dtype: Any = None) -> Any:
     """Randint function."""
     from ml_switcheroo.core.dtype import DType
 
-    if dtype is None:  # pragma: no cover
-        dtype = DType.Int32  # pragma: no cover
-    return _wrap(  # pragma: no cover
+    if dtype is None:
+        dtype = DType.Int32
+    return _wrap(
         random.randint(
             _to_tensor(key), shape=shape, minval=minval, maxval=maxval, dtype=dtype
         )
@@ -66,44 +64,32 @@ def randint(key: Any, shape: Any, minval: int, maxval: int, dtype: Any = None) -
 
 def bernoulli(key: Any, p: float = 0.5, shape: Any = None) -> Any:
     """Bernoulli function."""
-    if shape is None:  # pragma: no cover
-        shape = ()  # pragma: no cover
-    return _wrap(
-        random.bernoulli(_to_tensor(key), p=p, shape=shape)
-    )  # pragma: no cover
+    if shape is None:
+        shape = ()
+    return _wrap(random.bernoulli(_to_tensor(key), p=p, shape=shape))
 
 
 def categorical(key: Any, logits: Any, axis: int = -1, shape: Any = None) -> Any:
     """Categorical function."""
-    # Eager hack since native not in Switcheroo easily
-    t = _to_tensor(logits)
-    import numpy as np
-    import ml_switcheroo
-    from zero_jax.numpy.lax_numpy import _wrap
+    import ml_switcheroo.random as random
 
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.random.choice(
-            t.data.shape[axis], p=np.exp(t.data) / np.sum(np.exp(t.data))
-        )
-        return _wrap(
-            ml_switcheroo.Tensor(
-                np.array(res), (), ml_switcheroo.core.dtype.DType.Int32, t.device
-            )
-        )
-    raise NotImplementedError("categorical purely eager")  # pragma: no cover
+    return _wrap(
+        random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape)
+    )
 
 
 def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> Any:
     """Permutation function."""
-    t = _to_tensor(x)
-    import numpy as np
-    import ml_switcheroo
-    from zero_jax.numpy.lax_numpy import _wrap
+    import ml_switcheroo.random as random
 
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.random.permutation(t.data)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError("permutation purely eager")  # pragma: no cover
+    return _wrap(
+        random.permutation(
+            _to_tensor(key),
+            _to_tensor(x) if hasattr(x, "shape") else x,
+            axis=axis,
+            independent=independent,
+        )
+    )
 
 
 def choice(
@@ -115,12 +101,16 @@ def choice(
     axis: int = 0,
 ) -> Any:
     """Choice function."""
-    t = _to_tensor(a)
-    import numpy as np
-    import ml_switcheroo
-    from zero_jax.numpy.lax_numpy import _wrap
+    import ml_switcheroo.random as random
+    from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
 
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.random.choice(t.data, size=shape, replace=replace)
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError("choice purely eager")  # pragma: no cover
+    return _wrap(
+        random.choice(
+            _to_tensor(key),
+            _to_tensor(a),
+            shape=shape,
+            replace=replace,
+            p=_to_tensor(p) if p is not None else None,
+            axis=axis,
+        )
+    )

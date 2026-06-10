@@ -84,7 +84,7 @@ def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
         return children
     else:
         # Fallback
-        return leaves.pop(0)  # pragma: no cover
+        return leaves.pop(0)
 
 
 def tree_leaves(tree: Any) -> List[Any]:
@@ -123,19 +123,19 @@ def tree_any(tree: Any) -> bool:
     for leaf in leaves:
         if leaf:
             return True
-    return False  # pragma: no cover
+    return False
 
 
 # Also let PyTreeDef have num_nodes and num_leaves for parity
 def _patch_pytreedef() -> Any:
     """_patch_pytreedef function."""
-    PyTreeDef.num_leaves = property(  # pragma: no cover
-        lambda self: (  # pragma: no cover
-            1  # pragma: no cover
-            if not self.children_defs  # pragma: no cover
-            else sum(c.num_leaves for c in self.children_defs)  # pragma: no cover
-        )  # pragma: no cover
-    )  # pragma: no cover
-    PyTreeDef.num_nodes = property(  # pragma: no cover
+    PyTreeDef.num_leaves = property(
+        lambda self: (
+            1
+            if not self.children_defs
+            else sum(c.num_leaves for c in self.children_defs)
+        )
+    )
+    PyTreeDef.num_nodes = property(
         lambda self: 1 + sum(c.num_nodes for c in self.children_defs)
     )

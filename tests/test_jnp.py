@@ -196,3 +196,9 @@ def test_lax_numpy_missing_cov():
 
     assert jnp.max([1, 2], where=[True, False], initial=0) == 1
     assert jnp.sum([1, 2], where=[True, False]) == 1
+
+
+def test_shape():
+    import zero_jax.numpy as jnp
+
+    assert jnp.shape([1, 2, 3]) == (3,)

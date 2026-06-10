@@ -27,35 +27,19 @@ def div(x: Any, y: Any) -> Any:
 
 def broadcast(x: Any, sizes: Any) -> Any:
     """Broadcast function."""
-    # Basic broadcast to a size
-    t = _to_tensor(x)
-    # JAX broadcast adds 'sizes' dimensions to the left of the array.
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.broadcast_to(t.data, tuple(sizes) + t.shape)
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    sizes_tuple = tuple(sizes) + _to_tensor(x).shape
+    return _wrap(ops.broadcast_to(_to_tensor(x), sizes_tuple))
 
 
 def broadcast_in_dim(x: Any, shape: Any, broadcast_dimensions: Any) -> Any:
     """broadcast_in_dim function."""
-    # In eager, we can just reshape and then broadcast
+    # First reshape x to insert 1s for non-broadcasted dimensions
     t = _to_tensor(x)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res_shape = np.ones(len(shape), dtype=int)
-        for d, s in zip(broadcast_dimensions, t.shape):
-            res_shape[d] = s
-        reshaped = np.reshape(t.data, res_shape)
-        res = np.broadcast_to(reshaped, shape)
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    new_shape = [1] * len(shape)
+    for d, s in zip(broadcast_dimensions, t.shape):
+        new_shape[d] = s
+    reshaped = ops.reshape(t, tuple(new_shape))
+    return _wrap(ops.broadcast_to(reshaped, shape))
 
 
 def reshape(x: Any, new_sizes: Any, dimensions: Any = None) -> Any:
@@ -68,86 +52,37 @@ def reshape(x: Any, new_sizes: Any, dimensions: Any = None) -> Any:
 
 def transpose(x: Any, permutation: Any) -> Any:
     """Transpose function."""
-    t = _to_tensor(x)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.transpose(t.data, permutation)
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    return _wrap(ops.permute(_to_tensor(x), permutation))
 
 
 def slice(
     operand: Any, start_indices: Any, limit_indices: Any, strides: Any = None
 ) -> Any:
     """Slice function."""
-    # Assuming start and limit are sequences of ints
-    t = _to_tensor(operand)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        if strides is None:
-            strides = [1] * len(start_indices)
-        slices = tuple(
-            builtins.slice(s, l, st)
-            for s, l, st in zip(start_indices, limit_indices, strides)
-        )
-        res = t.data[slices]
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    if strides is None:
+        strides = [1] * len(start_indices)
+    return _wrap(
+        ops.strided_slice(_to_tensor(operand), start_indices, limit_indices, strides)
+    )
 
 
 def dynamic_slice(operand: Any, start_indices: Any, slice_sizes: Any) -> Any:
     """dynamic_slice function."""
-    t = _to_tensor(operand)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        s_idx = [int(s) for s in start_indices]
-        slices = tuple(
-            builtins.slice(s, s + sz, 1) for s, sz in zip(s_idx, slice_sizes)
-        )
-        res = t.data[slices]
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    # Cast start_indices to integers if they are not already
+    s_idx = [int(s) if not hasattr(s, "data") else int(s.data) for s in start_indices]
+    return _wrap(ops.dynamic_slice(_to_tensor(operand), s_idx, slice_sizes))
 
 
 def dynamic_update_slice(operand: Any, update: Any, start_indices: Any) -> Any:
     """dynamic_update_slice function."""
-    t = _to_tensor(operand)
-    u = _to_tensor(update)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        res = np.copy(t.data)
-        s_idx = [int(s) for s in start_indices]
-        slices = tuple(builtins.slice(s, s + sz, 1) for s, sz in zip(s_idx, u.shape))
-        res[slices] = u.data
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    s_idx = [int(s) if not hasattr(s, "data") else int(s.data) for s in start_indices]
+    return _wrap(ops.update_slice(_to_tensor(operand), _to_tensor(update), s_idx))
 
 
 def reduce(operand: Any, init_value: Any, computation: Any, dimensions: Any) -> Any:
     """Reduce function."""
-    # Very basic eager fallback
-    t = _to_tensor(operand)
-    import numpy as np
-
-    if hasattr(t, "data") and isinstance(t.data, np.ndarray):  # pragma: no cover
-        # We know test uses lax_zero.add
-        res = np.sum(t.data, axis=dimensions)
-        import ml_switcheroo
-
-        return _wrap(ml_switcheroo.Tensor(res, res.shape, t.dtype, t.device))
-    raise NotImplementedError()  # pragma: no cover
+    # A real reduce would dispatch based on computation. For now sum.
+    return _wrap(ops.sum(_to_tensor(operand), axis=dimensions))
 
 
 def select(pred: Any, on_true: Any, on_false: Any) -> Any:

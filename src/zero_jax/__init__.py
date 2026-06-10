@@ -26,9 +26,8 @@ __all__ = [
     "nn",
     "experimental",
 ]
-import numpy as np
+from .numpy.lax_numpy import ndarray as Array
 
-Array = np.ndarray
 __all__ += ["Array"]
 
 

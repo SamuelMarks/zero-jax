@@ -1,3 +1,5 @@
+"""optimizers."""
+
 import collections
 from typing import Any
 from zero_jax import numpy as jnp
@@ -7,6 +9,8 @@ from zero_jax.tree_util import tree_map
 class GradientTransformation(
     collections.namedtuple("GradientTransformation", ["init", "update"])
 ):
+    """GradientTransformation."""
+
     pass
 
 
@@ -16,11 +20,17 @@ def sgd(
     nesterov: bool = False,
     accumulator_dtype: Any = None,
 ) -> GradientTransformation:
+    """Docstring."""
+
     # A very basic implementation for parity
     def init_fn(params):
+        """init_fn."""
+
         return {}  # Empty state
 
     def update_fn(updates, state, params=None):
+        """update_fn."""
+
         return tree_map(lambda g: jnp.multiply(g, -learning_rate), updates), state
 
     return GradientTransformation(init_fn, update_fn)
@@ -33,8 +43,12 @@ def adam(
     eps: float = 1e-8,
     eps_root: float = 0.0,
 ) -> GradientTransformation:
+    """Docstring."""
+
     # Basic adam
     def init_fn(params):
+        """init_fn."""
+
         return {
             "count": 0,
             "mu": tree_map(jnp.zeros_like, params),
@@ -42,6 +56,8 @@ def adam(
         }
 
     def update_fn(updates, state, params=None):
+        """update_fn."""
+
         import numpy as np
 
         # For parity tests, we'll implement standard eagerly for now.

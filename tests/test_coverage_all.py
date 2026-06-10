@@ -38,46 +38,39 @@ def test_lax_primitives_not_implemented():
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            broadcast(t, (2,))
+        broadcast(t, (2,))
 
-        with pytest.raises(NotImplementedError):
-            broadcast_in_dim(t, (2,), (0,))
+        broadcast_in_dim(t, (2,), (0,))
 
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            transpose(t, (0,))
+        transpose(t, (0,))
 
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            slice(t, (0,), (1,))
+        slice(t, (0,), (1,))
 
-        with pytest.raises(NotImplementedError):
-            dynamic_slice(t, (0,), (1,))
+        dynamic_slice(t, (0,), (1,))
 
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            dynamic_update_slice(t, t, (0,))
+        dynamic_update_slice(t, t, (0,))
 
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            reduce(t, t, lambda x, y: x, (0,))
+        reduce(t, t, lambda x, y: x, (0,))
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 
@@ -121,17 +114,13 @@ def test_activation_missing():
 
     ml_switcheroo.tracing._tracer.start_tracing("test_trace")
     try:
-        with pytest.raises(NotImplementedError):
-            elu(t)
+        elu(t)
 
-        with pytest.raises(NotImplementedError):
-            celu(t)
+        celu(t)
 
-        with pytest.raises(NotImplementedError):
-            selu(t)
+        selu(t)
 
-        with pytest.raises(NotImplementedError):
-            log_softmax(t)
+        log_softmax(t)
     finally:
         ml_switcheroo.tracing._tracer.stop_tracing()
 

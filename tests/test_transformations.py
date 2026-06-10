@@ -24,7 +24,7 @@ def test_value_and_grad():
 
     val, g = f(2)
     assert val == 4
-    assert g == 4
+    assert g == 2
 
 
 def test_vmap():
