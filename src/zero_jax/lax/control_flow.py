@@ -1,6 +1,8 @@
 """Control flow primitives for zero_jax."""
 
-from typing import Callable, Any
+from typing import Any
+
+from typing import Callable
 from ml_switcheroo.tracing import _tracer
 from ml_switcheroo.core.config import config
 import ml_switcheroo.control_flow as cf
@@ -8,16 +10,21 @@ from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
 def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> Any:
-    def wrapped_true():
+    """Cond function."""
+
+    def wrapped_true() -> Any:
+        """wrapped_true function."""
         return _to_tensor(true_fn(*operands))
 
-    def wrapped_false():
+    def wrapped_false() -> Any:
+        """wrapped_false function."""
         return _to_tensor(false_fn(*operands))
 
     return _wrap(cf.cond(_to_tensor(pred), wrapped_true, wrapped_false))
 
 
 def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
+    """Scan function."""
     if xs is None:
         if length is None:
             raise ValueError("length must be provided if xs is None")
@@ -39,5 +46,6 @@ def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
 
 
 def stop_gradient(x: Any) -> Any:
+    """stop_gradient function."""
     # Actually switcheroo doesn't have stop_gradient yet, just pass through
     return x

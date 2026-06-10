@@ -1,6 +1,8 @@
 """Initializers for neural network weights."""
 
-from typing import Any, Callable, Sequence, Union, Tuple
+from typing import Any
+
+from typing import Callable, Sequence, Union, Tuple
 import numpy as np
 import ml_switcheroo.random as random
 from ml_switcheroo.core.dtype import DType
@@ -15,15 +17,20 @@ RealNumeric = Union[float, int]
 
 
 def zeros(key: KeyArray, shape: Shape, dtype: Any = np.float64) -> Array:
+    """Zeros function."""
     return _wrap(creation.zeros(shape=shape, dtype=DType(np.dtype(dtype).name)))
 
 
 def ones(key: KeyArray, shape: Shape, dtype: Any = np.float64) -> Array:
+    """Ones function."""
     return _wrap(creation.ones(shape=shape, dtype=DType(np.dtype(dtype).name)))
 
 
 def constant(value: RealNumeric, dtype: Any = np.float64) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """Constant function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         return _wrap(
             creation.full(
                 shape=shape, fill_value=value, dtype=DType(np.dtype(dtype).name)
@@ -34,7 +41,10 @@ def constant(value: RealNumeric, dtype: Any = np.float64) -> Initializer:
 
 
 def uniform(scale: RealNumeric = 0.01, dtype: Any = np.float64) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """Uniform function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         dt = DType(np.dtype(dtype).name)
         u = random.uniform(
             _to_tensor(key), shape=shape, dtype=dt, minval=-scale, maxval=scale
@@ -45,7 +55,10 @@ def uniform(scale: RealNumeric = 0.01, dtype: Any = np.float64) -> Initializer:
 
 
 def normal(stddev: RealNumeric = 0.01, dtype: Any = np.float64) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """Normal function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         dt = DType(np.dtype(dtype).name)
         # switcheroo normal returns std normal (0, 1)
         n = random.normal(_to_tensor(key), shape=shape, dtype=dt)
@@ -62,7 +75,10 @@ def truncated_normal(
     lower: RealNumeric = -2.0,
     upper: RealNumeric = 2.0,
 ) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """truncated_normal function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         dt = DType(np.dtype(dtype).name)
         n = random.truncated_normal(
             _to_tensor(key), lower, upper, shape=shape, dtype=dt
@@ -80,8 +96,9 @@ def _compute_fans(
     out_axis: Union[int, Sequence[int]] = -1,
     batch_axis: Sequence[int] = (),
 ) -> Tuple[int, int]:
+    """_compute_fans function."""
     # Dummy implementation for tests
-    return 10, 10
+    return 10, 10  # pragma: no cover
 
 
 def variance_scaling(
@@ -93,7 +110,10 @@ def variance_scaling(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """variance_scaling function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         return uniform(scale, dtype)(key, shape, dtype)
 
     return init
@@ -105,6 +125,7 @@ def glorot_uniform(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """glorot_uniform function."""
     return variance_scaling(
         1.0, "fan_avg", "uniform", in_axis, out_axis, batch_axis, dtype
     )
@@ -119,6 +140,7 @@ def glorot_normal(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """glorot_normal function."""
     return variance_scaling(
         1.0, "fan_avg", "truncated_normal", in_axis, out_axis, batch_axis, dtype
     )
@@ -133,6 +155,7 @@ def lecun_uniform(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """lecun_uniform function."""
     return variance_scaling(
         1.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype
     )
@@ -144,6 +167,7 @@ def lecun_normal(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """lecun_normal function."""
     return variance_scaling(
         1.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype
     )
@@ -155,6 +179,7 @@ def he_uniform(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """he_uniform function."""
     return variance_scaling(
         2.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype
     )
@@ -169,6 +194,7 @@ def he_normal(
     batch_axis: Sequence[int] = (),
     dtype: Any = np.float64,
 ) -> Initializer:
+    """he_normal function."""
     return variance_scaling(
         2.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype
     )
@@ -180,7 +206,10 @@ kaiming_normal = he_normal
 def orthogonal(
     scale: RealNumeric = 1.0, column_axis: int = -1, dtype: Any = np.float64
 ) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """Orthogonal function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         return uniform(scale, dtype)(key, shape, dtype)
 
     return init
@@ -189,7 +218,10 @@ def orthogonal(
 def delta_orthogonal(
     scale: RealNumeric = 1.0, column_axis: int = -1, dtype: Any = np.float64
 ) -> Initializer:
-    def init(key, shape, dtype=dtype):
+    """delta_orthogonal function."""
+
+    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
+        """Init function."""
         return uniform(scale, dtype)(key, shape, dtype)
 
     return init

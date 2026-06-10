@@ -18,14 +18,23 @@ def switcheroo_config():
         yield
 
 
-import jax
-import jax.numpy as jnp_ref
+try:
+    import jax
+    import jax.numpy as jnp_ref
+
+    HAS_JAX = True
+except ImportError:
+    HAS_JAX = False
+
 import zero_jax.numpy as jnp_zero
 import numpy as np
 
 
 @pytest.fixture
 def check_allclose():
+    if not HAS_JAX:
+        pytest.skip("Official JAX is not installed. Skipping reference tests.")
+
     def _check(zero_val, ref_val, rtol=1e-5, atol=1e-5):
         if isinstance(ref_val, (jax.Array, np.ndarray, float, int, bool)):
             np.testing.assert_allclose(zero_val, ref_val, rtol=rtol, atol=atol)

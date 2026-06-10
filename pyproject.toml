@@ -26,3 +26,9 @@ omit = [
 
 [tool.ruff.lint]
 ignore = ['E402', 'F401', 'F841', 'E741', 'E501']
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+    "reference: Tests comparing zero-jax to official jax output.",
+]

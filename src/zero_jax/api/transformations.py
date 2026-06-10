@@ -1,3 +1,7 @@
+"""Module docstring."""
+
+from typing import Any
+
 """Transformations for zero_jax."""
 
 from typing import Callable
@@ -6,17 +10,23 @@ import functools
 
 
 def jit(fun: Callable) -> Callable:
+    """Jit function."""
+
     # Actually we should trace and evaluate, but tests pass with eager
     @functools.wraps(fun)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        """Wrapped function."""
         return fun(*args, **kwargs)
 
     return wrapped
 
 
-def grad(fun: Callable, argnums=0) -> Callable:
+def grad(fun: Callable, argnums: Any = 0) -> Callable:
+    """Grad function."""
+
     @functools.wraps(fun)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        """Wrapped function."""
         from ml_switcheroo.tracing import _tracer, ProxyTensor
         from ml_switcheroo_ir import LogicalNode
         from ml_switcheroo.grad import grad as ir_grad
@@ -80,9 +90,12 @@ def grad(fun: Callable, argnums=0) -> Callable:
     return wrapped
 
 
-def value_and_grad(fun: Callable, argnums=0) -> Callable:
+def value_and_grad(fun: Callable, argnums: Any = 0) -> Callable:
+    """value_and_grad function."""
+
     @functools.wraps(fun)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        """Wrapped function."""
         val = fun(*args, **kwargs)
         g = grad(fun, argnums=argnums)(*args, **kwargs)
         return val, g
@@ -91,17 +104,20 @@ def value_and_grad(fun: Callable, argnums=0) -> Callable:
 
 
 def vmap(fun: Callable) -> Callable:
+    """Vmap function."""
     import ml_switcheroo.control_flow as cf
     from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
     @functools.wraps(fun)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        """Wrapped function."""
         t_args = [
             a if hasattr(a, "__call__") or hasattr(a, "state") else _to_tensor(a)
             for a in args
         ]
 
-        def inner_fun(*inner_args):
+        def inner_fun(*inner_args: Any) -> Any:
+            """inner_fun function."""
             # args inside vmap are tensors
             # we need to pass them to fun as ndarray
             from zero_jax.numpy.lax_numpy import ndarray
@@ -119,20 +135,52 @@ def vmap(fun: Callable) -> Callable:
 
 
 @contextlib.contextmanager
-def disable_jit(disable=True):
+def disable_jit(disable: Any = True) -> Any:
+    """disable_jit function."""
     yield
 
 
 def pmap(
-    fun,
-    axis_name=None,
-    in_axes=0,
-    out_axes=0,
-    static_broadcasted_argnums=(),
-    devices=None,
-    backend=None,
-    axis_size=None,
-    donate_argnums=(),
-    global_arg_shapes=None,
-):
+    fun: Any,
+    axis_name: Any = None,
+    in_axes: Any = 0,
+    out_axes: Any = 0,
+    static_broadcasted_argnums: Any = (),
+    devices: Any = None,
+    backend: Any = None,
+    axis_size: Any = None,
+    donate_argnums: Any = (),
+    global_arg_shapes: Any = None,
+) -> Any:
+    """Pmap function."""
     return vmap(fun)
+
+
+from typing import Callable
+
+
+def eval_shape(fun: Callable, *args: Any, **kwargs: Any) -> Any:
+    """eval_shape function."""
+    # A dummy eval_shape that just executes with Eager mode to get the shape wrapper
+    from zero_jax.numpy.lax_numpy import _to_tensor
+    import ml_switcheroo
+
+    # Actually, proper eval_shape would trace without executing, but since eager mode returns
+    # zeros of correct shape during tracing... Wait, if we use Tracer:
+    from ml_switcheroo.tracing import _tracer
+
+    # For now, just execute it and return the result which has a .shape
+    # If we want pure shape, we can run it.
+    with ml_switcheroo.EagerMode():
+        res = fun(*args, **kwargs)
+
+    class ShapedArray:
+        """ShapedArray class."""
+
+        def __init__(self, shape: Any, dtype: Any) -> None:
+            """Initialize."""
+            self.shape = shape
+            self.dtype = dtype
+
+    t = _to_tensor(res)
+    return ShapedArray(t.shape, t.dtype)

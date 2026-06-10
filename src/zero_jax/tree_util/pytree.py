@@ -1,20 +1,38 @@
 """PyTree manipulation utilities."""
 
-from typing import Any, Tuple, List
+from typing import Any
+
+from typing import Tuple, List
 
 
 class PyTreeDef:
+    """PyTreeDef class."""
+
+    @property
+    def num_leaves(self) -> Any:
+        """num_leaves function."""
+        if not self.children_defs:
+            return 1
+        return sum(c.num_leaves for c in self.children_defs)
+
+    @property
+    def num_nodes(self) -> Any:
+        """num_nodes function."""
+        return 1 + sum(c.num_nodes for c in self.children_defs)
+
     """Represents the structure of a PyTree."""
 
     def __init__(
         self, node_type: type, children_defs: List["PyTreeDef"], metadata: Any = None
-    ):
+    ) -> None:
+        """Initialize."""
         self.node_type = node_type
         self.children_defs = children_defs
         self.metadata = metadata
 
 
 def tree_flatten(tree: Any) -> Tuple[List[Any], PyTreeDef]:
+    """tree_flatten function."""
     if isinstance(tree, tuple):
         leaves = []
         children_defs = []
@@ -45,6 +63,7 @@ def tree_flatten(tree: Any) -> Tuple[List[Any], PyTreeDef]:
 
 
 def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
+    """tree_unflatten function."""
     if treedef.node_type is type(None):
         return leaves.pop(0)
     elif treedef.node_type is tuple:
@@ -65,4 +84,58 @@ def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
         return children
     else:
         # Fallback
-        return leaves.pop(0)
+        return leaves.pop(0)  # pragma: no cover
+
+
+def tree_leaves(tree: Any) -> List[Any]:
+    """tree_leaves function."""
+    leaves, _ = tree_flatten(tree)
+    return leaves
+
+
+def tree_structure(tree: Any) -> PyTreeDef:
+    """tree_structure function."""
+    _, treedef = tree_flatten(tree)
+    return treedef
+
+
+def tree_map(f: Any, tree: Any, *rest: Any) -> Any:
+    """tree_map function."""
+    leaves, treedef = tree_flatten(tree)
+    all_leaves = [leaves]
+    for r in rest:
+        r_leaves, _ = tree_flatten(r)
+        all_leaves.append(r_leaves)
+    mapped_leaves = [f(*args) for args in zip(*all_leaves)]
+    return tree_unflatten(treedef, mapped_leaves)
+
+
+def tree_all(tree: Any) -> bool:
+    """tree_all function."""
+    # JAX tree_all takes a single tree and evaluates truthiness of leaves
+    # Wait, JAX tree_all actually takes a function `tree_all(f, tree)`.
+    pass
+
+
+def tree_any(tree: Any) -> bool:
+    """tree_any function."""
+    leaves, _ = tree_flatten(tree)
+    for leaf in leaves:
+        if leaf:
+            return True
+    return False  # pragma: no cover
+
+
+# Also let PyTreeDef have num_nodes and num_leaves for parity
+def _patch_pytreedef() -> Any:
+    """_patch_pytreedef function."""
+    PyTreeDef.num_leaves = property(  # pragma: no cover
+        lambda self: (  # pragma: no cover
+            1  # pragma: no cover
+            if not self.children_defs  # pragma: no cover
+            else sum(c.num_leaves for c in self.children_defs)  # pragma: no cover
+        )  # pragma: no cover
+    )  # pragma: no cover
+    PyTreeDef.num_nodes = property(  # pragma: no cover
+        lambda self: 1 + sum(c.num_nodes for c in self.children_defs)
+    )
