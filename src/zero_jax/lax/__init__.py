@@ -1,5 +1,6 @@
-"""Module docstring."""
+import ml_switcheroo
 
+"Module docstring."
 from .control_flow import cond, scan
 
 __all__ = ["cond", "scan"]

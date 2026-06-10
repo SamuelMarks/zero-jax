@@ -1,5 +1,6 @@
-"""Module docstring."""
+import ml_switcheroo
 
+"Module docstring."
 from .lax_numpy import (
     sin,
     cos,
@@ -26,6 +27,9 @@ from .lax_numpy import (
     allclose,
     array_equal,
     broadcast_shapes,
+    dot,
+    matmul,
+    expand_dims,
 )
 
 __all__ = [
@@ -54,4 +58,7 @@ __all__ = [
     "allclose",
     "array_equal",
     "broadcast_shapes",
+    "dot",
+    "matmul",
+    "expand_dims",
 ]

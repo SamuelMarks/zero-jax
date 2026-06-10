@@ -2,7 +2,7 @@
 
 import pytest
 from zero_jax.lax import cond, scan
-from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
+from ml_switcheroo.tracing import _tracer, ProxyTensor
 
 
 def test_cond_eager():
@@ -48,7 +48,7 @@ def test_scan_tracing():
 
     carry, ys = scan(lambda c, x: (c, x), init, xs)
     assert carry.shape == ()
-    assert ys.shape == ()
+    assert ys.shape == (10,)
     _tracer.stop_tracing()
 
 

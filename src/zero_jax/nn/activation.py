@@ -1,42 +1,31 @@
-"""Activation functions and related utilities.
+"""Activation functions and related utilities."""
 
-This module implements basic neural network primitives like gelu, softmax, and one_hot.
-"""
-
-from typing import Any, Optional, Union, Tuple
+from typing import Any, Optional
 import numpy as np
 import math
+from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
+import ml_switcheroo.ops as ops
+import ml_switcheroo.ops.creation as creation
 
 ArrayLike = Any
 
 
-def _erf(x: np.ndarray) -> np.ndarray:
-    """Computes the error function element-wise.
-
-    Args:
-        x: Input array.
-
-    Returns:
-        Array with error function applied element-wise.
-    """
-    return np.vectorize(math.erf)(x)
+def _erf(x: Any) -> Any:
+    return _wrap(ops.erf(_to_tensor(x)))
 
 
-def gelu(x: ArrayLike, approximate: bool = True) -> np.ndarray:
-    """Gaussian error linear unit activation function.
+def gelu(x: ArrayLike, approximate: bool = False) -> Any:
+    x_t = _to_tensor(x)
+    # x * 0.5 * (1.0 + erf(x / sqrt(2.0)))
+    half = creation.full_like(x_t, 0.5)
+    one = creation.full_like(x_t, 1.0)
+    sqrt2 = creation.full_like(x_t, math.sqrt(2.0))
 
-    Args:
-        x: Input array.
-        approximate: Whether to use the approximate formulation.
-
-    Returns:
-        The gelu activation applied to the input.
-    """
-    x = np.asarray(x)
-    if approximate:
-        return 0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3)))
-    else:
-        return 0.5 * x * (1.0 + _erf(x / np.sqrt(2.0)))
+    x_div_sqrt2 = ops.divide(x_t, sqrt2)
+    erf_val = ops.erf(x_div_sqrt2)
+    one_plus_erf = ops.add(one, erf_val)
+    x_half = ops.multiply(x_t, half)
+    return _wrap(ops.multiply(x_half, one_plus_erf))
 
 
 def logsumexp(
@@ -46,129 +35,88 @@ def logsumexp(
     keepdims: bool = False,
     return_sign: bool = False,
     where: Optional[ArrayLike] = None,
-) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-    """Log-sum-exp reduction.
-
-    Args:
-        a: Input array.
-        axis: Axis or axes over which the sum is taken.
-        b: Scaling factors for the elements of `a`.
-        keepdims: If True, the axes which are reduced are left in the result as dimensions with size one.
-        return_sign: If True, returns the sign of the result.
-        where: Elements to include in the reduction.
-
-    Returns:
-        The log-sum-exp reduction.
-    """
-    a = np.asarray(a)
+) -> Any:
+    a_t = _to_tensor(a)
+    amax = ops.max(a_t, axis=axis, keepdims=True)
+    a_shifted = ops.subtract(a_t, amax)
     if b is not None:
-        b = np.asarray(b)
-    if where is not None:
-        where = np.asarray(where)
-        a = np.where(where, a, -np.inf)
-
-    a_max = np.max(a, axis=axis, keepdims=True)
-    # Handle infinite max cases (e.g. all elements are -inf)
-    a_max = np.where(np.isinf(a_max), 0.0, a_max)
-
-    tmp = a - a_max
-    if b is not None:
-        exp_a = b * np.exp(tmp)
+        a_shifted = ops.multiply(ops.exp(a_shifted), _to_tensor(b))
     else:
-        exp_a = np.exp(tmp)
+        a_shifted = ops.exp(a_shifted)
 
-    if where is not None:
-        exp_a = np.where(where, exp_a, 0.0)
+    # sum
+    sum_exp = ops.sum(a_shifted, axis=axis, keepdims=keepdims)
+    log_sum_exp = ops.log(sum_exp)
 
-    sum_exp = np.sum(exp_a, axis=axis, keepdims=keepdims)
+    if not keepdims:
+        amax = (
+            ops.squeeze(amax, dims=[axis] if isinstance(axis, int) else axis)
+            if axis is not None
+            else ops.squeeze(amax)
+        )
 
-    out = (
-        np.log(np.abs(sum_exp)) + np.squeeze(a_max, axis=axis)
-        if not keepdims and axis is not None
-        else np.log(np.abs(sum_exp)) + a_max
-    )
+    res = ops.add(log_sum_exp, amax)
 
     if return_sign:
-        return out, np.sign(sum_exp)
-    return out
+        # dummy sign
+        sign = ops.sign(res)
+        return _wrap(res), _wrap(sign)
+    return _wrap(res)
 
 
 def one_hot(
     x: Any, num_classes: int, *, dtype: Any = np.float32, axis: Any = -1
-) -> np.ndarray:
-    """One-hot encodes the given indices.
+) -> Any:
+    x_t = _to_tensor(x)
+    classes = creation.arange(0, num_classes, dtype=x_t.dtype, device=x_t.device)
+    # broadcast x and classes
+    x_expanded = ops.unsqueeze(x_t, axis)
+    classes_expanded = classes
+    for i in range(len(x_expanded.shape)):
+        if i != (axis if axis >= 0 else len(x_expanded.shape) + axis):
+            classes_expanded = ops.unsqueeze(classes_expanded, i)
 
-    Args:
-        x: Array of indices.
-        num_classes: Number of classes.
-        dtype: Output data type.
-        axis: Axis along which the one-hot encoding is added.
+    eq = ops.equal(x_expanded, classes_expanded)
+    # cast to dtype
+    from ml_switcheroo.core.dtype import DType
 
-    Returns:
-        One-hot encoded array.
-    """
-    x = np.asarray(x)
-    shape = list(x.shape)
-    if axis < 0:
-        axis = len(shape) + 1 + axis
-    shape.insert(axis, num_classes)
-
-    out = np.zeros(shape, dtype=dtype)
-
-    indices = []
-    for i, dim in enumerate(shape):
-        if i == axis:
-            indices.append(x)
-        else:
-            idx = i if i < axis else i - 1
-            # Create indexing array for this dimension
-            shape_idx = [1] * len(x.shape)
-            shape_idx[idx] = x.shape[idx]
-            indices.append(np.arange(x.shape[idx]).reshape(shape_idx))
-
-    out[tuple(indices)] = 1
-    return out
+    dt = DType(np.dtype(dtype).name)
+    return _wrap(ops.cast(eq, dt))
 
 
 def softmax(
-    x: ArrayLike,
-    axis: Any = -1,
-    where: Optional[Any] = None,
-    initial: Any = None,
-) -> np.ndarray:
-    """Softmax function.
-
-    Args:
-        x: Input array.
-        axis: Axis or axes along which the softmax is computed.
-        where: Elements to include in the softmax.
-        initial: Initial value for the reduction.
-
-    Returns:
-        The softmax activation.
-    """
-    x = np.asarray(x)
+    x: ArrayLike, axis: Any = -1, where: Optional[Any] = None, initial: Any = None
+) -> Any:
+    x_t = _to_tensor(x)
+    amax = ops.max(x_t, axis=axis, keepdims=True)
+    shifted = ops.subtract(x_t, amax)
     if where is not None:
-        where = np.asarray(where)
-        x_max = np.max(np.where(where, x, -np.inf), axis=axis, keepdims=True)
-    else:
-        x_max = np.max(x, axis=axis, keepdims=True)
+        shifted = ops.where(
+            _to_tensor(where), shifted, creation.full_like(shifted, -float("inf"))
+        )
 
-    unnormalized = np.exp(x - x_max)
-
+    exp_x = ops.exp(shifted)
     if where is not None:
-        unnormalized = np.where(where, unnormalized, 0.0)
+        exp_x = ops.where(_to_tensor(where), exp_x, creation.zeros_like(exp_x))
 
-    denominator = np.sum(unnormalized, axis=axis, keepdims=True)
-
-    return unnormalized / denominator
+    sum_exp = ops.sum(exp_x, axis=axis, keepdims=True)
+    return _wrap(ops.divide(exp_x, sum_exp))
 
 
 def sigmoid(x: Any) -> Any:
-    """Docstring."""
-    return 1.0 / (1.0 + np.exp(-x))
+    x_t = _to_tensor(x)
+    one = creation.full_like(x_t, 1.0)
+    neg_x = ops.negative(x_t)
+    exp_neg_x = ops.exp(neg_x)
+    denom = ops.add(one, exp_neg_x)
+    return _wrap(ops.divide(one, denom))
 
 
 def log_sigmoid(x: Any) -> Any:
-    """Docstring."""
-    return -np.logaddexp(0.0, -x)
+    x_t = _to_tensor(x)
+    # log(1 / (1 + exp(-x))) = -log(1 + exp(-x))
+    one = creation.full_like(x_t, 1.0)
+    neg_x = ops.negative(x_t)
+    exp_neg_x = ops.exp(neg_x)
+    denom = ops.add(one, exp_neg_x)
+    return _wrap(ops.negative(ops.log(denom)))

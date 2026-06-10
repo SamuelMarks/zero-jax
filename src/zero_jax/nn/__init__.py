@@ -1,5 +1,6 @@
-"""Module docstring."""
+import ml_switcheroo
 
+"Module docstring."
 from .activation import gelu, softmax, logsumexp, one_hot, sigmoid, log_sigmoid
 from . import initializers
 

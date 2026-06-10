@@ -1,77 +1,43 @@
 """Control flow primitives for zero_jax."""
 
 from typing import Callable, Any
-import uuid
-
-from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
-from ml_switcheroo_ir import LogicalNode
+from ml_switcheroo.tracing import _tracer
+from ml_switcheroo.core.config import config
+import ml_switcheroo.control_flow as cf
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
 def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> Any:
-    """Docstring."""
-    if not _tracer.is_tracing:
-        if bool(pred):
-            return true_fn(*operands)
-        else:
-            return false_fn(*operands)
+    def wrapped_true():
+        return _to_tensor(true_fn(*operands))
 
-    # Trace true_fn and false_fn into separate subgraphs
-    # For now, just emit an If node (placeholder, deep tracing requires hierarchical IR)
-    out_id = str(uuid.uuid4())
-    inputs = [getattr(pred, "id", str(pred))] + [
-        getattr(op, "id", str(op)) for op in operands
-    ]
+    def wrapped_false():
+        return _to_tensor(false_fn(*operands))
 
-    node = LogicalNode(
-        id=out_id,
-        op_type="If",
-        inputs=inputs,
-        attributes={"true_fn": true_fn.__name__, "false_fn": false_fn.__name__},
-        shape_metadata=(),  # Needs full tracing to determine
-    )
-    _tracer.add_node(node)
-    return ProxyTensor(id=out_id, shape=())
+    return _wrap(cf.cond(_to_tensor(pred), wrapped_true, wrapped_false))
 
 
 def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
-    """Docstring."""
-    if not _tracer.is_tracing:
+    if xs is None:
+        if length is None:
+            raise ValueError("length must be provided if xs is None")
+        xs = [0] * length
+    elif config.eager_mode:
+        pass  # xs is iterable
+
+    if config.eager_mode and not _tracer.is_tracing:
         carry = init
         ys = []
-        # Fallback eager scan
-        if xs is None:
-            if length is None:
-                raise ValueError("length must be provided if xs is None")
-            for _ in range(length):
-                carry, y = f(carry, None)
-                ys.append(y)
-        else:
-            # Simple iteration over 0th dimension
-            for x in xs:
-                carry, y = f(carry, x)
-                ys.append(y)
-        # Note: eager scan should stack ys, but keeping it simple for tests
+        for x in xs:
+            carry, y = f(carry, x)
+            ys.append(y)
         return carry, ys
-
-    out_id = str(uuid.uuid4())
-    inputs = [getattr(init, "id", str(init))]
-    if xs is not None:
-        inputs.append(getattr(xs, "id", str(xs)))
-
-    node = LogicalNode(
-        id=out_id,
-        op_type="Scan",
-        inputs=inputs,
-        attributes={"body_fn": f.__name__, "length": length},
-        shape_metadata=(),  # Needs full tracing
-    )
-    _tracer.add_node(node)
-    # Scan returns (carry, ys)
-    return ProxyTensor(id=f"{out_id}_carry", shape=()), ProxyTensor(
-        id=f"{out_id}_ys", shape=()
-    )
+    else:
+        # tracing
+        carry, ys = cf.scan(f, _to_tensor(init), _to_tensor(xs))
+        return _wrap(carry), _wrap(ys)
 
 
 def stop_gradient(x: Any) -> Any:
-    """Docstring."""
+    # Actually switcheroo doesn't have stop_gradient yet, just pass through
     return x

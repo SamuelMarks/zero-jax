@@ -17,7 +17,7 @@ def test_logsumexp():
     """Test logsumexp."""
     x = np.array([1.0, 2.0, 3.0])
     res = logsumexp(x)
-    assert isinstance(res, np.ndarray) or isinstance(res, float)
+    assert hasattr(res, "shape") or isinstance(res, float)
 
     # Test with b, keepdims, return_sign, where
     res2, sign2 = logsumexp(

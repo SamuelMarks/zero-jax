@@ -1,5 +1,6 @@
-"""Module docstring."""
+import ml_switcheroo
 
+"Module docstring."
 from . import numpy
 from . import tree_util
 from . import lax
@@ -32,25 +33,21 @@ class Device:
     """Docstring."""
 
     def __init__(self, platform="cpu"):
-        """Docstring."""
         self.platform = platform
 
 
 def devices(backend=None):
-    """Docstring."""
-    return [Device("cpu")]
+    return [Device(platform="cpu")]
 
 
 def local_devices(backend=None):
-    """Docstring."""
-    return [Device("cpu")]
+    return [Device(platform="cpu")]
 
 
 __all__ += ["Device", "devices", "local_devices"]
 
 
 def device_get(x):
-    """Docstring."""
     return x
 
 

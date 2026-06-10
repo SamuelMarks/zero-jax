@@ -1,9 +1,4 @@
-"""Module docstring."""
-
-
 class ErrorCategory:
-    """Class docstring."""
-
     pass
 
 
@@ -13,5 +8,7 @@ div_checks = ErrorCategory()
 
 
 def checkify(fn, errors=None):
-    """Function docstring."""
-    return lambda *a, **k: (None, fn(*a, **k))
+    def wrapper(*args, **kwargs):
+        return None, fn(*args, **kwargs)
+
+    return wrapper

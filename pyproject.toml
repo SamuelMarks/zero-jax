@@ -8,10 +8,7 @@ version = "0.4.30"
 description = "Zero-dependency pure Python implementation of the JAX API surface."
 authors = [{ name = "Samuel Marks" }]
 requires-python = ">=3.9"
-dependencies = [
-    "numpy",
-    "ml-switcheroo-compiler",
-]
+dependencies = ["ml-switcheroo-compiler"]
 
 [project.optional-dependencies]
 test = [
@@ -26,3 +23,6 @@ omit = [
     "generate_jnp_stubs.py",
     "scripts/*"
 ]
+
+[tool.ruff.lint]
+ignore = ['E402', 'F401', 'F841', 'E741', 'E501']
