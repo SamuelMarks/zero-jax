@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""PyTree utilities for manipulating nested data structures."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .pytree import (
     tree_flatten,
     tree_unflatten,

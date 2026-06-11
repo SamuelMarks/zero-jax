@@ -148,32 +148,13 @@ This plan outlines the steps required to port the official JAX test suite to ver
     - [ ] Behavior with errors vs successful checks.
 - [ ] Fix any failing `zero_jax.experimental.checkify` implementations to match reference behavior exactly.
 
-## Phase 9: Porting `optax` Tests (for `zero_optax`)
-- [ ] Port/write parity tests for Core Optimizers:
-    - [ ] `sgd`, `adam`, `adamw`, `rmsprop`, `adagrad`
-- [ ] Port/write parity tests for Schedules:
-    - [ ] `linear_schedule`
-    - [ ] `cosine_decay_schedule`
-    - [ ] `exponential_decay`
-    - [ ] `piecewise_constant_schedule`
-- [ ] Port/write parity tests for Losses:
-    - [ ] `l2_loss`
-    - [ ] `huber_loss`
-    - [ ] `softmax_cross_entropy`
-    - [ ] `sigmoid_binary_cross_entropy`
-- [ ] Port/write parity tests for Transformations and Composition:
-    - [ ] `chain`
-    - [ ] `scale`, `scale_by_adam`, `scale_by_rms`, etc.
-    - [ ] `clip_by_global_norm`
-- [ ] Fix any failing `zero_optax` implementations to match reference behavior exactly.
-
-## Phase 10: Integration and Edge Cases
+## Phase 9: Integration and Edge Cases
 - [ ] Test combination of transformations (e.g., `jit(vmap(grad(f)))`).
 - [ ] Test behavior with different dtypes (`float32`, `float64`, `int32`, `bool_`).
 - [ ] Test behavior with NaN and Inf values.
 - [ ] Test handling of weak types (Python scalars vs JAX arrays).
 
-## Phase 11: CI Integration & Maintenance
+## Phase 10: CI Integration & Maintenance
 - [ ] Update `.github/workflows/ci.yml` to run the comparative test suite alongside the standard test suite.
 - [ ] Set up caching for reference dependencies (if necessary) to speed up CI.
 - [ ] Resolve any performance bottlenecks in running the dual test suite in CI.

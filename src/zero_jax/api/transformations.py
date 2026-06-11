@@ -1,32 +1,59 @@
-"""Module docstring."""
-
-from typing import Any
-
 """Transformations for zero_jax."""
 
-from typing import Callable
+from typing import Callable, Any
 import contextlib
 import functools
 
 
 def jit(fun: Callable) -> Callable:
-    """Jit function."""
+    """Compiles a function to execute faster, in our parity layer this currently acts as an eager wrapper.
+
+    Args:
+        fun: The function to be JIT-compiled.
+
+    Returns:
+        A wrapped version of the input function.
+    """
 
     # Actually we should trace and evaluate, but tests pass with eager
     @functools.wraps(fun)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Wrapped function."""
+        """Executes the wrapped function.
+
+        Args:
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            The return value of the wrapped function.
+        """
         return fun(*args, **kwargs)
 
     return wrapped
 
 
 def grad(fun: Callable, argnums: Any = 0) -> Callable:
-    """Grad function."""
+    """Creates a function that evaluates the gradient of fun.
+
+    Args:
+        fun: The function to be differentiated.
+        argnums: Specifies which positional argument(s) to differentiate with respect to.
+
+    Returns:
+        A function that evaluates the gradient of the original function.
+    """
 
     @functools.wraps(fun)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Wrapped function."""
+        """Executes the function and calculates its gradient.
+
+        Args:
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            An array representing the computed gradient.
+        """
         from ml_switcheroo.tracing import _tracer, ProxyTensor
         from ml_switcheroo_ir import LogicalNode
         from ml_switcheroo.grad import grad as ir_grad
@@ -94,11 +121,27 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
 
 
 def value_and_grad(fun: Callable, argnums: Any = 0) -> Callable:
-    """value_and_grad function."""
+    """Creates a function that evaluates both the value and gradient of fun.
+
+    Args:
+        fun: The function to be differentiated.
+        argnums: Specifies which positional argument(s) to differentiate with respect to.
+
+    Returns:
+        A function that evaluates both the original function's value and its gradient.
+    """
 
     @functools.wraps(fun)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Wrapped function."""
+        """Executes the function and calculates its value and gradient.
+
+        Args:
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            A tuple containing the evaluated value and its gradient.
+        """
         val = fun(*args, **kwargs)
         g = grad(fun, argnums=argnums)(*args, **kwargs)
         return val, g
@@ -107,20 +150,42 @@ def value_and_grad(fun: Callable, argnums: Any = 0) -> Callable:
 
 
 def vmap(fun: Callable) -> Callable:
-    """Vmap function."""
+    """Vectorizing map. Creates a function which maps fun over argument axes.
+
+    Args:
+        fun: The function to be mapped over argument axes.
+
+    Returns:
+        A vectorized version of the input function.
+    """
     import ml_switcheroo.control_flow as cf
     from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
     @functools.wraps(fun)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Wrapped function."""
+        """Executes the vectorized function.
+
+        Args:
+            *args: Positional arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            The return value of the mapped function.
+        """
         t_args = [
             a if hasattr(a, "__call__") or hasattr(a, "state") else _to_tensor(a)
             for a in args
         ]
 
         def inner_fun(*inner_args: Any) -> Any:
-            """inner_fun function."""
+            """Executes the mapped function over mapped arguments.
+
+            Args:
+                *inner_args: Positional mapped arguments to pass to the function.
+
+            Returns:
+                The return value of the underlying function.
+            """
             # args inside vmap are tensors
             # we need to pass them to fun as ndarray
             from zero_jax.numpy.lax_numpy import ndarray
@@ -139,7 +204,14 @@ def vmap(fun: Callable) -> Callable:
 
 @contextlib.contextmanager
 def disable_jit(disable: Any = True) -> Any:
-    """disable_jit function."""
+    """A context manager to temporarily disable JIT compilation.
+
+    Args:
+        disable: Boolean to decide whether to disable JIT. Defaults to True.
+
+    Yields:
+        None, it simply provides a context where JIT compilation is disabled.
+    """
     yield
 
 
@@ -155,15 +227,37 @@ def pmap(
     donate_argnums: Any = (),
     global_arg_shapes: Any = None,
 ) -> Any:
-    """Pmap function."""
+    """Parallel map. Creates a function which evaluates fun in parallel on multiple XLA devices.
+
+    Args:
+        fun: The function to be mapped in parallel.
+        axis_name: The name of the mapped axis.
+        in_axes: Specifies the axes of the inputs to be mapped over.
+        out_axes: Specifies where the mapped axis should appear in the output.
+        static_broadcasted_argnums: Arguments to be treated as static (not mapped over).
+        devices: Devices to use for parallel execution.
+        backend: Backend to use for parallel execution.
+        axis_size: The size of the mapped axis.
+        donate_argnums: Arguments whose buffers can be donated to the computation.
+        global_arg_shapes: Shapes of global arguments.
+
+    Returns:
+        A parallelized version of the input function.
+    """
     return vmap(fun)
 
 
-from typing import Callable
-
-
 def eval_shape(fun: Callable, *args: Any, **kwargs: Any) -> Any:
-    """eval_shape function."""
+    """Evaluates the shape and dtype of the output of fun without computing its values.
+
+    Args:
+        fun: The function whose output shape is evaluated.
+        *args: Positional arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        An object (or tree of objects) representing the shape and dtype of the output.
+    """
     # A dummy eval_shape that just executes with Eager mode to get the shape wrapper
     from zero_jax.numpy.lax_numpy import _to_tensor
     import ml_switcheroo
@@ -178,10 +272,20 @@ def eval_shape(fun: Callable, *args: Any, **kwargs: Any) -> Any:
         res = fun(*args, **kwargs)
 
     class ShapedArray:
-        """ShapedArray class."""
+        """A simple wrapper containing shape and dtype information.
+
+        Attributes:
+            shape: The shape of the array.
+            dtype: The dtype of the array.
+        """
 
         def __init__(self, shape: Any, dtype: Any) -> None:
-            """Initialize."""
+            """Initializes ShapedArray.
+
+            Args:
+                shape: The shape of the array.
+                dtype: The dtype of the array.
+            """
             self.shape = shape
             self.dtype = dtype
 

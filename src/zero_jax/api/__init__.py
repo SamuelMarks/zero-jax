@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""Core API module for JAX-like transformations (jit, grad, vmap, etc.)."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .transformations import (
     jit,
     grad,

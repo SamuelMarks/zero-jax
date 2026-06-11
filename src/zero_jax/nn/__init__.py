@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""Neural network utilities including activations and initializers."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .activation import (
     gelu,
     softmax,

@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""Pseudo-random number generation (PRNG) utilities."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .prng import (
     split,
     fold_in,

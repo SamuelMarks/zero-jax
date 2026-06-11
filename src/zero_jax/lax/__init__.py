@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""LAX module for core primitive operations and control flow."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .control_flow import cond, scan, stop_gradient
 from .primitives import (
     add,

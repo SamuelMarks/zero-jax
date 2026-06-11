@@ -1,9 +1,8 @@
-"""Module docstring."""
+"""NumPy-like API for array manipulations and mathematical operations."""
 
 from typing import Any
 import ml_switcheroo
 
-"Module docstring."
 from .lax_numpy import (
     sin,
     cos,

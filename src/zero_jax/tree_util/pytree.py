@@ -1,38 +1,61 @@
 """PyTree manipulation utilities."""
 
-from typing import Any
-
-from typing import Tuple, List
+from typing import Any, Tuple, List
 
 
 class PyTreeDef:
-    """PyTreeDef class."""
+    """Represents the structure of a PyTree.
+
+    Attributes:
+        node_type: The type of the node.
+        children_defs: The definitions of the children nodes.
+        metadata: Additional metadata for the node.
+    """
 
     @property
     def num_leaves(self) -> Any:
-        """num_leaves function."""
+        """Returns the number of leaves in the PyTree structure.
+
+        Returns:
+            The total number of leaf nodes.
+        """
         if not self.children_defs:
             return 1
         return sum(c.num_leaves for c in self.children_defs)
 
     @property
     def num_nodes(self) -> Any:
-        """num_nodes function."""
-        return 1 + sum(c.num_nodes for c in self.children_defs)
+        """Returns the number of nodes in the PyTree structure.
 
-    """Represents the structure of a PyTree."""
+        Returns:
+            The total number of all nodes (internal and leaves).
+        """
+        return 1 + sum(c.num_nodes for c in self.children_defs)
 
     def __init__(
         self, node_type: type, children_defs: List["PyTreeDef"], metadata: Any = None
     ) -> None:
-        """Initialize."""
+        """Initializes a PyTreeDef.
+
+        Args:
+            node_type: The type of the node.
+            children_defs: A list of children node definitions.
+            metadata: Any metadata associated with the node.
+        """
         self.node_type = node_type
         self.children_defs = children_defs
         self.metadata = metadata
 
 
 def tree_flatten(tree: Any) -> Tuple[List[Any], PyTreeDef]:
-    """tree_flatten function."""
+    """Flattens a PyTree into a list of leaves and a PyTreeDef structure.
+
+    Args:
+        tree: The PyTree to flatten.
+
+    Returns:
+        A tuple containing a list of leaves and the PyTree structure definition.
+    """
     if isinstance(tree, tuple):
         leaves = []
         children_defs = []
@@ -63,7 +86,15 @@ def tree_flatten(tree: Any) -> Tuple[List[Any], PyTreeDef]:
 
 
 def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
-    """tree_unflatten function."""
+    """Reconstructs a PyTree from its leaves and its PyTreeDef structure.
+
+    Args:
+        treedef: The PyTree structure definition.
+        leaves: The list of leaves to insert into the PyTree.
+
+    Returns:
+        The reconstructed PyTree.
+    """
     if treedef.node_type is type(None):
         return leaves.pop(0)
     elif treedef.node_type is tuple:
@@ -88,19 +119,42 @@ def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
 
 
 def tree_leaves(tree: Any) -> List[Any]:
-    """tree_leaves function."""
+    """Extracts all the leaves from a PyTree.
+
+    Args:
+        tree: The PyTree to extract leaves from.
+
+    Returns:
+        A list of the leaves of the PyTree.
+    """
     leaves, _ = tree_flatten(tree)
     return leaves
 
 
 def tree_structure(tree: Any) -> PyTreeDef:
-    """tree_structure function."""
+    """Extracts the structure of a PyTree.
+
+    Args:
+        tree: The PyTree to analyze.
+
+    Returns:
+        The PyTreeDef structure of the PyTree.
+    """
     _, treedef = tree_flatten(tree)
     return treedef
 
 
 def tree_map(f: Any, tree: Any, *rest: Any) -> Any:
-    """tree_map function."""
+    """Maps a function over the leaves of a PyTree.
+
+    Args:
+        f: The function to map.
+        tree: The primary PyTree.
+        *rest: Additional PyTrees to zip with the primary tree.
+
+    Returns:
+        A new PyTree with the function applied to its leaves.
+    """
     leaves, treedef = tree_flatten(tree)
     all_leaves = [leaves]
     for r in rest:
@@ -111,14 +165,27 @@ def tree_map(f: Any, tree: Any, *rest: Any) -> Any:
 
 
 def tree_all(tree: Any) -> bool:
-    """tree_all function."""
-    # JAX tree_all takes a single tree and evaluates truthiness of leaves
-    # Wait, JAX tree_all actually takes a function `tree_all(f, tree)`.
-    pass
+    """Checks if all leaves in a PyTree evaluate to True.
+
+    Args:
+        tree: The PyTree to check.
+
+    Returns:
+        True if all leaves are truthy, False otherwise.
+    """
+    leaves, _ = tree_flatten(tree)
+    return all(leaves)
 
 
 def tree_any(tree: Any) -> bool:
-    """tree_any function."""
+    """Checks if any leaf in a PyTree evaluates to True.
+
+    Args:
+        tree: The PyTree to check.
+
+    Returns:
+        True if at least one leaf is truthy, False otherwise.
+    """
     leaves, _ = tree_flatten(tree)
     for leaf in leaves:
         if leaf:
@@ -128,7 +195,11 @@ def tree_any(tree: Any) -> bool:
 
 # Also let PyTreeDef have num_nodes and num_leaves for parity
 def _patch_pytreedef() -> Any:
-    """_patch_pytreedef function."""
+    """Patches PyTreeDef with num_leaves and num_nodes properties.
+
+    Returns:
+        None
+    """
     PyTreeDef.num_leaves = property(
         lambda self: (
             1
