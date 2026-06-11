@@ -1,5 +1,7 @@
 """Activation functions and related utilities."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 

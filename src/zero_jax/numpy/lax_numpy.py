@@ -58,7 +58,7 @@ class ndarray:
         Returns:
             Any: The result of the array operation.
         """
-        from ml_switcheroo.core import tensor_utils
+        from zero_jax.numpy import tensor_utils
 
         if hasattr(self._tensor.data, "id"):  # ProxyTensor check
             return tensor_utils.zeros(
@@ -427,7 +427,7 @@ def _to_tensor(x: Any) -> Any:
             device=config.default_device,
         )
 
-    from ml_switcheroo.core import tensor_utils
+    from zero_jax.numpy import tensor_utils
 
     arr = tensor_utils.to_array(x)
     if config.eager_mode and not _tracer.is_tracing:
@@ -883,7 +883,7 @@ def array_equal(a1: Any, a2: Any, equal_nan: Any = False) -> Any:
         Any: The result of the operation.
     """
     res = ops.equal(_to_tensor(a1), _to_tensor(a2))
-    from ml_switcheroo.core import tensor_utils
+    from zero_jax.numpy import tensor_utils
 
     return bool(tensor_utils.to_array(res.data).all()) if hasattr(res, "data") else True
 

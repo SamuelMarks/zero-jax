@@ -1,5 +1,7 @@
 """Neural network utilities including activations and initializers."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 

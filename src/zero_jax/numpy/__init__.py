@@ -1,9 +1,14 @@
-"""NumPy-like API for array manipulations and mathematical operations."""
+"""JAX-like API for array manipulations and mathematical operations."""
+
+from __future__ import annotations
 
 from typing import Any
 import ml_switcheroo
 
-from .lax_numpy import (
+from zero_jax.numpy.lax_numpy import (
+    _to_tensor,
+    _wrap,
+    ndarray,
     sin,
     cos,
     exp,
@@ -120,6 +125,9 @@ from .lax_numpy import (
 )
 
 __all__ = [
+    "_to_tensor",
+    "_wrap",
+    "ndarray",
     "sin",
     "cos",
     "exp",

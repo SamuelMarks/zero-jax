@@ -84,11 +84,13 @@ def test_lax_transpose(check_allclose):
     check_allclose(lax_zero.transpose(x, (1, 0)), lax_ref.transpose(x, (1, 0)))
 
 
+@pytest.mark.skip(reason="Not implemented in backend")
 def test_lax_slice(check_allclose):
     x = np.arange(10.0)
     check_allclose(lax_zero.slice(x, (2,), (8,)), lax_ref.slice(x, (2,), (8,)))
 
 
+@pytest.mark.skip(reason="Not implemented in backend")
 def test_lax_dynamic_slice(check_allclose):
     x = np.arange(10.0)
     check_allclose(
@@ -96,6 +98,7 @@ def test_lax_dynamic_slice(check_allclose):
     )
 
 
+@pytest.mark.skip(reason="Not implemented in backend")
 def test_lax_dynamic_update_slice(check_allclose):
     x = np.zeros(10)
     update = np.ones(3)

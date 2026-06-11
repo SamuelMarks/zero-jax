@@ -1,5 +1,7 @@
 """LAX module for core primitive operations and control flow."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 

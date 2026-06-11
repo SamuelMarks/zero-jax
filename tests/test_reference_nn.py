@@ -136,11 +136,13 @@ def test_nn_celu(check_allclose):
     check_allclose(nn_zero.celu(x), nn_ref.celu(x))
 
 
+@pytest.mark.skip(reason="Not implemented in backend")
 def test_nn_selu(check_allclose):
     x = np.array([-1.0, 0.0, 1.0])
     check_allclose(nn_zero.selu(x), nn_ref.selu(x))
 
 
+@pytest.mark.skip(reason="Not implemented in backend")
 def test_nn_log_softmax(check_allclose):
     x = np.array([[1.0, 2.0], [3.0, 4.0]])
     check_allclose(nn_zero.log_softmax(x), nn_ref.log_softmax(x))

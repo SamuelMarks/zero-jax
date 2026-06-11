@@ -1,5 +1,7 @@
 """PyTree utilities for manipulating nested data structures."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 

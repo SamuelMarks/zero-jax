@@ -1,5 +1,7 @@
 """Initializers for neural network weights."""
 
+from __future__ import annotations
+
 from typing import Any
 
 from typing import Callable, Sequence, Union, Tuple

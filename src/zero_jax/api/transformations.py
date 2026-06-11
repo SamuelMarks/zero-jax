@@ -1,5 +1,7 @@
 """Transformations for zero_jax."""
 
+from __future__ import annotations
+
 from typing import Callable, Any
 import contextlib
 import functools
@@ -60,7 +62,7 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
         from ml_switcheroo.interpreter import evaluate_graph
         from zero_jax.numpy.lax_numpy import _to_tensor, array
         import uuid
-        from ml_switcheroo.core import tensor_utils
+        from zero_jax.numpy import tensor_utils
 
         t_args = [
             a if hasattr(a, "__call__") or hasattr(a, "state") else _to_tensor(a)

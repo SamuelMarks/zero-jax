@@ -1,5 +1,7 @@
 """Pseudo-random number generation (PRNG) utilities."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 

@@ -1,9 +1,10 @@
 """Main initialization module for zero_jax."""
 
+from __future__ import annotations
+
 from typing import Any
 import ml_switcheroo
 
-from . import numpy
 from . import tree_util
 from . import lax
 from .api import jit, grad, value_and_grad, vmap, disable_jit, pmap, eval_shape
@@ -12,7 +13,6 @@ from . import nn
 from . import experimental
 
 __all__ = [
-    "numpy",
     "tree_util",
     "lax",
     "jit",
@@ -26,7 +26,8 @@ __all__ = [
     "nn",
     "experimental",
 ]
-from .numpy.lax_numpy import ndarray as Array
+
+from zero_jax.numpy.lax_numpy import ndarray as Array
 
 __all__ += ["Array"]
 

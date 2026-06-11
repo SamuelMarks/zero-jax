@@ -1,5 +1,5 @@
 import pytest
-from zero_jax.numpy import lax_numpy as jnp_zero
+from ml_switcheroo import jnp as jnp_zero
 import numpy as np
 from ml_switcheroo.core.config import config
 

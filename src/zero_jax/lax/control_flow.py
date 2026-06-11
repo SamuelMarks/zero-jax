@@ -1,5 +1,7 @@
 """Control flow primitives for zero_jax."""
 
+from __future__ import annotations
+
 from typing import Any, Callable
 from ml_switcheroo.tracing import _tracer
 from ml_switcheroo.core.config import config
