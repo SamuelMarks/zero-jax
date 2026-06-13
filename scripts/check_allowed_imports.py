@@ -4,7 +4,7 @@ import ast
 import sys
 import os
 
-ALLOWED_3RD_PARTY = {"numpy", "pydantic"}
+ALLOWED_3RD_PARTY = {"numpy", "jax", "pydantic"}
 ALLOWED_INTERNAL = {
     "ml_switcheroo_compiler",
     "cdd_python",
@@ -43,7 +43,9 @@ def check_file(filepath: str) -> bool:
                     and base_module not in sys.stdlib_module_names
                 ):
                     errors.append((node.lineno, base_module))
-                elif base_module == "numpy" and "src" in filepath.split(os.sep):
+                elif base_module in ("numpy", "jax") and "src" in filepath.split(
+                    os.sep
+                ):
                     errors.append((node.lineno, base_module))
         elif isinstance(node, ast.ImportFrom):
             if node.level > 0:  # Relative import
@@ -56,7 +58,9 @@ def check_file(filepath: str) -> bool:
                     and base_module not in sys.stdlib_module_names
                 ):
                     errors.append((node.lineno, base_module))
-                elif base_module == "numpy" and "src" in filepath.split(os.sep):
+                elif base_module in ("numpy", "jax") and "src" in filepath.split(
+                    os.sep
+                ):
                     errors.append((node.lineno, base_module))
 
     if errors:

@@ -28,7 +28,7 @@ def _erf(x: Any) -> Any:
     return _wrap(ops.erf(_to_tensor(x)))
 
 
-def gelu(x: ArrayLike, approximate: bool = False) -> Any:
+def gelu(x: ArrayLike, approximate: bool = True) -> Any:
     """
     Computes the Gaussian Error Linear Unit (GELU) activation function.
 

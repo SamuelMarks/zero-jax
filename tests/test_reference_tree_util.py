@@ -50,7 +50,6 @@ def test_tree_structure():
     assert struct_z.num_nodes == struct_r.num_nodes
 
 
-@pytest.mark.skip(reason="jax.tree_util.tree_all differs per jax version")
 def test_tree_all_skip():
     tree = {"a": True, "b": [True, False]}
     # jax.tree_util.tree_all evaluates to boolean scalar

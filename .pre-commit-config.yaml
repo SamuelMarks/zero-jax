@@ -37,3 +37,17 @@ repos:
         types: [python]
 
 
+
+      - id: check-api-parity
+        name: Check API Parity against Snapshot
+        entry: python3 scripts/check_api_parity.py
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: check-ops-coverage
+        name: Check 100% Ops Coverage
+        entry: python3 scripts/check_ops_coverage.py
+        language: system
+        types: [python]
+        pass_filenames: false
