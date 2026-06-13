@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-import ml_switcheroo
+import ml_switcheroo_compiler
 
 from . import tree_util
 from . import lax
@@ -88,3 +88,7 @@ def device_get(x: Any) -> Any:
 
 
 __all__.append("device_get")
+
+from ml_switcheroo_compiler import EagerMode
+
+__all__.append("EagerMode")

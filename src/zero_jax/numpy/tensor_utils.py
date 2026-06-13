@@ -1,13 +1,7 @@
-import numpy as np
+import ml_switcheroo_compiler as compiler
+import ml_switcheroo_compiler.ops as compiler_ops
+from ml_switcheroo_compiler.core.dtype import DType
 
 
 def to_array(x):
-    if hasattr(x, "numpy"):
-        return x.numpy()
-    if hasattr(x, "tolist"):
-        return np.array(x.tolist())
-    return np.array(x)
-
-
-def zeros(shape, dtype=float):
-    return np.zeros(shape, dtype=dtype)
+    return compiler_ops.array(x)

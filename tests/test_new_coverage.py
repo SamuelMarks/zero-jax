@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-import ml_switcheroo
-from ml_switcheroo.tracing import ProxyTensor
-from ml_switcheroo.core.dtype import DType
+import ml_switcheroo_compiler
+from ml_switcheroo_compiler.tracing import ProxyTensor
+from ml_switcheroo_compiler.core.dtype import DType
 
 
 def test_initializers_compute_fans():
@@ -15,7 +15,7 @@ def test_lax_numpy_bool_proxy():
     import zero_jax.numpy as jnp
     from zero_jax.numpy import tensor_utils
 
-    t = ml_switcheroo.Tensor(
+    t = ml_switcheroo_compiler.Tensor(
         data=ProxyTensor(id="1", shape=(1,), dtype=DType.Float32),
         shape=(1,),
         dtype=DType.Float32,
@@ -46,7 +46,7 @@ def test_lax_numpy_truediv_floordiv():
 
 
 def test_lax_numpy_setitem_eager():
-    from ml_switcheroo.core.config import config
+    from ml_switcheroo_compiler.core.config import config
     import zero_jax.numpy as jnp
 
     config.eager_mode = True
@@ -75,33 +75,33 @@ def test_lax_numpy_getitem_tensor():
 
 def test_lax_numpy_wrap_tracing():
     import zero_jax.numpy as jnp
-    import ml_switcheroo
+    import ml_switcheroo_compiler
 
-    t = ml_switcheroo.Tensor(
+    t = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
         shape=(1,),
         dtype=DType.Float32,
         device="cpu",
     )
     # Testing _to_tensor with eager tensor under tracing
-    ml_switcheroo.tracing._tracer.start_tracing("test_trace")
+    ml_switcheroo_compiler.tracing._tracer.start_tracing("test_trace")
     try:
         jnp._to_tensor(t)
     finally:
-        ml_switcheroo.tracing._tracer.stop_tracing()
+        ml_switcheroo_compiler.tracing._tracer.stop_tracing()
 
 
 def test_lax_numpy_wrap_tuple_list():
     import zero_jax.numpy as jnp
-    import ml_switcheroo
+    import ml_switcheroo_compiler
 
-    t1 = ml_switcheroo.Tensor(
+    t1 = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
         shape=(1,),
         dtype=DType.Float32,
         device="cpu",
     )
-    t2 = ml_switcheroo.Tensor(
+    t2 = ml_switcheroo_compiler.Tensor(
         data=np.array([2.0]),
         shape=(1,),
         dtype=DType.Float32,

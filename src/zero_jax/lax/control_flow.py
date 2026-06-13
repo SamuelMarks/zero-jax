@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, Callable
-from ml_switcheroo.tracing import _tracer
-from ml_switcheroo.core.config import config
-import ml_switcheroo.control_flow as cf
+from ml_switcheroo_compiler.tracing import _tracer
+from ml_switcheroo_compiler.core.config import config
+import ml_switcheroo_compiler.ops.control_flow as cf
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 

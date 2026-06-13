@@ -6,7 +6,6 @@ import numpy as np
 from zero_jax.nn.activation import gelu, logsumexp, one_hot, softmax
 
 
-@pytest.mark.skip(reason="Not implemented in backend")
 def test_gelu():
     """Test gelu."""
     x = np.array([-1.0, 0.0, 1.0])
@@ -103,3 +102,30 @@ def test_softmax_eager_extra():
     x = np.array([0.0, 1.0, 2.0])
     res2 = softmax(x, where=np.array([True, True, False]))
     assert res2.shape == (3,)
+
+
+def test_selu():
+    from zero_jax.nn.activation import selu
+    import numpy as np
+
+    x = np.array([0.0, 1.0, -1.0])
+    res = selu(x)
+    assert res.shape == x.shape
+
+
+def test_log_softmax():
+    from zero_jax.nn.activation import log_softmax
+    import numpy as np
+
+    x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    res = log_softmax(x, axis=-1)
+    assert res.shape == x.shape
+
+
+def test_erf():
+    from zero_jax.nn.activation import _erf
+    import numpy as np
+
+    x = np.array([0.0, 1.0, -1.0])
+    res = _erf(x)
+    assert res.shape == x.shape

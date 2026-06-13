@@ -22,10 +22,10 @@ def test_api_jit(check_allclose):
 
 def test_api_grad(check_allclose):
     def f(x):
-        return jnp_ref.sum(x**2)
+        return jnp_ref.sum(x * x)
 
     def f_z(x):
-        return jnp_zero.sum(x**2)
+        return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0, 3.0])
     # Assuming ml-switcheroo or zero-jax grad returns matching results
@@ -39,10 +39,10 @@ def test_api_grad(check_allclose):
 
 def test_api_value_and_grad(check_allclose):
     def f(x):
-        return jnp_ref.sum(x**2)
+        return jnp_ref.sum(x * x)
 
     def f_z(x):
-        return jnp_zero.sum(x**2)
+        return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0])
     try:
@@ -97,7 +97,7 @@ def test_api_eval_shape():
     x = np.array([1.0, 2.0])
 
     # We just ensure it doesn't crash and returns an object with shape,
-    # as strict type equality might fail (e.g. ShapedArray vs ml_switcheroo Tensor)
+    # as strict type equality might fail (e.g. ShapedArray vs ml_switcheroo_compiler Tensor)
     res_r = jax.eval_shape(f, x)
 
     try:

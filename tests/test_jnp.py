@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from zero_jax import numpy as jnp
-from ml_switcheroo.tracing import _tracer, ProxyTensor
+from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
 
 def test_unary_ops_eager():
@@ -182,7 +182,7 @@ def test_missing_numpy_methods():
 
 def test_multiply_proxy_y():
     from zero_jax import numpy as jnp
-    from ml_switcheroo.tracing import _tracer, ProxyTensor
+    from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
     _tracer.start_tracing()
     y = ProxyTensor(id="y", shape=(2,))

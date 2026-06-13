@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from typing import Any
-import ml_switcheroo
+import ml_switcheroo_compiler
 
 from typing import Optional
 import math
 from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
-import ml_switcheroo.ops as ops
-import ml_switcheroo.ops.creation as creation
-import ml_switcheroo.nn as nn
+import ml_switcheroo_compiler.ops as ops
+import ml_switcheroo_compiler.ops.creation as creation
+import ml_switcheroo_compiler.nn as nn
 
 ArrayLike = Any
 
@@ -102,7 +102,7 @@ def _to_dtype(dtype: Any) -> Any:
     Returns:
         Any: The parsed DType object.
     """
-    from ml_switcheroo.core.dtype import DType
+    from ml_switcheroo_compiler.core.dtype import DType
 
     if isinstance(dtype, DType):
         return dtype
@@ -148,7 +148,7 @@ def one_hot(x: Any, num_classes: int, *, dtype: Any = float, axis: Any = -1) -> 
     eq = ops.equal(x_expanded, classes_expanded)
     # cast to dtype
     dt = _to_dtype(dtype)
-    return _wrap(ops.cast(eq, dt))
+    return _wrap(ops.cast(eq, dtype=dt))
 
 
 def softmax(
@@ -229,7 +229,8 @@ def relu(x: ArrayLike) -> Any:
     Returns:
         Any: Array with ReLU applied.
     """
-    return _wrap(nn.relu(_to_tensor(x)))
+    x_t = _to_tensor(x)
+    return _wrap(ops.maximum(x_t, _to_tensor(0.0)))
 
 
 def relu6(x: ArrayLike) -> Any:
@@ -292,7 +293,8 @@ def swish(x: ArrayLike) -> Any:
     Returns:
         Any: Array with Swish applied.
     """
-    return _wrap(nn.swish(_to_tensor(x)))
+    x_t = _to_tensor(x)
+    return _wrap(ops.multiply(x_t, _to_tensor(sigmoid(x_t))))
 
 
 def silu(x: ArrayLike) -> Any:
@@ -305,7 +307,7 @@ def silu(x: ArrayLike) -> Any:
     Returns:
         Any: Array with SiLU applied.
     """
-    return _wrap(nn.swish(_to_tensor(x)))
+    return swish(x)
 
 
 def elu(x: ArrayLike, alpha: float = 1.0) -> Any:
@@ -319,7 +321,13 @@ def elu(x: ArrayLike, alpha: float = 1.0) -> Any:
     Returns:
         Any: Array with ELU applied.
     """
-    return _wrap(nn.elu(_to_tensor(x), alpha=alpha))
+    x_t = _to_tensor(x)
+    pos = ops.maximum(x_t, _to_tensor(0.0))
+    neg = ops.multiply(
+        _to_tensor(alpha),
+        ops.subtract(ops.exp(ops.minimum(x_t, _to_tensor(0.0))), _to_tensor(1.0)),
+    )
+    return _wrap(ops.add(pos, neg))
 
 
 def celu(x: ArrayLike, alpha: float = 1.0) -> Any:
@@ -333,7 +341,16 @@ def celu(x: ArrayLike, alpha: float = 1.0) -> Any:
     Returns:
         Any: Array with CELU applied.
     """
-    return _wrap(nn.celu(_to_tensor(x), alpha=alpha))
+    x_t = _to_tensor(x)
+    pos = ops.maximum(x_t, _to_tensor(0.0))
+    neg = ops.multiply(
+        _to_tensor(alpha),
+        ops.subtract(
+            ops.exp(ops.divide(ops.minimum(x_t, _to_tensor(0.0)), _to_tensor(alpha))),
+            _to_tensor(1.0),
+        ),
+    )
+    return _wrap(ops.add(pos, neg))
 
 
 def selu(x: ArrayLike) -> Any:
@@ -360,4 +377,4 @@ def log_softmax(x: ArrayLike, axis: int = -1) -> Any:
     Returns:
         Any: Array of the same shape as `x` with log-softmax applied.
     """
-    return _wrap(nn.log_softmax(_to_tensor(x), dim=axis))
+    return _wrap(nn.log_softmax(_to_tensor(x), axis=axis))

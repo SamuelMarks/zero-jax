@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import ml_switcheroo.random as random
+import ml_switcheroo_compiler.random as random
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
@@ -35,7 +35,28 @@ def fold_in(key: Any, data: Any) -> Any:
     """
     if key is None:
         return None
-    return _wrap(random.fold_in(_to_tensor(key), data))
+    key_t = _to_tensor(key)
+    from ml_switcheroo_compiler.tracing import _tracer
+
+    if _tracer.is_tracing:
+        from ml_switcheroo_ir import LogicalNode
+        from ml_switcheroo_compiler.tracing import ProxyTensor
+        import uuid
+
+        out_id = str(uuid.uuid4())
+        node = LogicalNode(
+            id=out_id,
+            op_type="RandomFoldIn",
+            inputs=[key_t.data.id],
+            attributes={"data": data},
+            shape_metadata=(2,),
+        )
+        _tracer.add_node(node)
+        pt = ProxyTensor(id=out_id, shape=(2,), dtype=key_t.dtype.value)
+        import ml_switcheroo_compiler
+
+        return _wrap(ml_switcheroo_compiler.Tensor(pt, (2,), key_t.dtype, key_t.device))
+    return _wrap(random.fold_in(key_t, data))
 
 
 def PRNGKey(seed: int) -> Any:
@@ -65,7 +86,7 @@ def uniform(
     Returns:
         An array of uniform random values.
     """
-    from ml_switcheroo.core.config import config
+    from ml_switcheroo_compiler.core.config import config
 
     if dtype is None:
         dtype = config.default_float_dtype
@@ -87,7 +108,7 @@ def normal(key: Any, shape: Any, dtype: Any = None) -> Any:
     Returns:
         An array of standard normal random values.
     """
-    from ml_switcheroo.core.config import config
+    from ml_switcheroo_compiler.core.config import config
 
     if dtype is None:
         dtype = config.default_float_dtype
@@ -107,7 +128,7 @@ def randint(key: Any, shape: Any, minval: int, maxval: int, dtype: Any = None) -
     Returns:
         An array of uniform random integers.
     """
-    from ml_switcheroo.core.dtype import DType
+    from ml_switcheroo_compiler.core.dtype import DType
 
     if dtype is None:
         dtype = DType.Int32
@@ -146,7 +167,7 @@ def categorical(key: Any, logits: Any, axis: int = -1, shape: Any = None) -> Any
     Returns:
         An array of categorical random samples.
     """
-    import ml_switcheroo.random as random
+    import ml_switcheroo_compiler.random as random
 
     return _wrap(
         random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape)
@@ -165,7 +186,7 @@ def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> A
     Returns:
         A randomly permuted sequence or array.
     """
-    import ml_switcheroo.random as random
+    import ml_switcheroo_compiler.random as random
 
     return _wrap(
         random.permutation(
@@ -198,7 +219,7 @@ def choice(
     Returns:
         An array containing the random samples.
     """
-    import ml_switcheroo.random as random
+    import ml_switcheroo_compiler.random as random
     from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
 
     return _wrap(

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-import ml_switcheroo
+import ml_switcheroo_compiler
 
 from .pytree import (
     tree_flatten,

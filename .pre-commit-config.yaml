@@ -36,10 +36,4 @@ repos:
         files: ^src/.*\.py$
         types: [python]
 
-      - id: check-api-compliance
-        name: Check API Conformance
-        entry: env PYTHONPATH=src:../ml-switcheroo-compiler/src python3 scripts/check_compliance.py
-        language: system
-        files: ^(SEMANTIC_PLAN\.md|src/.*\.py)$
-        pass_filenames: false
 

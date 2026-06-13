@@ -2,7 +2,7 @@
 
 import pytest
 from zero_jax.lax import cond, scan
-from ml_switcheroo.tracing import _tracer, ProxyTensor
+from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
 
 def test_cond_eager():

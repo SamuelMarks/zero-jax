@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from typing import Callable, Sequence, Union, Tuple
-import ml_switcheroo.random as random
-from ml_switcheroo.core.dtype import DType
+import ml_switcheroo_compiler.random as random
+from ml_switcheroo_compiler.core.dtype import DType
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
-import ml_switcheroo.ops.creation as creation
+import ml_switcheroo_compiler.ops.creation as creation
 
 from zero_jax.numpy.lax_numpy import ndarray as Array
 
@@ -169,7 +169,7 @@ def normal(stddev: RealNumeric = 0.01, dtype: Any = float) -> Initializer:
         dt = _to_dtype(dtype)
         # switcheroo normal returns std normal (0, 1)
         n = random.normal(_to_tensor(key), shape=shape, dtype=dt)
-        import ml_switcheroo.ops as ops
+        import ml_switcheroo_compiler.ops as ops
 
         return _wrap(ops.multiply(n, creation.full_like(n, stddev)))
 
@@ -211,7 +211,7 @@ def truncated_normal(
         n = random.truncated_normal(
             _to_tensor(key), lower, upper, shape=shape, dtype=dt
         )
-        import ml_switcheroo.ops as ops
+        import ml_switcheroo_compiler.ops as ops
 
         return _wrap(ops.multiply(n, creation.full_like(n, stddev)))
 

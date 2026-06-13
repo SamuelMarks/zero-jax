@@ -56,10 +56,10 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
         Returns:
             An array representing the computed gradient.
         """
-        from ml_switcheroo.tracing import _tracer, ProxyTensor
+        from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
         from ml_switcheroo_ir import LogicalNode
-        from ml_switcheroo.grad import grad as ir_grad
-        from ml_switcheroo.interpreter import evaluate_graph
+        from ml_switcheroo_compiler.transforms.autodiff import grad as ir_grad
+        from ml_switcheroo_compiler.interpreter import evaluate_graph
         from zero_jax.numpy.lax_numpy import _to_tensor, array
         import uuid
         from zero_jax.numpy import tensor_utils
@@ -90,7 +90,7 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
             )
             graph.nodes[in_id] = node
             proxy = ProxyTensor(id=in_id, shape=arg.shape, dtype=arg.dtype.value)
-            from ml_switcheroo import Tensor
+            from ml_switcheroo_compiler import Tensor
 
             proxy_tensor = Tensor(
                 data=proxy, shape=arg.shape, dtype=arg.dtype, device=arg.device
@@ -160,7 +160,7 @@ def vmap(fun: Callable) -> Callable:
     Returns:
         A vectorized version of the input function.
     """
-    import ml_switcheroo.control_flow as cf
+    import ml_switcheroo_compiler.ops.control_flow as cf
     from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
     @functools.wraps(fun)
@@ -262,15 +262,15 @@ def eval_shape(fun: Callable, *args: Any, **kwargs: Any) -> Any:
     """
     # A dummy eval_shape that just executes with Eager mode to get the shape wrapper
     from zero_jax.numpy.lax_numpy import _to_tensor
-    import ml_switcheroo
+    import ml_switcheroo_compiler
 
     # Actually, proper eval_shape would trace without executing, but since eager mode returns
     # zeros of correct shape during tracing... Wait, if we use Tracer:
-    from ml_switcheroo.tracing import _tracer
+    from ml_switcheroo_compiler.tracing import _tracer
 
     # For now, just execute it and return the result which has a .shape
     # If we want pure shape, we can run it.
-    with ml_switcheroo.EagerMode():
+    with ml_switcheroo_compiler.EagerMode():
         res = fun(*args, **kwargs)
 
     class ShapedArray:

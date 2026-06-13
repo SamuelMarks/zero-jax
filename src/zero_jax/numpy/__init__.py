@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-import ml_switcheroo
+import ml_switcheroo_compiler
 
 from zero_jax.numpy.lax_numpy import (
     _to_tensor,

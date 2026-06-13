@@ -3,9 +3,9 @@
 from typing import Any
 
 from typing import Tuple, List, Optional
-import ml_switcheroo.ops as ops
-from ml_switcheroo import Tensor
-import ml_switcheroo
+import ml_switcheroo_compiler.ops as ops
+from ml_switcheroo_compiler import Tensor
+import ml_switcheroo_compiler as _ml_switcheroo_compiler
 
 
 class ndarray:
@@ -48,23 +48,21 @@ class ndarray:
         """
         return self._tensor.dtype
 
-    def __array__(self) -> Any:
+    def __array__(self, dtype=None) -> Any:
         """
         Perform the array operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            dtype: Optional dtype to convert to.
 
         Returns:
             Any: The result of the array operation.
         """
-        from zero_jax.numpy import tensor_utils
-
-        if hasattr(self._tensor.data, "id"):  # ProxyTensor check
-            return tensor_utils.zeros(
-                self._tensor.shape
-            )  # Return dummy shape for tracing asserts if needed
-        return tensor_utils.to_array(self._tensor.data)
+        arr = self._tensor.__array__()
+        if dtype is not None:
+            # We don't have numpy here, but the caller usually handles the dtype cast
+            pass
+        return arr
 
     def __repr__(self) -> Any:
         """
@@ -297,7 +295,7 @@ class ndarray:
             Any: The result of the setitem operation.
         """
 
-        from ml_switcheroo.core.config import config
+        from ml_switcheroo_compiler.core.config import config
 
         if config.eager_mode:
             val = getattr(value, "_tensor", value)
@@ -351,9 +349,13 @@ class ndarray:
         Returns:
             Any: The result of the bool operation.
         """
-        arr = self.__array__()
-        if arr.size == 1:
-            return bool(arr.item())
+        import math
+
+        size = math.prod(self.shape) if self.shape else 1
+        if size == 1:
+            if hasattr(self._tensor.data, "id"):  # ProxyTensor
+                return True  # Tracer dummy bool
+            return bool(self._tensor.item())
         raise ValueError(
             "The truth value of an array with more than one element is ambiguous."
         )
@@ -394,33 +396,41 @@ def _to_tensor(x: Any) -> Any:
     Returns:
         Any: The result of the operation.
     """
+
     if isinstance(x, ndarray):
         x = x._tensor
-    from ml_switcheroo.core.config import config
-    from ml_switcheroo.tracing import _tracer, ProxyTensor
+    from ml_switcheroo_compiler.core.config import config
+    from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
     from ml_switcheroo_ir import LogicalNode
     import uuid
 
-    if isinstance(x, ml_switcheroo.Tensor):
+    if isinstance(x, _ml_switcheroo_compiler.Tensor):
         if _tracer.is_tracing and not hasattr(x.data, "id"):
             # lift eager tensor as constant
             out_id = str(uuid.uuid4())
+            val = getattr(
+                x.data,
+                "tolist",
+                lambda: (
+                    x.item() if (not x.shape or getattr(x, "size", 1) == 1) else x.data
+                ),
+            )()
             node = LogicalNode(
                 id=out_id,
                 op_type="Constant",
-                attributes={"value": getattr(x.data, "tolist", lambda: x.data)()},
+                attributes={"value": val},
                 shape_metadata=x.shape,
             )
             _tracer.add_node(node)
             pt = ProxyTensor(id=out_id, shape=x.shape, dtype=x.dtype.value)
-            return ml_switcheroo.Tensor(
+            return _ml_switcheroo_compiler.Tensor(
                 data=pt, shape=x.shape, dtype=x.dtype, device=x.device
             )
         return x
     if isinstance(x, ProxyTensor):
         # We need a dtype. ProxyTensor has dtype as string.
         # But we'll just mock it or use default.
-        return ml_switcheroo.Tensor(
+        return _ml_switcheroo_compiler.Tensor(
             data=x,
             shape=x.shape,
             dtype=config.default_float_dtype,
@@ -429,24 +439,9 @@ def _to_tensor(x: Any) -> Any:
 
     from zero_jax.numpy import tensor_utils
 
-    arr = tensor_utils.to_array(x)
-    if config.eager_mode and not _tracer.is_tracing:
-        return ml_switcheroo.Tensor(
-            arr, arr.shape, config.default_float_dtype, config.default_device
-        )
-    else:
-        out_id = str(uuid.uuid4())
-        node = LogicalNode(
-            id=out_id, op_type="Constant", attributes={"value": arr.tolist()}
-        )
-        _tracer.add_node(node)
-        pt = ProxyTensor(id=out_id, shape=arr.shape)
-        return ml_switcheroo.Tensor(
-            data=pt,
-            shape=arr.shape,
-            dtype=config.default_float_dtype,
-            device=config.default_device,
-        )
+    with _ml_switcheroo_compiler.EagerMode():
+        arr = tensor_utils.to_array(x)
+    return _to_tensor(arr)
 
 
 def _wrap(t: Any) -> Any:
@@ -883,9 +878,7 @@ def array_equal(a1: Any, a2: Any, equal_nan: Any = False) -> Any:
         Any: The result of the operation.
     """
     res = ops.equal(_to_tensor(a1), _to_tensor(a2))
-    from zero_jax.numpy import tensor_utils
-
-    return bool(tensor_utils.to_array(res.data).all()) if hasattr(res, "data") else True
+    return bool(ops.all(res).item())
 
 
 def broadcast_shapes(*shapes: Any) -> Any:
@@ -894,7 +887,7 @@ def broadcast_shapes(*shapes: Any) -> Any:
     Returns:
         Any: The result of the operation.
     """
-    from ml_switcheroo.shape import broadcast_shapes as _broadcast_shapes
+    from ml_switcheroo_compiler.ops import broadcast_shapes as _broadcast_shapes
     import functools
 
     if not shapes:
@@ -1881,7 +1874,7 @@ def repeat(a: Any, repeats: Any, axis: Any = None) -> Any:
     Returns:
         Any: The result of the operation.
     """
-    return _wrap(ops.repeat(_to_tensor(a), repeats=repeats, axis=axis))
+    return _wrap(ops.repeat(_to_tensor(a), repeats=repeats, dim=axis))
 
 
 def pad(array: Any, pad_width: Any, mode: str = "constant", **kwargs: Any) -> Any:
@@ -2047,14 +2040,7 @@ def cumsum(a: Any, axis: Any = None, dtype: Any = None) -> Any:
     """
     res = ops.cumsum(_to_tensor(a), axis=axis)
     if dtype is not None:
-        from ml_switcheroo.core.dtype import DType
+        from zero_jax.nn.activation import _to_dtype
 
-        if isinstance(dtype, DType):
-            dt = dtype
-        else:
-            val = getattr(dtype, "value", getattr(dtype, "name", str(dtype)))
-            if isinstance(val, str):
-                val = val.lower()
-            dt = DType(val)
-        res = ops.cast(res, dt)
+        res = ops.cast(res, dtype=_to_dtype(dtype))
     return _wrap(res)

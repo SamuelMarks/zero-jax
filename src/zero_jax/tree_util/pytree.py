@@ -34,6 +34,15 @@ class PyTreeDef:
         """
         return 1 + sum(c.num_nodes for c in self.children_defs)
 
+    def __eq__(self, other):
+        if not isinstance(other, PyTreeDef):
+            return False
+        return (
+            self.node_type == other.node_type
+            and self.metadata == other.metadata
+            and self.children_defs == other.children_defs
+        )
+
     def __init__(
         self, node_type: type, children_defs: List["PyTreeDef"], metadata: Any = None
     ) -> None:

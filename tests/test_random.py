@@ -2,7 +2,7 @@
 
 import numpy as np
 from zero_jax.random import split, fold_in
-from ml_switcheroo.tracing import _tracer, ProxyTensor
+from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
 
 def test_random_split_eager():

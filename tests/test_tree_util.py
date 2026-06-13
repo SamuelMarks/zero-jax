@@ -29,3 +29,14 @@ def test_tree_flatten_unflatten():
     leaves, treedef = tree_flatten(nested)
     assert leaves == [1.0, 2.0, 3.0, 4.0]
     assert tree_unflatten(treedef, leaves) == nested
+
+
+def test_pytreedef_eq():
+    from zero_jax.tree_util.pytree import tree_structure
+
+    d1 = tree_structure({"a": 1, "b": [2, 3]})
+    d2 = tree_structure({"a": 1, "b": [2, 3]})
+    d3 = tree_structure({"a": 1, "c": [2, 3]})
+    assert d1 == d2
+    assert d1 != d3
+    assert d1 != 5

@@ -1,7 +1,7 @@
 import pytest
-from ml_switcheroo import jnp as jnp_zero
+from zero_jax import numpy as jnp_zero
 import numpy as np
-from ml_switcheroo.core.config import config
+from ml_switcheroo_compiler.core.config import config
 
 
 def test_jnp_sin(switcheroo_config):
