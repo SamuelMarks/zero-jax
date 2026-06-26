@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.traceback_util.util."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class Generic:
@@ -111,17 +112,17 @@ annotations: Any = None
 
 def as_hashable_function(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for as_hashable_function."""
-    raise NotImplementedError("as_hashable_function not yet implemented in zero-jax")
+    return getattr(_ops, "as_hashable_function")(*args, **kwargs)
 
 
 def assert_unreachable(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for assert_unreachable."""
-    raise NotImplementedError("assert_unreachable not yet implemented in zero-jax")
+    return getattr(_ops, "assert_unreachable")(*args, **kwargs)
 
 
 def cache(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for cache."""
-    raise NotImplementedError("cache not yet implemented in zero-jax")
+    return getattr(_ops, "cache")(*args, **kwargs)
 
 
 cache_clearing_funs: Any = None
@@ -129,39 +130,37 @@ cache_clearing_funs: Any = None
 
 def canonicalize_axis(*args: Any, **kwargs: Any) -> Any:
     """Canonicalize an axis in [-num_dims, num_dims) to [0, num_dims)."""
-    raise NotImplementedError("canonicalize_axis not yet implemented in zero-jax")
+    return getattr(_ops, "canonicalize_axis")(*args, **kwargs)
 
 
 def cast(*args: Any, **kwargs: Any) -> Any:
     """Cast a value to a type."""
-    raise NotImplementedError("cast not yet implemented in zero-jax")
+    return getattr(_ops, "cast")(*args, **kwargs)
 
 
 def ceil_of_ratio(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for ceil_of_ratio."""
-    raise NotImplementedError("ceil_of_ratio not yet implemented in zero-jax")
+    return getattr(_ops, "ceil_of_ratio")(*args, **kwargs)
 
 
 def check_toposort(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for check_toposort."""
-    raise NotImplementedError("check_toposort not yet implemented in zero-jax")
+    return getattr(_ops, "check_toposort")(*args, **kwargs)
 
 
 def clear_all_caches(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for clear_all_caches."""
-    raise NotImplementedError("clear_all_caches not yet implemented in zero-jax")
+    return getattr(_ops, "clear_all_caches")(*args, **kwargs)
 
 
 def clear_all_weakref_lru_caches(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for clear_all_weakref_lru_caches."""
-    raise NotImplementedError(
-        "clear_all_weakref_lru_caches not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "clear_all_weakref_lru_caches")(*args, **kwargs)
 
 
 def concatenate(*args: Any, **kwargs: Any) -> Any:
     """Concatenates/flattens a list of lists."""
-    raise NotImplementedError("concatenate not yet implemented in zero-jax")
+    return getattr(_ops, "concatenate")(*args, **kwargs)
 
 
 from . import config
@@ -169,7 +168,7 @@ from . import config
 
 def curry(*args: Any, **kwargs: Any) -> Any:
     """Curries arguments of f, returning a function on any remaining arguments."""
-    raise NotImplementedError("curry not yet implemented in zero-jax")
+    return getattr(_ops, "curry")(*args, **kwargs)
 
 
 from . import dataclasses
@@ -177,17 +176,17 @@ from . import dataclasses
 
 def distributed_debug_log(*args: Any, **kwargs: Any) -> Any:
     """Format and log `pairs` if config.jax_distributed_debug is enabled."""
-    raise NotImplementedError("distributed_debug_log not yet implemented in zero-jax")
+    return getattr(_ops, "distributed_debug_log")(*args, **kwargs)
 
 
 def flatten(*args: Any, **kwargs: Any) -> Any:
     """Concatenates/flattens a list of lists."""
-    raise NotImplementedError("flatten not yet implemented in zero-jax")
+    return getattr(_ops, "flatten")(*args, **kwargs)
 
 
 def fun_name(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for fun_name."""
-    raise NotImplementedError("fun_name not yet implemented in zero-jax")
+    return getattr(_ops, "fun_name")(*args, **kwargs)
 
 
 from . import functools
@@ -200,22 +199,22 @@ from . import logging
 
 def maybe_named_axis(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for maybe_named_axis."""
-    raise NotImplementedError("maybe_named_axis not yet implemented in zero-jax")
+    return getattr(_ops, "maybe_named_axis")(*args, **kwargs)
 
 
 def memoize(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for memoize."""
-    raise NotImplementedError("memoize not yet implemented in zero-jax")
+    return getattr(_ops, "memoize")(*args, **kwargs)
 
 
 def merge_lists(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for merge_lists."""
-    raise NotImplementedError("merge_lists not yet implemented in zero-jax")
+    return getattr(_ops, "merge_lists")(*args, **kwargs)
 
 
 def moveaxis(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for moveaxis."""
-    raise NotImplementedError("moveaxis not yet implemented in zero-jax")
+    return getattr(_ops, "moveaxis")(*args, **kwargs)
 
 
 from . import np
@@ -224,7 +223,7 @@ from . import operator
 
 def overload(*args: Any, **kwargs: Any) -> Any:
     """Decorator for overloaded functions/methods."""
-    raise NotImplementedError("overload not yet implemented in zero-jax")
+    return getattr(_ops, "overload")(*args, **kwargs)
 
 
 class partial:
@@ -235,107 +234,107 @@ class partial:
 
 def partition_list(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for partition_list."""
-    raise NotImplementedError("partition_list not yet implemented in zero-jax")
+    return getattr(_ops, "partition_list")(*args, **kwargs)
 
 
 def safe_map(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for safe_map."""
-    raise NotImplementedError("safe_map not yet implemented in zero-jax")
+    return getattr(_ops, "safe_map")(*args, **kwargs)
 
 
 def safe_zip(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for safe_zip."""
-    raise NotImplementedError("safe_zip not yet implemented in zero-jax")
+    return getattr(_ops, "safe_zip")(*args, **kwargs)
 
 
 def set_module(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for set_module."""
-    raise NotImplementedError("set_module not yet implemented in zero-jax")
+    return getattr(_ops, "set_module")(*args, **kwargs)
 
 
 def split_dict(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for split_dict."""
-    raise NotImplementedError("split_dict not yet implemented in zero-jax")
+    return getattr(_ops, "split_dict")(*args, **kwargs)
 
 
 def split_list(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for split_list."""
-    raise NotImplementedError("split_list not yet implemented in zero-jax")
+    return getattr(_ops, "split_list")(*args, **kwargs)
 
 
 def split_list_checked(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for split_list_checked."""
-    raise NotImplementedError("split_list_checked not yet implemented in zero-jax")
+    return getattr(_ops, "split_list_checked")(*args, **kwargs)
 
 
 def split_merge(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for split_merge."""
-    raise NotImplementedError("split_merge not yet implemented in zero-jax")
+    return getattr(_ops, "split_merge")(*args, **kwargs)
 
 
 def stable_unique(*args: Any, **kwargs: Any) -> Any:
     """Returns unique elements from `it` in the order of occurrence."""
-    raise NotImplementedError("stable_unique not yet implemented in zero-jax")
+    return getattr(_ops, "stable_unique")(*args, **kwargs)
 
 
 def subs_list(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subs_list."""
-    raise NotImplementedError("subs_list not yet implemented in zero-jax")
+    return getattr(_ops, "subs_list")(*args, **kwargs)
 
 
 def subs_list2(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subs_list2."""
-    raise NotImplementedError("subs_list2 not yet implemented in zero-jax")
+    return getattr(_ops, "subs_list2")(*args, **kwargs)
 
 
 def subvals(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subvals."""
-    raise NotImplementedError("subvals not yet implemented in zero-jax")
+    return getattr(_ops, "subvals")(*args, **kwargs)
 
 
 def toposort(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for toposort."""
-    raise NotImplementedError("toposort not yet implemented in zero-jax")
+    return getattr(_ops, "toposort")(*args, **kwargs)
 
 
 def tuple_delete(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for tuple_delete."""
-    raise NotImplementedError("tuple_delete not yet implemented in zero-jax")
+    return getattr(_ops, "tuple_delete")(*args, **kwargs)
 
 
 def tuple_insert(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for tuple_insert."""
-    raise NotImplementedError("tuple_insert not yet implemented in zero-jax")
+    return getattr(_ops, "tuple_insert")(*args, **kwargs)
 
 
 def tuple_update(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for tuple_update."""
-    raise NotImplementedError("tuple_update not yet implemented in zero-jax")
+    return getattr(_ops, "tuple_update")(*args, **kwargs)
 
 
 def unflatten(*args: Any, **kwargs: Any) -> Any:
     """Splits `xs` into subsequences of lengths `ns`."""
-    raise NotImplementedError("unflatten not yet implemented in zero-jax")
+    return getattr(_ops, "unflatten")(*args, **kwargs)
 
 
 def unzip2(*args: Any, **kwargs: Any) -> Any:
     """Unzip sequence of length-2 tuples into two tuples."""
-    raise NotImplementedError("unzip2 not yet implemented in zero-jax")
+    return getattr(_ops, "unzip2")(*args, **kwargs)
 
 
 def unzip3(*args: Any, **kwargs: Any) -> Any:
     """Unzip sequence of length-3 tuples into three tuples."""
-    raise NotImplementedError("unzip3 not yet implemented in zero-jax")
+    return getattr(_ops, "unzip3")(*args, **kwargs)
 
 
 def use_cpp_class(*args: Any, **kwargs: Any) -> Any:
     """A helper decorator to replace a python class with its C++ version"""
-    raise NotImplementedError("use_cpp_class not yet implemented in zero-jax")
+    return getattr(_ops, "use_cpp_class")(*args, **kwargs)
 
 
 def use_cpp_method(*args: Any, **kwargs: Any) -> Any:
     """A helper decorator to exclude methods from the set that are forwarded to C++ class"""
-    raise NotImplementedError("use_cpp_method not yet implemented in zero-jax")
+    return getattr(_ops, "use_cpp_method")(*args, **kwargs)
 
 
 from . import weakref
@@ -343,17 +342,17 @@ from . import weakref
 
 def weakref_lru_cache(*args: Any, **kwargs: Any) -> Any:
     """Least recently used cache decorator with weakref support."""
-    raise NotImplementedError("weakref_lru_cache not yet implemented in zero-jax")
+    return getattr(_ops, "weakref_lru_cache")(*args, **kwargs)
 
 
 def wrap_name(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for wrap_name."""
-    raise NotImplementedError("wrap_name not yet implemented in zero-jax")
+    return getattr(_ops, "wrap_name")(*args, **kwargs)
 
 
 def wraps(*args: Any, **kwargs: Any) -> Any:
     """Like functools.wraps, but with finer-grained control over the name and docstring"""
-    raise NotImplementedError("wraps not yet implemented in zero-jax")
+    return getattr(_ops, "wraps")(*args, **kwargs)
 
 
 from . import xc

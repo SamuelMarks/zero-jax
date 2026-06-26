@@ -1,6 +1,7 @@
 """Frontend API routing for jax.custom_derivatives."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class CustomVJPPrimal:
@@ -17,12 +18,12 @@ class SymbolicZero:
 
 def closure_convert(*args: Any, **kwargs: Any) -> Any:
     """Closure conversion utility, for use with higher-order custom derivatives."""
-    raise NotImplementedError("closure_convert not yet implemented in zero-jax")
+    return getattr(_ops, "closure_convert")(*args, **kwargs)
 
 
 def custom_gradient(*args: Any, **kwargs: Any) -> Any:
     """Convenience function for defining custom VJP rules (aka custom gradients)."""
-    raise NotImplementedError("custom_gradient not yet implemented in zero-jax")
+    return getattr(_ops, "custom_gradient")(*args, **kwargs)
 
 
 class custom_jvp:
@@ -49,11 +50,9 @@ custom_vjp_call_p: Any = None
 
 def custom_vjp_primal_tree_values(*args: Any, **kwargs: Any) -> Any:
     """Strips away perturbation information from forward rule arguments."""
-    raise NotImplementedError(
-        "custom_vjp_primal_tree_values not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "custom_vjp_primal_tree_values")(*args, **kwargs)
 
 
 def linear_call(*args: Any, **kwargs: Any) -> Any:
     """Call a linear function, with a custom implementation for its transpose."""
-    raise NotImplementedError("linear_call not yet implemented in zero-jax")
+    return getattr(_ops, "linear_call")(*args, **kwargs)

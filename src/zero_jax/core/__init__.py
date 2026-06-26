@@ -1,6 +1,7 @@
 """Frontend API routing for jax.core."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class AbstractToken:
@@ -17,12 +18,12 @@ class AbstractValue:
 
 def Atom(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for Atom."""
-    raise NotImplementedError("Atom not yet implemented in zero-jax")
+    return getattr(_ops, "Atom")(*args, **kwargs)
 
 
 def AxisSize(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for AxisSize."""
-    raise NotImplementedError("AxisSize not yet implemented in zero-jax")
+    return getattr(_ops, "AxisSize")(*args, **kwargs)
 
 
 class CallPrimitive:
@@ -219,12 +220,12 @@ abstract_token: Any = None
 
 def apply_todos(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for apply_todos."""
-    raise NotImplementedError("apply_todos not yet implemented in zero-jax")
+    return getattr(_ops, "apply_todos")(*args, **kwargs)
 
 
 def as_named_shape(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for as_named_shape."""
-    raise NotImplementedError("as_named_shape not yet implemented in zero-jax")
+    return getattr(_ops, "as_named_shape")(*args, **kwargs)
 
 
 aval_mapping_handlers: Any = None
@@ -232,24 +233,22 @@ aval_mapping_handlers: Any = None
 
 def axis_frame(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for axis_frame."""
-    raise NotImplementedError("axis_frame not yet implemented in zero-jax")
+    return getattr(_ops, "axis_frame")(*args, **kwargs)
 
 
 def call(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for call."""
-    raise NotImplementedError("call not yet implemented in zero-jax")
+    return getattr(_ops, "call")(*args, **kwargs)
 
 
 def call_bind_with_continuation(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for call_bind_with_continuation."""
-    raise NotImplementedError(
-        "call_bind_with_continuation not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "call_bind_with_continuation")(*args, **kwargs)
 
 
 def call_impl(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for call_impl."""
-    raise NotImplementedError("call_impl not yet implemented in zero-jax")
+    return getattr(_ops, "call_impl")(*args, **kwargs)
 
 
 call_p: Any = None
@@ -257,22 +256,22 @@ call_p: Any = None
 
 def check_eqn(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for check_eqn."""
-    raise NotImplementedError("check_eqn not yet implemented in zero-jax")
+    return getattr(_ops, "check_eqn")(*args, **kwargs)
 
 
 def check_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Checks well-formedness of a jaxpr."""
-    raise NotImplementedError("check_jaxpr not yet implemented in zero-jax")
+    return getattr(_ops, "check_jaxpr")(*args, **kwargs)
 
 
 def check_type(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for check_type."""
-    raise NotImplementedError("check_type not yet implemented in zero-jax")
+    return getattr(_ops, "check_type")(*args, **kwargs)
 
 
 def check_valid_jaxtype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for check_valid_jaxtype."""
-    raise NotImplementedError("check_valid_jaxtype not yet implemented in zero-jax")
+    return getattr(_ops, "check_valid_jaxtype")(*args, **kwargs)
 
 
 closed_call_p: Any = None
@@ -280,24 +279,22 @@ closed_call_p: Any = None
 
 def concrete_aval(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for concrete_aval."""
-    raise NotImplementedError("concrete_aval not yet implemented in zero-jax")
+    return getattr(_ops, "concrete_aval")(*args, **kwargs)
 
 
 def concrete_or_error(*args: Any, **kwargs: Any) -> Any:
     """Like force(val), but gives the context in the error message."""
-    raise NotImplementedError("concrete_or_error not yet implemented in zero-jax")
+    return getattr(_ops, "concrete_or_error")(*args, **kwargs)
 
 
 def concretization_function_error(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for concretization_function_error."""
-    raise NotImplementedError(
-        "concretization_function_error not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "concretization_function_error")(*args, **kwargs)
 
 
 def cur_sublevel(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for cur_sublevel."""
-    raise NotImplementedError("cur_sublevel not yet implemented in zero-jax")
+    return getattr(_ops, "cur_sublevel")(*args, **kwargs)
 
 
 custom_typechecks: Any = None
@@ -305,116 +302,112 @@ custom_typechecks: Any = None
 
 def dedup_referents(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for dedup_referents."""
-    raise NotImplementedError("dedup_referents not yet implemented in zero-jax")
+    return getattr(_ops, "dedup_referents")(*args, **kwargs)
 
 
 def do_subst_axis_names_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for do_subst_axis_names_jaxpr."""
-    raise NotImplementedError(
-        "do_subst_axis_names_jaxpr not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "do_subst_axis_names_jaxpr")(*args, **kwargs)
 
 
 def ensure_compile_time_eval(*args: Any, **kwargs: Any) -> Any:
     """Context manager to ensure evaluation at trace/compile time (or error)."""
-    raise NotImplementedError(
-        "ensure_compile_time_eval not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "ensure_compile_time_eval")(*args, **kwargs)
 
 
 def escaped_tracer_error(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for escaped_tracer_error."""
-    raise NotImplementedError("escaped_tracer_error not yet implemented in zero-jax")
+    return getattr(_ops, "escaped_tracer_error")(*args, **kwargs)
 
 
 def eval_context(*args: Any, **kwargs: Any) -> Any:
     """Context manager to ensure evaluation at trace/compile time (or error)."""
-    raise NotImplementedError("eval_context not yet implemented in zero-jax")
+    return getattr(_ops, "eval_context")(*args, **kwargs)
 
 
 def eval_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for eval_jaxpr."""
-    raise NotImplementedError("eval_jaxpr not yet implemented in zero-jax")
+    return getattr(_ops, "eval_jaxpr")(*args, **kwargs)
 
 
 def extend_axis_env(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for extend_axis_env."""
-    raise NotImplementedError("extend_axis_env not yet implemented in zero-jax")
+    return getattr(_ops, "extend_axis_env")(*args, **kwargs)
 
 
 def extend_axis_env_nd(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for extend_axis_env_nd."""
-    raise NotImplementedError("extend_axis_env_nd not yet implemented in zero-jax")
+    return getattr(_ops, "extend_axis_env_nd")(*args, **kwargs)
 
 
 def find_top_trace(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for find_top_trace."""
-    raise NotImplementedError("find_top_trace not yet implemented in zero-jax")
+    return getattr(_ops, "find_top_trace")(*args, **kwargs)
 
 
 def full_lower(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for full_lower."""
-    raise NotImplementedError("full_lower not yet implemented in zero-jax")
+    return getattr(_ops, "full_lower")(*args, **kwargs)
 
 
 def gensym(*args: Any, **kwargs: Any) -> Any:
     """Produce distinct variables, printed with the optional suffix."""
-    raise NotImplementedError("gensym not yet implemented in zero-jax")
+    return getattr(_ops, "gensym")(*args, **kwargs)
 
 
 def get_aval(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for get_aval."""
-    raise NotImplementedError("get_aval not yet implemented in zero-jax")
+    return getattr(_ops, "get_aval")(*args, **kwargs)
 
 
 def get_referent(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for get_referent."""
-    raise NotImplementedError("get_referent not yet implemented in zero-jax")
+    return getattr(_ops, "get_referent")(*args, **kwargs)
 
 
 def is_constant_dim(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for is_constant_dim."""
-    raise NotImplementedError("is_constant_dim not yet implemented in zero-jax")
+    return getattr(_ops, "is_constant_dim")(*args, **kwargs)
 
 
 def is_constant_shape(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for is_constant_shape."""
-    raise NotImplementedError("is_constant_shape not yet implemented in zero-jax")
+    return getattr(_ops, "is_constant_shape")(*args, **kwargs)
 
 
 def jaxpr_as_fun(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for jaxpr_as_fun."""
-    raise NotImplementedError("jaxpr_as_fun not yet implemented in zero-jax")
+    return getattr(_ops, "jaxpr_as_fun")(*args, **kwargs)
 
 
 def jaxpr_uses_outfeed(*args: Any, **kwargs: Any) -> Any:
     """Finds if there are outfeed primitives anywhere inside a Jaxpr."""
-    raise NotImplementedError("jaxpr_uses_outfeed not yet implemented in zero-jax")
+    return getattr(_ops, "jaxpr_uses_outfeed")(*args, **kwargs)
 
 
 def jaxprs_in_params(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for jaxprs_in_params."""
-    raise NotImplementedError("jaxprs_in_params not yet implemented in zero-jax")
+    return getattr(_ops, "jaxprs_in_params")(*args, **kwargs)
 
 
 def join_effects(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for join_effects."""
-    raise NotImplementedError("join_effects not yet implemented in zero-jax")
+    return getattr(_ops, "join_effects")(*args, **kwargs)
 
 
 def join_named_shapes(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for join_named_shapes."""
-    raise NotImplementedError("join_named_shapes not yet implemented in zero-jax")
+    return getattr(_ops, "join_named_shapes")(*args, **kwargs)
 
 
 def lattice_join(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for lattice_join."""
-    raise NotImplementedError("lattice_join not yet implemented in zero-jax")
+    return getattr(_ops, "lattice_join")(*args, **kwargs)
 
 
 def leaked_tracer_error(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for leaked_tracer_error."""
-    raise NotImplementedError("leaked_tracer_error not yet implemented in zero-jax")
+    return getattr(_ops, "leaked_tracer_error")(*args, **kwargs)
 
 
 literalable_types: Any = None
@@ -422,56 +415,52 @@ literalable_types: Any = None
 
 def map_bind(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for map_bind."""
-    raise NotImplementedError("map_bind not yet implemented in zero-jax")
+    return getattr(_ops, "map_bind")(*args, **kwargs)
 
 
 def map_bind_with_continuation(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for map_bind_with_continuation."""
-    raise NotImplementedError(
-        "map_bind_with_continuation not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "map_bind_with_continuation")(*args, **kwargs)
 
 
 def mapped_aval(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for mapped_aval."""
-    raise NotImplementedError("mapped_aval not yet implemented in zero-jax")
+    return getattr(_ops, "mapped_aval")(*args, **kwargs)
 
 
 def max_dim(*args: Any, **kwargs: Any) -> Any:
     """Like max(d1, d2) but for both constant and symbolic dimensions."""
-    raise NotImplementedError("max_dim not yet implemented in zero-jax")
+    return getattr(_ops, "max_dim")(*args, **kwargs)
 
 
 def maybe_find_leaked_tracers(*args: Any, **kwargs: Any) -> Any:
     """Find the leaked tracers holding a reference to the MainTrace or SubLevel."""
-    raise NotImplementedError(
-        "maybe_find_leaked_tracers not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "maybe_find_leaked_tracers")(*args, **kwargs)
 
 
 def min_dim(*args: Any, **kwargs: Any) -> Any:
     """Like min(d1, d2) but for both constant and symbolic dimensions."""
-    raise NotImplementedError("min_dim not yet implemented in zero-jax")
+    return getattr(_ops, "min_dim")(*args, **kwargs)
 
 
 def new_base_main(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for new_base_main."""
-    raise NotImplementedError("new_base_main not yet implemented in zero-jax")
+    return getattr(_ops, "new_base_main")(*args, **kwargs)
 
 
 def new_jaxpr_eqn(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for new_jaxpr_eqn."""
-    raise NotImplementedError("new_jaxpr_eqn not yet implemented in zero-jax")
+    return getattr(_ops, "new_jaxpr_eqn")(*args, **kwargs)
 
 
 def new_main(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for new_main."""
-    raise NotImplementedError("new_main not yet implemented in zero-jax")
+    return getattr(_ops, "new_main")(*args, **kwargs)
 
 
 def new_sublevel(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for new_sublevel."""
-    raise NotImplementedError("new_sublevel not yet implemented in zero-jax")
+    return getattr(_ops, "new_sublevel")(*args, **kwargs)
 
 
 no_axis_name: Any = None
@@ -483,24 +472,22 @@ outfeed_primitives: Any = None
 
 def primal_dtype_to_tangent_dtype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for primal_dtype_to_tangent_dtype."""
-    raise NotImplementedError(
-        "primal_dtype_to_tangent_dtype not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "primal_dtype_to_tangent_dtype")(*args, **kwargs)
 
 
 def primitive_uses_outfeed(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for primitive_uses_outfeed."""
-    raise NotImplementedError("primitive_uses_outfeed not yet implemented in zero-jax")
+    return getattr(_ops, "primitive_uses_outfeed")(*args, **kwargs)
 
 
 def process_env_traces_call(*args: Any, **kwargs: Any) -> Any:
     """partial(func, *args, **keywords) - new function with partial application"""
-    raise NotImplementedError("process_env_traces_call not yet implemented in zero-jax")
+    return getattr(_ops, "process_env_traces_call")(*args, **kwargs)
 
 
 def process_env_traces_map(*args: Any, **kwargs: Any) -> Any:
     """partial(func, *args, **keywords) - new function with partial application"""
-    raise NotImplementedError("process_env_traces_map not yet implemented in zero-jax")
+    return getattr(_ops, "process_env_traces_map")(*args, **kwargs)
 
 
 pytype_aval_mappings: Any = None
@@ -508,14 +495,12 @@ pytype_aval_mappings: Any = None
 
 def raise_as_much_as_possible(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for raise_as_much_as_possible."""
-    raise NotImplementedError(
-        "raise_as_much_as_possible not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "raise_as_much_as_possible")(*args, **kwargs)
 
 
 def raise_to_shaped(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for raise_to_shaped."""
-    raise NotImplementedError("raise_to_shaped not yet implemented in zero-jax")
+    return getattr(_ops, "raise_to_shaped")(*args, **kwargs)
 
 
 raise_to_shaped_mappings: Any = None
@@ -523,49 +508,47 @@ raise_to_shaped_mappings: Any = None
 
 def reset_trace_state(*args: Any, **kwargs: Any) -> Any:
     """Resets the global trace state and returns True if it was already clean."""
-    raise NotImplementedError("reset_trace_state not yet implemented in zero-jax")
+    return getattr(_ops, "reset_trace_state")(*args, **kwargs)
 
 
 def stash_axis_env(*args: Any, **kwargs: Any) -> Any:
     """Promise that a function or with-suite does not depend implicitly on axis env"""
-    raise NotImplementedError("stash_axis_env not yet implemented in zero-jax")
+    return getattr(_ops, "stash_axis_env")(*args, **kwargs)
 
 
 def str_eqn_compact(*args: Any, **kwargs: Any) -> Any:
     """Compact equation to string conversion used in HLO metadata."""
-    raise NotImplementedError("str_eqn_compact not yet implemented in zero-jax")
+    return getattr(_ops, "str_eqn_compact")(*args, **kwargs)
 
 
 def subjaxprs(*args: Any, **kwargs: Any) -> Any:
     """Generator for all subjaxprs found in the params of jaxpr.eqns."""
-    raise NotImplementedError("subjaxprs not yet implemented in zero-jax")
+    return getattr(_ops, "subjaxprs")(*args, **kwargs)
 
 
 def subst_axis_names(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subst_axis_names."""
-    raise NotImplementedError("subst_axis_names not yet implemented in zero-jax")
+    return getattr(_ops, "subst_axis_names")(*args, **kwargs)
 
 
 def subst_axis_names_eqn(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subst_axis_names_eqn."""
-    raise NotImplementedError("subst_axis_names_eqn not yet implemented in zero-jax")
+    return getattr(_ops, "subst_axis_names_eqn")(*args, **kwargs)
 
 
 def subst_axis_names_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subst_axis_names_jaxpr."""
-    raise NotImplementedError("subst_axis_names_jaxpr not yet implemented in zero-jax")
+    return getattr(_ops, "subst_axis_names_jaxpr")(*args, **kwargs)
 
 
 def subst_axis_names_var(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for subst_axis_names_var."""
-    raise NotImplementedError("subst_axis_names_var not yet implemented in zero-jax")
+    return getattr(_ops, "subst_axis_names_var")(*args, **kwargs)
 
 
 def substitute_vars_in_output_ty(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for substitute_vars_in_output_ty."""
-    raise NotImplementedError(
-        "substitute_vars_in_output_ty not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "substitute_vars_in_output_ty")(*args, **kwargs)
 
 
 thread_local_state: Any = None
@@ -573,47 +556,47 @@ thread_local_state: Any = None
 
 def trace_state_clean(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for trace_state_clean."""
-    raise NotImplementedError("trace_state_clean not yet implemented in zero-jax")
+    return getattr(_ops, "trace_state_clean")(*args, **kwargs)
 
 
 def traverse_jaxpr_params(*args: Any, **kwargs: Any) -> Any:
     """Applies f to each jaxpr parameter and returns a tuple of returned values."""
-    raise NotImplementedError("traverse_jaxpr_params not yet implemented in zero-jax")
+    return getattr(_ops, "traverse_jaxpr_params")(*args, **kwargs)
 
 
 def typecheck(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for typecheck."""
-    raise NotImplementedError("typecheck not yet implemented in zero-jax")
+    return getattr(_ops, "typecheck")(*args, **kwargs)
 
 
 def typecompat(*args: Any, **kwargs: Any) -> Any:
     """Determine whether `aval` conforms to `aval_ref`."""
-    raise NotImplementedError("typecompat not yet implemented in zero-jax")
+    return getattr(_ops, "typecompat")(*args, **kwargs)
 
 
 def typematch(*args: Any, **kwargs: Any) -> Any:
     """Determine whether `aval1` and `aval2` are equivalent."""
-    raise NotImplementedError("typematch not yet implemented in zero-jax")
+    return getattr(_ops, "typematch")(*args, **kwargs)
 
 
 def unmapped_aval(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for unmapped_aval."""
-    raise NotImplementedError("unmapped_aval not yet implemented in zero-jax")
+    return getattr(_ops, "unmapped_aval")(*args, **kwargs)
 
 
 def used_axis_names(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for used_axis_names."""
-    raise NotImplementedError("used_axis_names not yet implemented in zero-jax")
+    return getattr(_ops, "used_axis_names")(*args, **kwargs)
 
 
 def used_axis_names_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for used_axis_names_jaxpr."""
-    raise NotImplementedError("used_axis_names_jaxpr not yet implemented in zero-jax")
+    return getattr(_ops, "used_axis_names_jaxpr")(*args, **kwargs)
 
 
 def valid_jaxtype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for valid_jaxtype."""
-    raise NotImplementedError("valid_jaxtype not yet implemented in zero-jax")
+    return getattr(_ops, "valid_jaxtype")(*args, **kwargs)
 
 
 class Jaxpr:

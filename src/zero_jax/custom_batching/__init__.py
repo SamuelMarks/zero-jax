@@ -1,6 +1,7 @@
 """Frontend API routing for jax.custom_batching."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class custom_vmap:
@@ -11,4 +12,4 @@ class custom_vmap:
 
 def sequential_vmap(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for sequential_vmap."""
-    raise NotImplementedError("sequential_vmap not yet implemented in zero-jax")
+    return getattr(_ops, "sequential_vmap")(*args, **kwargs)

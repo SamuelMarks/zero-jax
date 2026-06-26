@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.xla."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class Backend:
@@ -11,17 +12,17 @@ class Backend:
 
 def abstractify(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for abstractify."""
-    raise NotImplementedError("abstractify not yet implemented in zero-jax")
+    return getattr(_ops, "abstractify")(*args, **kwargs)
 
 
 def apply_primitive(*args: Any, **kwargs: Any) -> Any:
     """Impl rule that compiles and runs a single primitive 'prim' using XLA."""
-    raise NotImplementedError("apply_primitive not yet implemented in zero-jax")
+    return getattr(_ops, "apply_primitive")(*args, **kwargs)
 
 
 def canonicalize_dtype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for canonicalize_dtype."""
-    raise NotImplementedError("canonicalize_dtype not yet implemented in zero-jax")
+    return getattr(_ops, "canonicalize_dtype")(*args, **kwargs)
 
 
 canonicalize_dtype_handlers: Any = None

@@ -1,46 +1,47 @@
-"""Mock implementation for jax.tree."""
+"""Frontend API routing for jax.tree."""
 
 from typing import Any
+import ml_switcheroo_compiler.tree_util as _tu
 
 
-def all(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for all."""
-    raise NotImplementedError("all not yet implemented in zero-jax")
+def all(tree: Any) -> bool:
+    """Checks if all leaves of a PyTree are truthy."""
+    return _tu.tree_all(tree)
 
 
-def flatten(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for flatten."""
-    raise NotImplementedError("flatten not yet implemented in zero-jax")
+def flatten(tree: Any) -> Any:
+    """Flattens a PyTree into a list of leaves and a treedef."""
+    return _tu.tree_flatten(tree)
 
 
-def leaves(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for leaves."""
-    raise NotImplementedError("leaves not yet implemented in zero-jax")
+def leaves(tree: Any) -> Any:
+    """Gets the leaves of a PyTree."""
+    return _tu.tree_leaves(tree)
 
 
-def map(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for map."""
-    raise NotImplementedError("map not yet implemented in zero-jax")
+def map(f: Any, tree: Any, *rest: Any) -> Any:
+    """Maps a function over the leaves of a PyTree."""
+    return _tu.tree_map(f, tree, *rest)
 
 
-def reduce(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for reduce."""
-    raise NotImplementedError("reduce not yet implemented in zero-jax")
+def reduce(f: Any, tree: Any, initializer: Any = None) -> Any:
+    """Reduces a PyTree by applying a function over its leaves."""
+    return _tu.tree_reduce(f, tree, initializer)
 
 
-def structure(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for structure."""
-    raise NotImplementedError("structure not yet implemented in zero-jax")
+def structure(tree: Any) -> Any:
+    """Gets the structure of a PyTree."""
+    return _tu.tree_structure(tree)
 
 
-def transpose(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for transpose."""
-    raise NotImplementedError("transpose not yet implemented in zero-jax")
+def transpose(outer_treedef: Any, inner_treedef: Any, pytree_to_transpose: Any) -> Any:
+    """Transposes a PyTree of PyTrees."""
+    return _tu.tree_transpose(outer_treedef, inner_treedef, pytree_to_transpose)
 
 
-def unflatten(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for unflatten."""
-    raise NotImplementedError("unflatten not yet implemented in zero-jax")
+def unflatten(treedef: Any, leaves: Any) -> Any:
+    """Reconstructs a PyTree from a treedef and a list of leaves."""
+    return _tu.tree_unflatten(treedef, leaves)
 
 
 __all__ = [

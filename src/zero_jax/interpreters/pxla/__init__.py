@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.pxla."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class ArrayMapping:
@@ -17,7 +18,7 @@ class Chunked:
 
 def Index(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for Index."""
-    raise NotImplementedError("Index not yet implemented in zero-jax")
+    return getattr(_ops, "Index")(*args, **kwargs)
 
 
 class MapTracer:
@@ -28,7 +29,7 @@ class MapTracer:
 
 def MeshAxisName(*args: Any, **kwargs: Any) -> Any:
     """Special type indicating an unconstrained type."""
-    raise NotImplementedError("MeshAxisName not yet implemented in zero-jax")
+    return getattr(_ops, "MeshAxisName")(*args, **kwargs)
 
 
 class MeshComputation:
@@ -81,28 +82,22 @@ class Unstacked:
 
 def are_op_shardings_equal(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for are_op_shardings_equal."""
-    raise NotImplementedError("are_op_shardings_equal not yet implemented in zero-jax")
+    return getattr(_ops, "are_op_shardings_equal")(*args, **kwargs)
 
 
 def array_mapping_to_axis_resources(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for array_mapping_to_axis_resources."""
-    raise NotImplementedError(
-        "array_mapping_to_axis_resources not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "array_mapping_to_axis_resources")(*args, **kwargs)
 
 
 def global_aval_to_result_handler(*args: Any, **kwargs: Any) -> Any:
     """Returns a function for handling the raw buffers of a single output aval."""
-    raise NotImplementedError(
-        "global_aval_to_result_handler not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "global_aval_to_result_handler")(*args, **kwargs)
 
 
 def global_avals_to_results_handler(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for global_avals_to_results_handler."""
-    raise NotImplementedError(
-        "global_avals_to_results_handler not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "global_avals_to_results_handler")(*args, **kwargs)
 
 
 global_result_handlers: Any = None
@@ -110,29 +105,27 @@ global_result_handlers: Any = None
 
 def is_op_sharding_replicated(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for is_op_sharding_replicated."""
-    raise NotImplementedError(
-        "is_op_sharding_replicated not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "is_op_sharding_replicated")(*args, **kwargs)
 
 
 def op_sharding_to_indices(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for op_sharding_to_indices."""
-    raise NotImplementedError("op_sharding_to_indices not yet implemented in zero-jax")
+    return getattr(_ops, "op_sharding_to_indices")(*args, **kwargs)
 
 
 def parallel_callable(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for parallel_callable."""
-    raise NotImplementedError("parallel_callable not yet implemented in zero-jax")
+    return getattr(_ops, "parallel_callable")(*args, **kwargs)
 
 
 def shard_args(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for shard_args."""
-    raise NotImplementedError("shard_args not yet implemented in zero-jax")
+    return getattr(_ops, "shard_args")(*args, **kwargs)
 
 
 def spec_to_indices(*args: Any, **kwargs: Any) -> Any:
     """Returns numpy-style indices corresponding to a sharding spec."""
-    raise NotImplementedError("spec_to_indices not yet implemented in zero-jax")
+    return getattr(_ops, "spec_to_indices")(*args, **kwargs)
 
 
 thread_resources: Any = None

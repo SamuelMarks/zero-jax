@@ -1,6 +1,7 @@
 """Tests for zero_jax module."""
 
 import pytest
+from unittest.mock import patch
 import zero_jax.custom_derivatives as mod
 
 
@@ -18,14 +19,16 @@ def test_SymbolicZero() -> None:
 
 def test_closure_convert() -> None:
     """Test closure_convert."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.closure_convert") as mock_op:
         mod.closure_convert()
+        mock_op.assert_called_once_with()
 
 
 def test_custom_gradient() -> None:
     """Test custom_gradient."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.custom_gradient") as mock_op:
         mod.custom_gradient()
+        mock_op.assert_called_once_with()
 
 
 def test_custom_jvp() -> None:
@@ -42,11 +45,13 @@ def test_custom_vjp() -> None:
 
 def test_custom_vjp_primal_tree_values() -> None:
     """Test custom_vjp_primal_tree_values."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.custom_vjp_primal_tree_values") as mock_op:
         mod.custom_vjp_primal_tree_values()
+        mock_op.assert_called_once_with()
 
 
 def test_linear_call() -> None:
     """Test linear_call."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.linear_call") as mock_op:
         mod.linear_call()
+        mock_op.assert_called_once_with()

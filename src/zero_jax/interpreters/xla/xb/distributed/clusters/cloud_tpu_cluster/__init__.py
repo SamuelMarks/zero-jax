@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.xla.xb.distributed.clusters.cloud_tpu_cluster."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class BaseTpuCluster:
@@ -29,17 +30,17 @@ coordinator_port: Any = None
 
 def get_metadata(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for get_metadata."""
-    raise NotImplementedError("get_metadata not yet implemented in zero-jax")
+    return getattr(_ops, "get_metadata")(*args, **kwargs)
 
 
 def get_tpu_env_value(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for get_tpu_env_value."""
-    raise NotImplementedError("get_tpu_env_value not yet implemented in zero-jax")
+    return getattr(_ops, "get_tpu_env_value")(*args, **kwargs)
 
 
 def has_megascale_address(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for has_megascale_address."""
-    raise NotImplementedError("has_megascale_address not yet implemented in zero-jax")
+    return getattr(_ops, "has_megascale_address")(*args, **kwargs)
 
 
 logger: Any = None

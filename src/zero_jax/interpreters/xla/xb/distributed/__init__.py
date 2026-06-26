@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.xla.xb.distributed."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class State:
@@ -19,7 +20,7 @@ global_state: Any = None
 
 def initialize(*args: Any, **kwargs: Any) -> Any:
     """Initializes the JAX distributed system."""
-    raise NotImplementedError("initialize not yet implemented in zero-jax")
+    return getattr(_ops, "initialize")(*args, **kwargs)
 
 
 logger: Any = None
@@ -29,7 +30,7 @@ from . import os
 
 def shutdown(*args: Any, **kwargs: Any) -> Any:
     """Shuts down the distributed system."""
-    raise NotImplementedError("shutdown not yet implemented in zero-jax")
+    return getattr(_ops, "shutdown")(*args, **kwargs)
 
 
 from . import xla_bridge

@@ -1,6 +1,7 @@
 """Mock implementation for jax.lib.xla_client."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 DTYPE_TO_XLA_ELEMENT_TYPE: Any = None
 Union: Any = None
@@ -329,179 +330,147 @@ class float8_e5m2fnuz:
 
 def CurrentSourceInfoMetadata(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for CurrentSourceInfoMetadata."""
-    raise NotImplementedError(
-        "CurrentSourceInfoMetadata not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "CurrentSourceInfoMetadata")(*args, **kwargs)
 
 
 def LoadedExecutable_execute(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for LoadedExecutable_execute."""
-    raise NotImplementedError(
-        "LoadedExecutable_execute not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "LoadedExecutable_execute")(*args, **kwargs)
 
 
 def LoadedExecutable_execute_with_token(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for LoadedExecutable_execute_with_token."""
-    raise NotImplementedError(
-        "LoadedExecutable_execute_with_token not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "LoadedExecutable_execute_with_token")(*args, **kwargs)
 
 
 def dtype_to_etype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for dtype_to_etype."""
-    raise NotImplementedError("dtype_to_etype not yet implemented in zero-jax")
+    return getattr(_ops, "dtype_to_etype")(*args, **kwargs)
 
 
 def execute_with_python_values(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for execute_with_python_values."""
-    raise NotImplementedError(
-        "execute_with_python_values not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "execute_with_python_values")(*args, **kwargs)
 
 
 def execute_with_python_values_replicated(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for execute_with_python_values_replicated."""
-    raise NotImplementedError(
-        "execute_with_python_values_replicated not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "execute_with_python_values_replicated")(*args, **kwargs)
 
 
 def generate_pjrt_gpu_plugin_options(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for generate_pjrt_gpu_plugin_options."""
-    raise NotImplementedError(
-        "generate_pjrt_gpu_plugin_options not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "generate_pjrt_gpu_plugin_options")(*args, **kwargs)
 
 
 def heap_profile(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for heap_profile."""
-    raise NotImplementedError("heap_profile not yet implemented in zero-jax")
+    return getattr(_ops, "heap_profile")(*args, **kwargs)
 
 
 def initialize_pjrt_plugin(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for initialize_pjrt_plugin."""
-    raise NotImplementedError("initialize_pjrt_plugin not yet implemented in zero-jax")
+    return getattr(_ops, "initialize_pjrt_plugin")(*args, **kwargs)
 
 
 def load_pjrt_plugin_dynamically(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for load_pjrt_plugin_dynamically."""
-    raise NotImplementedError(
-        "load_pjrt_plugin_dynamically not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "load_pjrt_plugin_dynamically")(*args, **kwargs)
 
 
 def load_pjrt_plugin_with_c_api(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for load_pjrt_plugin_with_c_api."""
-    raise NotImplementedError(
-        "load_pjrt_plugin_with_c_api not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "load_pjrt_plugin_with_c_api")(*args, **kwargs)
 
 
 def make_c_api_client(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_c_api_client."""
-    raise NotImplementedError("make_c_api_client not yet implemented in zero-jax")
+    return getattr(_ops, "make_c_api_client")(*args, **kwargs)
 
 
 def make_c_api_device_topology(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_c_api_device_topology."""
-    raise NotImplementedError(
-        "make_c_api_device_topology not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "make_c_api_device_topology")(*args, **kwargs)
 
 
 def make_convolution_dimension_numbers(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_convolution_dimension_numbers."""
-    raise NotImplementedError(
-        "make_convolution_dimension_numbers not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "make_convolution_dimension_numbers")(*args, **kwargs)
 
 
 def make_cpu_client(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_cpu_client."""
-    raise NotImplementedError("make_cpu_client not yet implemented in zero-jax")
+    return getattr(_ops, "make_cpu_client")(*args, **kwargs)
 
 
 def make_dot_dimension_numbers(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_dot_dimension_numbers."""
-    raise NotImplementedError(
-        "make_dot_dimension_numbers not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "make_dot_dimension_numbers")(*args, **kwargs)
 
 
 def make_gpu_client(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_gpu_client."""
-    raise NotImplementedError("make_gpu_client not yet implemented in zero-jax")
+    return getattr(_ops, "make_gpu_client")(*args, **kwargs)
 
 
 def make_padding_config(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_padding_config."""
-    raise NotImplementedError("make_padding_config not yet implemented in zero-jax")
+    return getattr(_ops, "make_padding_config")(*args, **kwargs)
 
 
 def make_replica_groups(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_replica_groups."""
-    raise NotImplementedError("make_replica_groups not yet implemented in zero-jax")
+    return getattr(_ops, "make_replica_groups")(*args, **kwargs)
 
 
 def make_tfrt_tpu_c_api_client(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_tfrt_tpu_c_api_client."""
-    raise NotImplementedError(
-        "make_tfrt_tpu_c_api_client not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "make_tfrt_tpu_c_api_client")(*args, **kwargs)
 
 
 def make_tfrt_tpu_c_api_device_topology(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_tfrt_tpu_c_api_device_topology."""
-    raise NotImplementedError(
-        "make_tfrt_tpu_c_api_device_topology not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "make_tfrt_tpu_c_api_device_topology")(*args, **kwargs)
 
 
 def make_tpu_client(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_tpu_client."""
-    raise NotImplementedError("make_tpu_client not yet implemented in zero-jax")
+    return getattr(_ops, "make_tpu_client")(*args, **kwargs)
 
 
 def pjrt_plugin_initialized(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for pjrt_plugin_initialized."""
-    raise NotImplementedError("pjrt_plugin_initialized not yet implemented in zero-jax")
+    return getattr(_ops, "pjrt_plugin_initialized")(*args, **kwargs)
 
 
 def pjrt_plugin_loaded(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for pjrt_plugin_loaded."""
-    raise NotImplementedError("pjrt_plugin_loaded not yet implemented in zero-jax")
+    return getattr(_ops, "pjrt_plugin_loaded")(*args, **kwargs)
 
 
 def register_custom_call_handler(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for register_custom_call_handler."""
-    raise NotImplementedError(
-        "register_custom_call_handler not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "register_custom_call_handler")(*args, **kwargs)
 
 
 def register_custom_call_target(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for register_custom_call_target."""
-    raise NotImplementedError(
-        "register_custom_call_target not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "register_custom_call_target")(*args, **kwargs)
 
 
 def shape_from_pyval(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for shape_from_pyval."""
-    raise NotImplementedError("shape_from_pyval not yet implemented in zero-jax")
+    return getattr(_ops, "shape_from_pyval")(*args, **kwargs)
 
 
 def tracebacks(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for tracebacks."""
-    raise NotImplementedError("tracebacks not yet implemented in zero-jax")
+    return getattr(_ops, "tracebacks")(*args, **kwargs)
 
 
 def window_padding_type_to_pad_values(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for window_padding_type_to_pad_values."""
-    raise NotImplementedError(
-        "window_padding_type_to_pad_values not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "window_padding_type_to_pad_values")(*args, **kwargs)
 
 
 atexit: Any = None  # Mock module

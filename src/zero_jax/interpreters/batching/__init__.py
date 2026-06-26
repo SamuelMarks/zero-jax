@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.batching."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class Array:
@@ -11,7 +12,7 @@ class Array:
 
 def AxisSize(*args: Any, **kwargs: Any) -> Any:
     """Special type indicating an unconstrained type."""
-    raise NotImplementedError("AxisSize not yet implemented in zero-jax")
+    return getattr(_ops, "AxisSize")(*args, **kwargs)
 
 
 class BatchTrace:
@@ -28,22 +29,22 @@ class BatchTracer:
 
 def BatchingRule(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for BatchingRule."""
-    raise NotImplementedError("BatchingRule not yet implemented in zero-jax")
+    return getattr(_ops, "BatchingRule")(*args, **kwargs)
 
 
 def Elt(*args: Any, **kwargs: Any) -> Any:
     """Special type indicating an unconstrained type."""
-    raise NotImplementedError("Elt not yet implemented in zero-jax")
+    return getattr(_ops, "Elt")(*args, **kwargs)
 
 
 def FromEltHandler(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for FromEltHandler."""
-    raise NotImplementedError("FromEltHandler not yet implemented in zero-jax")
+    return getattr(_ops, "FromEltHandler")(*args, **kwargs)
 
 
 def GetIdx(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for GetIdx."""
-    raise NotImplementedError("GetIdx not yet implemented in zero-jax")
+    return getattr(_ops, "GetIdx")(*args, **kwargs)
 
 
 class IndexedAxisSize:
@@ -72,12 +73,12 @@ class JumbleTy:
 
 def MakeIotaHandler(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for MakeIotaHandler."""
-    raise NotImplementedError("MakeIotaHandler not yet implemented in zero-jax")
+    return getattr(_ops, "MakeIotaHandler")(*args, **kwargs)
 
 
 def MapSpec(*args: Any, **kwargs: Any) -> Any:
     """Special type indicating an unconstrained type."""
-    raise NotImplementedError("MapSpec not yet implemented in zero-jax")
+    return getattr(_ops, "MapSpec")(*args, **kwargs)
 
 
 class NotMapped:
@@ -94,12 +95,12 @@ class RaggedAxis:
 
 def ToEltHandler(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for ToEltHandler."""
-    raise NotImplementedError("ToEltHandler not yet implemented in zero-jax")
+    return getattr(_ops, "ToEltHandler")(*args, **kwargs)
 
 
 def Vmappable(*args: Any, **kwargs: Any) -> Any:
     """Special type indicating an unconstrained type."""
-    raise NotImplementedError("Vmappable not yet implemented in zero-jax")
+    return getattr(_ops, "Vmappable")(*args, **kwargs)
 
 
 class Zero:
@@ -119,79 +120,77 @@ axis_primitive_batchers: Any = None
 
 def batch(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for batch."""
-    raise NotImplementedError("batch not yet implemented in zero-jax")
+    return getattr(_ops, "batch")(*args, **kwargs)
 
 
 def batch_custom_jvp_subtrace(*args: Any, **kwargs: Any) -> Any:
     """partial(func, *args, **keywords) - new function with partial application"""
-    raise NotImplementedError(
-        "batch_custom_jvp_subtrace not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "batch_custom_jvp_subtrace")(*args, **kwargs)
 
 
 def batch_custom_vjp_bwd(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for batch_custom_vjp_bwd."""
-    raise NotImplementedError("batch_custom_vjp_bwd not yet implemented in zero-jax")
+    return getattr(_ops, "batch_custom_vjp_bwd")(*args, **kwargs)
 
 
 def batch_jaxpr(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for batch_jaxpr."""
-    raise NotImplementedError("batch_jaxpr not yet implemented in zero-jax")
+    return getattr(_ops, "batch_jaxpr")(*args, **kwargs)
 
 
 def batch_jaxpr2(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for batch_jaxpr2."""
-    raise NotImplementedError("batch_jaxpr2 not yet implemented in zero-jax")
+    return getattr(_ops, "batch_jaxpr2")(*args, **kwargs)
 
 
 def batch_jaxpr_axes(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for batch_jaxpr_axes."""
-    raise NotImplementedError("batch_jaxpr_axes not yet implemented in zero-jax")
+    return getattr(_ops, "batch_jaxpr_axes")(*args, **kwargs)
 
 
 def batch_subtrace(*args: Any, **kwargs: Any) -> Any:
     """partial(func, *args, **keywords) - new function with partial application"""
-    raise NotImplementedError("batch_subtrace not yet implemented in zero-jax")
+    return getattr(_ops, "batch_subtrace")(*args, **kwargs)
 
 
 def bdim_at_front(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for bdim_at_front."""
-    raise NotImplementedError("bdim_at_front not yet implemented in zero-jax")
+    return getattr(_ops, "bdim_at_front")(*args, **kwargs)
 
 
 def broadcast(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for broadcast."""
-    raise NotImplementedError("broadcast not yet implemented in zero-jax")
+    return getattr(_ops, "broadcast")(*args, **kwargs)
 
 
 def broadcast_batcher(*args: Any, **kwargs: Any) -> Any:
     """Process a primitive with built-in broadcasting."""
-    raise NotImplementedError("broadcast_batcher not yet implemented in zero-jax")
+    return getattr(_ops, "broadcast_batcher")(*args, **kwargs)
 
 
 def defbroadcasting(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for defbroadcasting."""
-    raise NotImplementedError("defbroadcasting not yet implemented in zero-jax")
+    return getattr(_ops, "defbroadcasting")(*args, **kwargs)
 
 
 def defreducer(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for defreducer."""
-    raise NotImplementedError("defreducer not yet implemented in zero-jax")
+    return getattr(_ops, "defreducer")(*args, **kwargs)
 
 
 def defvectorized(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for defvectorized."""
-    raise NotImplementedError("defvectorized not yet implemented in zero-jax")
+    return getattr(_ops, "defvectorized")(*args, **kwargs)
 
 
 def flatten_fun_for_vmap(*args: Any, **kwargs: Any) -> Any:
     """partial(func, *args, **keywords) - new function with partial application"""
-    raise NotImplementedError("flatten_fun_for_vmap not yet implemented in zero-jax")
+    return getattr(_ops, "flatten_fun_for_vmap")(*args, **kwargs)
 
 
 def from_elt(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for from_elt."""
-    raise NotImplementedError("from_elt not yet implemented in zero-jax")
+    return getattr(_ops, "from_elt")(*args, **kwargs)
 
 
 from_elt_handlers: Any = None
@@ -199,7 +198,7 @@ from_elt_handlers: Any = None
 
 def is_vmappable(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for is_vmappable."""
-    raise NotImplementedError("is_vmappable not yet implemented in zero-jax")
+    return getattr(_ops, "is_vmappable")(*args, **kwargs)
 
 
 jumble_axis: Any = None
@@ -207,7 +206,7 @@ jumble_axis: Any = None
 
 def make_iota(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for make_iota."""
-    raise NotImplementedError("make_iota not yet implemented in zero-jax")
+    return getattr(_ops, "make_iota")(*args, **kwargs)
 
 
 make_iota_handlers: Any = None
@@ -215,22 +214,22 @@ make_iota_handlers: Any = None
 
 def matchaxis(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for matchaxis."""
-    raise NotImplementedError("matchaxis not yet implemented in zero-jax")
+    return getattr(_ops, "matchaxis")(*args, **kwargs)
 
 
 def moveaxis(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for moveaxis."""
-    raise NotImplementedError("moveaxis not yet implemented in zero-jax")
+    return getattr(_ops, "moveaxis")(*args, **kwargs)
 
 
 def reducer_batcher(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for reducer_batcher."""
-    raise NotImplementedError("reducer_batcher not yet implemented in zero-jax")
+    return getattr(_ops, "reducer_batcher")(*args, **kwargs)
 
 
 def register_vmappable(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for register_vmappable."""
-    raise NotImplementedError("register_vmappable not yet implemented in zero-jax")
+    return getattr(_ops, "register_vmappable")(*args, **kwargs)
 
 
 spec_types: Any = None
@@ -240,7 +239,7 @@ spmd_axis_primitive_batchers: Any = None
 
 def to_elt(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for to_elt."""
-    raise NotImplementedError("to_elt not yet implemented in zero-jax")
+    return getattr(_ops, "to_elt")(*args, **kwargs)
 
 
 to_elt_handlers: Any = None
@@ -248,12 +247,12 @@ to_elt_handlers: Any = None
 
 def unregister_vmappable(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for unregister_vmappable."""
-    raise NotImplementedError("unregister_vmappable not yet implemented in zero-jax")
+    return getattr(_ops, "unregister_vmappable")(*args, **kwargs)
 
 
 def vectorized_batcher(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for vectorized_batcher."""
-    raise NotImplementedError("vectorized_batcher not yet implemented in zero-jax")
+    return getattr(_ops, "vectorized_batcher")(*args, **kwargs)
 
 
 vmappables: Any = None
@@ -261,7 +260,7 @@ vmappables: Any = None
 
 def vtile(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for vtile."""
-    raise NotImplementedError("vtile not yet implemented in zero-jax")
+    return getattr(_ops, "vtile")(*args, **kwargs)
 
 
 zero_if_mapped: Any = None

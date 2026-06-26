@@ -316,9 +316,7 @@ class ndarray:
             val = getattr(val, "data", val)
             self._tensor.data[key] = val
         else:
-            raise NotImplementedError(
-                "Item assignment is only supported in eager mode."
-            )
+            raise TypeError("JAX arrays are immutable.")
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -965,21 +963,6 @@ def broadcast_shapes(*shapes: Any) -> Any:
     return functools.reduce(_broadcast_shapes, shapes)
 
 
-def _unary_op(x: Any, name: Any) -> Any:
-    """Apply a unary operation.
-
-    Args:
-        x (Any): Argument x.
-        name (Any): Argument name.
-
-    Returns:
-        Any: The result of the operation.
-    """
-    if name == "Transpose":
-        return transpose(x)
-    raise NotImplementedError()
-
-
 def ones(shape: Any, dtype: Any = None) -> Any:
     """Return a new array of given shape and type, filled with ones.
 
@@ -1106,23 +1089,45 @@ def linspace(
     dtype: Any = None,
     axis: int = 0,
 ) -> Any:
-    """Return evenly spaced numbers over a specified interval.
+    """Return evenly spaced numbers over a specified interval."""
+    if num < 0:
+        raise ValueError("Number of samples, %s, must be non-negative." % num)
+    if num == 0:
+        return _wrap(ops.empty((0,), dtype=dtype))
 
-    Args:
-        start (Any): Argument start.
-        stop (Any): Argument stop.
-        num (Any): Argument num.
-        endpoint (Any): Argument endpoint.
-        retstep (Any): Argument retstep.
-        dtype (Any): Argument dtype.
-        axis (Any): Argument axis.
+    start_t = _to_tensor(start)
+    stop_t = _to_tensor(stop)
 
-    Returns:
-        Any: The result of the operation.
-    """
-    if retstep or axis != 0 or not endpoint:
-        raise NotImplementedError("linspace currently only supports basic usage")
-    return _wrap(ops.linspace(start=start, stop=stop, steps=num, dtype=dtype))
+    if dtype is None:
+        import ml_switcheroo_compiler
+
+        if start_t.dtype.name.startswith("Int") and stop_t.dtype.name.startswith("Int"):
+            dtype = ml_switcheroo_compiler.core.dtype.DType.Float32
+
+    if endpoint:
+        step_denom = num - 1 if num - 1 > 1 else 1
+    else:
+        step_denom = num
+
+    step = (stop - start) / step_denom
+
+    from ml_switcheroo_compiler.ops import (
+        arange as backend_arange,
+        multiply as backend_mul,
+        add as backend_add,
+    )
+
+    idx = backend_arange(0, num, 1, dtype=dtype)
+    res = backend_add(_to_tensor(start), backend_mul(idx, _to_tensor(step)))
+
+    res_wrapped = _wrap(res)
+
+    if axis != 0:
+        res_wrapped = moveaxis(res_wrapped, 0, axis)
+
+    if retstep:
+        return res_wrapped, step
+    return res_wrapped
 
 
 def logspace(
@@ -1153,20 +1158,24 @@ def logspace(
 
 
 def eye(N: int, M: int = None, k: int = 0, dtype: Any = None) -> Any:
-    """Return a 2-D array with ones on the diagonal and zeros elsewhere.
+    """Return a 2-D array with ones on the diagonal and zeros elsewhere."""
+    if M is None:
+        M = N
+    if k == 0:
+        return _wrap(ops.eye(n=N, m=M, dtype=dtype))
 
-    Args:
-        N (Any): Argument N.
-        M (Any): Argument M.
-        k (Any): Argument k.
-        dtype (Any): Argument dtype.
+    row_idx = arange(N)
+    col_idx = arange(M)
+    row_k = add(row_idx, k)
+    row_k_expand = expand_dims(row_k, 1)
+    col_expand = expand_dims(col_idx, 0)
+    res = equal(row_k_expand, col_expand)
 
-    Returns:
-        Any: The result of the operation.
-    """
-    if k != 0:
-        raise NotImplementedError()
-    return _wrap(ops.eye(n=N, m=M, dtype=dtype))
+    if dtype is None:
+        import ml_switcheroo_compiler
+
+        dtype = ml_switcheroo_compiler.core.dtype.DType.Float32
+    return astype(res, dtype)
 
 
 def identity(n: int, dtype: Any = None) -> Any:
@@ -1185,13 +1194,7 @@ def identity(n: int, dtype: Any = None) -> Any:
 def meshgrid(
     *xi: Any, copy: Any = True, sparse: Any = False, indexing: Any = "xy"
 ) -> Any:
-    """Return coordinate matrices from coordinate vectors.
-
-    Returns:
-        Any: The result of the operation.
-    """
-    if sparse or not copy:
-        raise NotImplementedError()
+    """Return coordinate matrices from coordinate vectors."""
 
     tensors = [_to_tensor(x) for x in xi]
 
@@ -1207,8 +1210,9 @@ def meshgrid(
         reshaped = ops.reshape(t, shape=tuple(shape))
         output.append(reshaped)
 
-    broadcast_shape = tuple(t.shape[0] for t in tensors)
-    output = [ops.broadcast_to(t, broadcast_shape) for t in output]
+    if not sparse:
+        broadcast_shape = tuple(t.shape[0] for t in tensors)
+        output = [ops.broadcast_to(t, broadcast_shape) for t in output]
 
     if indexing == "xy" and ndim > 1:
         output[0], output[1] = output[1], output[0]
@@ -1751,18 +1755,12 @@ def std(
 
 
 def ravel(a: Any, order: str = "C") -> Any:
-    """Return a contiguous flattened array.
-
-    Args:
-        a (Any): Argument a.
-        order (Any): Argument order.
-
-    Returns:
-        Any: The result of the operation.
-    """
-    # Eager fallback or reshape if order='C'
-    if order != "C":
-        raise NotImplementedError("ravel only supports order='C'")
+    """Return a contiguous flattened array."""
+    if order == "F":
+        axes = list(range(a.ndim))[::-1]
+        a = transpose(a, axes=axes)
+    elif order not in ("C", "A", "K"):
+        raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
     return reshape(a, (-1,))
 
 
@@ -3153,7 +3151,7 @@ def isneginf(x: Any, out: Any = None) -> Any:
     neg_mask = x < 0
     res = logical_and(inf_mask, neg_mask)
     if out is not None:
-        raise NotImplementedError("out parameter is not supported")
+        raise ValueError("out parameter is not supported in JAX")
     return res
 
 
@@ -3171,7 +3169,7 @@ def isposinf(x: Any, out: Any = None) -> Any:
     pos_mask = x > 0
     res = logical_and(inf_mask, pos_mask)
     if out is not None:
-        raise NotImplementedError("out parameter is not supported")
+        raise ValueError("out parameter is not supported in JAX")
     return res
 
 
@@ -3230,20 +3228,9 @@ def nan_to_num(
 
 
 def searchsorted(a: Any, v: Any, side: str = "left", sorter: Any = None) -> Any:
-    """Find indices where elements should be inserted to maintain order.
-
-    Args:
-        a: Input array.
-        v: Values to insert into a.
-        side: If 'left', the index of the first suitable location found is given.
-        sorter: Optional array of integer indices that sort array a into ascending order.
-
-    Returns:
-        Array of insertion points.
-    """
-    # ml-switcheroo-compiler ops.searchsorted currently only accepts side.
+    """Find indices where elements should be inserted to maintain order."""
     if sorter is not None:
-        raise NotImplementedError("sorter is not yet supported in searchsorted")
+        a = take(a, sorter, axis=-1)
     return _wrap(
         ops.shape.indexing.searchsorted(_to_tensor(a), _to_tensor(v), side=side)
     )
@@ -3260,26 +3247,13 @@ def signbit(x: Any, out: Any = None) -> Any:
         Boolean array.
     """
     if out is not None:
-        raise NotImplementedError("out parameter is not supported")
+        raise ValueError("out parameter is not supported in JAX")
     return _wrap(ops.signbit(_to_tensor(x)))
 
 
 def argsort(a: Any, axis: int = -1, kind: Any = None, order: Any = None) -> Any:
-    """Returns the indices that would sort an array.
-
-    Args:
-        a: Array to sort.
-        axis: Axis along which to sort.
-        kind: Sorting algorithm.
-        order: Field to sort by.
-
-    Returns:
-        Array of indices that sort a.
-    """
-    # ml-switcheroo-compiler ops.sort currently just sorts, no argsort directly exported in the python API
-    # But wait, numpy argsort can't be implemented with ops.sort directly if it doesn't return indices.
-    # Let's check if the compiler has Argsort eager op.
-    raise NotImplementedError("argsort not fully supported in compiler natively yet")
+    """Returns the indices that would sort an array."""
+    return _wrap(ops.argsort(_to_tensor(a), axis=axis))
 
 
 def copy(a: Any, order: str = "K") -> Any:

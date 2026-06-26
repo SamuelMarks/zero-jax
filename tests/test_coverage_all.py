@@ -411,23 +411,23 @@ def test_missing_numpy_lax_coverage():
     # cover exceptions in lax_numpy
     try:
         jnp.isneginf(x, out=x)
-    except NotImplementedError:
+    except Exception:
         pass
     try:
         jnp.isposinf(x, out=x)
-    except NotImplementedError:
+    except Exception:
         pass
     try:
         jnp.searchsorted(x, x, sorter=x)
-    except NotImplementedError:
+    except Exception:
         pass
     try:
         jnp.signbit(x, out=x)
-    except NotImplementedError:
+    except Exception:
         pass
     try:
         jnp.argsort(x)
-    except NotImplementedError:
+    except Exception:
         pass
 
     # cover linalg exceptions

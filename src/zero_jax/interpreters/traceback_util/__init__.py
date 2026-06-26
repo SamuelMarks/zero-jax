@@ -1,6 +1,7 @@
 """Frontend API routing for jax.interpreters.traceback_util."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 C: Any = None
 
@@ -28,12 +29,12 @@ annotations: Any = None
 
 def api_boundary(*args: Any, **kwargs: Any) -> Any:
     """Wraps ``fun`` to form a boundary for filtering exception tracebacks."""
-    raise NotImplementedError("api_boundary not yet implemented in zero-jax")
+    return getattr(_ops, "api_boundary")(*args, **kwargs)
 
 
 def cast(*args: Any, **kwargs: Any) -> Any:
     """Cast a value to a type."""
-    raise NotImplementedError("cast not yet implemented in zero-jax")
+    return getattr(_ops, "cast")(*args, **kwargs)
 
 
 from . import config
@@ -41,12 +42,12 @@ from . import config
 
 def filter_traceback(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for filter_traceback."""
-    raise NotImplementedError("filter_traceback not yet implemented in zero-jax")
+    return getattr(_ops, "filter_traceback")(*args, **kwargs)
 
 
 def format_exception_only(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for format_exception_only."""
-    raise NotImplementedError("format_exception_only not yet implemented in zero-jax")
+    return getattr(_ops, "format_exception_only")(*args, **kwargs)
 
 
 from . import functools
@@ -54,7 +55,7 @@ from . import functools
 
 def include_frame(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for include_frame."""
-    raise NotImplementedError("include_frame not yet implemented in zero-jax")
+    return getattr(_ops, "include_frame")(*args, **kwargs)
 
 
 from . import os
@@ -62,7 +63,7 @@ from . import os
 
 def register_exclusion(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for register_exclusion."""
-    raise NotImplementedError("register_exclusion not yet implemented in zero-jax")
+    return getattr(_ops, "register_exclusion")(*args, **kwargs)
 
 
 from . import sys

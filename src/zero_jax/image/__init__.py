@@ -1,6 +1,7 @@
 """Frontend API routing for jax.image."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class ResizeMethod:
@@ -11,9 +12,9 @@ class ResizeMethod:
 
 def resize(*args: Any, **kwargs: Any) -> Any:
     """Image resize."""
-    raise NotImplementedError("resize not yet implemented in zero-jax")
+    return getattr(_ops, "resize")(*args, **kwargs)
 
 
 def scale_and_translate(*args: Any, **kwargs: Any) -> Any:
     """Apply a scale and translation to an image."""
-    raise NotImplementedError("scale_and_translate not yet implemented in zero-jax")
+    return getattr(_ops, "scale_and_translate")(*args, **kwargs)

@@ -148,22 +148,6 @@ def test_add_mul_tracing():
     _tracer.stop_tracing()
 
 
-def test_unary_op_unsupported_eager():
-    from zero_jax.numpy.lax_numpy import _unary_op
-
-    with pytest.raises(NotImplementedError):
-        _unary_op(1.0, "UnsupportedOp")
-
-
-def test_unary_op_transpose():
-    import numpy as np
-    from zero_jax.numpy.lax_numpy import _unary_op
-
-    assert np.array_equal(
-        _unary_op(np.array([[1, 2]]), "Transpose"), np.array([[1], [2]])
-    )
-
-
 def test_missing_numpy_methods():
     import numpy as np
     from zero_jax import numpy as jnp

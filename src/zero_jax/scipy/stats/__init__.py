@@ -1,6 +1,7 @@
 """Frontend API routing for jax.scipy.stats."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 from . import bernoulli
 from . import beta
 from . import betabinom
@@ -26,7 +27,7 @@ from . import logistic
 
 def mode(*args: Any, **kwargs: Any) -> Any:
     """Compute the mode (most common value) along an axis of an array."""
-    raise NotImplementedError("mode not yet implemented in zero-jax")
+    return getattr(_ops, "mode")(*args, **kwargs)
 
 
 from . import multinomial
@@ -39,12 +40,12 @@ from . import poisson
 
 def rankdata(*args: Any, **kwargs: Any) -> Any:
     """Compute the rank of data along an array axis."""
-    raise NotImplementedError("rankdata not yet implemented in zero-jax")
+    return getattr(_ops, "rankdata")(*args, **kwargs)
 
 
 def sem(*args: Any, **kwargs: Any) -> Any:
     """Compute the standard error of the mean."""
-    raise NotImplementedError("sem not yet implemented in zero-jax")
+    return getattr(_ops, "sem")(*args, **kwargs)
 
 
 from . import t

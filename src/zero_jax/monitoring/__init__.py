@@ -1,32 +1,29 @@
 """Frontend API routing for jax.monitoring."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 def clear_event_listeners(*args: Any, **kwargs: Any) -> Any:
     """Clear event listeners."""
-    raise NotImplementedError("clear_event_listeners not yet implemented in zero-jax")
+    return getattr(_ops, "clear_event_listeners")(*args, **kwargs)
 
 
 def record_event(*args: Any, **kwargs: Any) -> Any:
     """Record an event."""
-    raise NotImplementedError("record_event not yet implemented in zero-jax")
+    return getattr(_ops, "record_event")(*args, **kwargs)
 
 
 def record_event_duration_secs(*args: Any, **kwargs: Any) -> Any:
     """Record an event duration in seconds (float)."""
-    raise NotImplementedError(
-        "record_event_duration_secs not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "record_event_duration_secs")(*args, **kwargs)
 
 
 def register_event_duration_secs_listener(*args: Any, **kwargs: Any) -> Any:
     """Register a callback to be invoked during record_event_duration_secs()."""
-    raise NotImplementedError(
-        "register_event_duration_secs_listener not yet implemented in zero-jax"
-    )
+    return getattr(_ops, "register_event_duration_secs_listener")(*args, **kwargs)
 
 
 def register_event_listener(*args: Any, **kwargs: Any) -> Any:
     """Register a callback to be invoked during record_event()."""
-    raise NotImplementedError("register_event_listener not yet implemented in zero-jax")
+    return getattr(_ops, "register_event_listener")(*args, **kwargs)

@@ -1,43 +1,44 @@
 """Frontend API routing for jax.scipy.stats.norm."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 def cdf(*args: Any, **kwargs: Any) -> Any:
     """Normal cumulative distribution function."""
-    raise NotImplementedError("cdf not yet implemented in zero-jax")
+    return getattr(_ops, "cdf")(*args, **kwargs)
 
 
 def isf(*args: Any, **kwargs: Any) -> Any:
     """Normal distribution inverse survival function."""
-    raise NotImplementedError("isf not yet implemented in zero-jax")
+    return getattr(_ops, "isf")(*args, **kwargs)
 
 
 def logcdf(*args: Any, **kwargs: Any) -> Any:
     """Normal log cumulative distribution function."""
-    raise NotImplementedError("logcdf not yet implemented in zero-jax")
+    return getattr(_ops, "logcdf")(*args, **kwargs)
 
 
 def logpdf(*args: Any, **kwargs: Any) -> Any:
     """Normal log probability distribution function."""
-    raise NotImplementedError("logpdf not yet implemented in zero-jax")
+    return getattr(_ops, "logpdf")(*args, **kwargs)
 
 
 def logsf(*args: Any, **kwargs: Any) -> Any:
     """Normal distribution log survival function."""
-    raise NotImplementedError("logsf not yet implemented in zero-jax")
+    return getattr(_ops, "logsf")(*args, **kwargs)
 
 
 def pdf(*args: Any, **kwargs: Any) -> Any:
     """Normal probability distribution function."""
-    raise NotImplementedError("pdf not yet implemented in zero-jax")
+    return getattr(_ops, "pdf")(*args, **kwargs)
 
 
 def ppf(*args: Any, **kwargs: Any) -> Any:
     """Normal distribution percent point function."""
-    raise NotImplementedError("ppf not yet implemented in zero-jax")
+    return getattr(_ops, "ppf")(*args, **kwargs)
 
 
 def sf(*args: Any, **kwargs: Any) -> Any:
     """Normal distribution survival function."""
-    raise NotImplementedError("sf not yet implemented in zero-jax")
+    return getattr(_ops, "sf")(*args, **kwargs)

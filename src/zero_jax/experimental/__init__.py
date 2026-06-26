@@ -1,6 +1,7 @@
 """Frontend API routing for jax.experimental."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 class EArray:
@@ -14,17 +15,17 @@ from . import compilation_cache
 
 def disable_x64(*args: Any, **kwargs: Any) -> Any:
     """Experimental context manager to temporarily disable X64 mode."""
-    raise NotImplementedError("disable_x64 not yet implemented in zero-jax")
+    return getattr(_ops, "disable_x64")(*args, **kwargs)
 
 
 def enable_x64(*args: Any, **kwargs: Any) -> Any:
     """Experimental context manager to temporarily enable X64 mode."""
-    raise NotImplementedError("enable_x64 not yet implemented in zero-jax")
+    return getattr(_ops, "enable_x64")(*args, **kwargs)
 
 
 def io_callback(*args: Any, **kwargs: Any) -> Any:
     """Calls an impure Python callback."""
-    raise NotImplementedError("io_callback not yet implemented in zero-jax")
+    return getattr(_ops, "io_callback")(*args, **kwargs)
 
 
 from . import x64_context

@@ -1,13 +1,14 @@
 """Frontend API routing for jax.scipy.stats.pareto."""
 
 from typing import Any
+import ml_switcheroo_compiler.ops as _ops
 
 
 def logpdf(*args: Any, **kwargs: Any) -> Any:
     """Pareto log probability distribution function."""
-    raise NotImplementedError("logpdf not yet implemented in zero-jax")
+    return getattr(_ops, "logpdf")(*args, **kwargs)
 
 
 def pdf(*args: Any, **kwargs: Any) -> Any:
     """Pareto probability distribution function."""
-    raise NotImplementedError("pdf not yet implemented in zero-jax")
+    return getattr(_ops, "pdf")(*args, **kwargs)

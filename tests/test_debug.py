@@ -1,6 +1,7 @@
 """Tests for zero_jax module."""
 
 import pytest
+from unittest.mock import patch
 import zero_jax.debug as mod
 
 
@@ -12,35 +13,41 @@ def test_DebugEffect() -> None:
 
 def test_breakpoint() -> None:
     """Test breakpoint."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.breakpoint") as mock_op:
         mod.breakpoint()
+        mock_op.assert_called_once_with()
 
 
 def test_callback() -> None:
     """Test callback."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.callback") as mock_op:
         mod.callback()
+        mock_op.assert_called_once_with()
 
 
 def test_inspect_array_sharding() -> None:
     """Test inspect_array_sharding."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.inspect_array_sharding") as mock_op:
         mod.inspect_array_sharding()
+        mock_op.assert_called_once_with()
 
 
 def test_print() -> None:
     """Test print."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.print") as mock_op:
         mod.print()
+        mock_op.assert_called_once_with()
 
 
 def test_visualize_array_sharding() -> None:
     """Test visualize_array_sharding."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.visualize_array_sharding") as mock_op:
         mod.visualize_array_sharding()
+        mock_op.assert_called_once_with()
 
 
 def test_visualize_sharding() -> None:
     """Test visualize_sharding."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.visualize_sharding") as mock_op:
         mod.visualize_sharding()
+        mock_op.assert_called_once_with()

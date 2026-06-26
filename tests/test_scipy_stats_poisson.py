@@ -1,22 +1,26 @@
 """Tests for zero_jax module."""
 
 import pytest
+from unittest.mock import patch
 import zero_jax.scipy.stats.poisson as mod
 
 
 def test_cdf() -> None:
     """Test cdf."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.cdf") as mock_op:
         mod.cdf()
+        mock_op.assert_called_once_with()
 
 
 def test_logpmf() -> None:
     """Test logpmf."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.logpmf") as mock_op:
         mod.logpmf()
+        mock_op.assert_called_once_with()
 
 
 def test_pmf() -> None:
     """Test pmf."""
-    with pytest.raises(NotImplementedError):
+    with patch("ml_switcheroo_compiler.ops.pmf") as mock_op:
         mod.pmf()
+        mock_op.assert_called_once_with()

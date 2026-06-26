@@ -60,7 +60,7 @@ def test_lax_numpy_setitem_eager():
     assert a[1] == 4.0
 
     config.eager_mode = False
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         a[0] = 5.0
     config.eager_mode = True
 
@@ -142,8 +142,7 @@ def test_lax_numpy_broadcast_shapes_empty():
 def test_lax_numpy_linspace_exceptions():
     import zero_jax.numpy as jnp
 
-    with pytest.raises(NotImplementedError):
-        jnp.linspace(0, 1, 10, retstep=True)
+    jnp.linspace(0, 1, 10, retstep=True)
 
 
 @pytest.mark.skip(reason="Not implemented in backend")
@@ -200,3 +199,33 @@ def test_lax_numpy_truediv():
     # tests __truediv__ where a is an array
     res = a / b
     assert jnp.all(res == jnp.array([2.0]))
+
+
+def test_linspace_negative_num():
+    import zero_jax.numpy as jnp
+    import pytest
+
+    with pytest.raises(ValueError, match="must be non-negative"):
+        jnp.linspace(0, 1, -1)
+
+
+def test_linspace_zero_num():
+    import zero_jax.numpy as jnp
+
+    res = jnp.linspace(0, 1, 0)
+    assert res.shape == (0,)
+
+
+def test_linspace_axis():
+    import zero_jax.numpy as jnp
+
+    res = jnp.linspace(0, 1, 3, axis=-1)
+    assert res.shape == (3,)
+
+
+def test_ravel_invalid_order():
+    import zero_jax.numpy as jnp
+    import pytest
+
+    with pytest.raises(ValueError, match="order must be one of"):
+        jnp.ravel(jnp.array([1, 2]), order="Z")
