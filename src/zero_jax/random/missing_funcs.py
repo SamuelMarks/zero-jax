@@ -315,6 +315,7 @@ __all__ = [
     "pareto",
     "poisson",
     "rademacher",
+    "random_gamma_p",
     "rayleigh",
     "t",
     "triangular",

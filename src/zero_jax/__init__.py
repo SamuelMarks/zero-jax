@@ -12,6 +12,28 @@ from . import lax
 from . import random
 from . import nn
 from . import experimental
+from . import typing
+from . import api_util
+from . import core
+from . import sharding
+from . import custom_transpose
+from . import lib
+from . import version
+from . import util
+from . import monitoring
+from . import image
+from . import interpreters
+from . import stages
+from . import errors
+from . import ops
+from . import scipy
+from . import profiler
+from . import custom_derivatives
+from . import custom_batching
+from . import debug
+from . import dtypes
+from . import distributed
+from . import dlpack
 
 from .api import (
     jit,
@@ -95,6 +117,29 @@ __all__ = [
     "random",
     "nn",
     "experimental",
+    "typing",
+    "api_util",
+    "core",
+    "sharding",
+    "custom_transpose",
+    "lib",
+    "version",
+    "util",
+    "monitoring",
+    "image",
+    "interpreters",
+    "stages",
+    "errors",
+    "ops",
+    "tree",
+    "scipy",
+    "profiler",
+    "custom_derivatives",
+    "custom_batching",
+    "debug",
+    "dtypes",
+    "distributed",
+    "dlpack",
     "jit",
     "grad",
     "value_and_grad",

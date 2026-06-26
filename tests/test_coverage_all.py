@@ -352,14 +352,6 @@ def test_missing_lax_numpy_last():
 
 def test_missing_lax_primitives_coverage():
     from zero_jax import lax
-    from zero_jax.lax.primitives import (
-        equal,
-        not_equal,
-        greater,
-        greater_equal,
-        less,
-        less_equal,
-    )
     from zero_jax import numpy as jnp
     from zero_jax.random import PRNGKey, truncated_normal
     import zero_jax.api as api
@@ -369,12 +361,12 @@ def test_missing_lax_primitives_coverage():
     y = np.array([1.0, 3.0], dtype=np.float32)
 
     ops_to_try = [
-        lambda: equal(x, y),
-        lambda: not_equal(x, y),
-        lambda: greater(x, y),
-        lambda: greater_equal(x, y),
-        lambda: less(x, y),
-        lambda: less_equal(x, y),
+        lambda: lax.eq(x, y),
+        lambda: lax.ne(x, y),
+        lambda: lax.gt(x, y),
+        lambda: lax.ge(x, y),
+        lambda: lax.lt(x, y),
+        lambda: lax.le(x, y),
         lambda: lax.digamma(x),
         lambda: lax.lgamma(x),
         lambda: lax.erf(x),

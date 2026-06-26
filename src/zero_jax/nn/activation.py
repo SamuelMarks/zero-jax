@@ -12,7 +12,7 @@ import ml_switcheroo_compiler.ops as ops
 import ml_switcheroo_compiler.ops.creation as creation
 import ml_switcheroo_compiler.nn as nn
 
-ArrayLike = Any
+_ArrayLike = Any
 
 
 def _erf(x: Any) -> Any:
@@ -28,12 +28,12 @@ def _erf(x: Any) -> Any:
     return _wrap(ops.erf(_to_tensor(x)))
 
 
-def gelu(x: ArrayLike, approximate: bool = True) -> Any:
+def gelu(x: _ArrayLike, approximate: bool = True) -> Any:
     """
     Computes the Gaussian Error Linear Unit (GELU) activation function.
 
     Args:
-        x (ArrayLike): The input array.
+        x (_ArrayLike): The input array.
         approximate (bool): If True, uses the approximate GELU formulation based on tanh. Defaults to False.
 
     Returns:
@@ -43,23 +43,23 @@ def gelu(x: ArrayLike, approximate: bool = True) -> Any:
 
 
 def logsumexp(
-    a: ArrayLike,
+    a: _ArrayLike,
     axis: Any = None,
-    b: Optional[ArrayLike] = None,
+    b: Optional[_ArrayLike] = None,
     keepdims: bool = False,
     return_sign: bool = False,
-    where: Optional[ArrayLike] = None,
+    where: Optional[_ArrayLike] = None,
 ) -> Any:
     """
     Computes the log of the sum of exponentials of input elements.
 
     Args:
-        a (ArrayLike): Input array.
+        a (_ArrayLike): Input array.
         axis (Any, optional): Axis or axes over which the sum is computed. By default, computes the sum over all elements.
-        b (Optional[ArrayLike], optional): Array of weights for the elements of `a`. Defaults to None.
+        b (Optional[_ArrayLike], optional): Array of weights for the elements of `a`. Defaults to None.
         keepdims (bool): If True, retains reduced dimensions with length 1. Defaults to False.
         return_sign (bool): If True, returns a tuple of (result, sign). Defaults to False.
-        where (Optional[ArrayLike], optional): Elements to include in the sum. Defaults to None.
+        where (Optional[_ArrayLike], optional): Elements to include in the sum. Defaults to None.
 
     Returns:
         Any: The logsumexp of the inputs. If `return_sign` is True, returns a tuple containing the logsumexp and its sign.
@@ -152,13 +152,13 @@ def one_hot(x: Any, num_classes: int, *, dtype: Any = float, axis: Any = -1) -> 
 
 
 def softmax(
-    x: ArrayLike, axis: Any = -1, where: Optional[Any] = None, initial: Any = None
+    x: _ArrayLike, axis: Any = -1, where: Optional[Any] = None, initial: Any = None
 ) -> Any:
     """
     Computes the softmax activation function over the given axis.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
         axis (Any, optional): Axis along which the softmax is computed. Defaults to -1.
         where (Optional[Any], optional): Elements to include in the computation. Defaults to None.
         initial (Any, optional): Initial value for the sum. Defaults to None.
@@ -213,12 +213,12 @@ def log_sigmoid(x: Any) -> Any:
     return _wrap(ops.negative(ops.log(denom)))
 
 
-def relu(x: ArrayLike) -> Any:
+def relu(x: _ArrayLike) -> Any:
     """
     Computes the Rectified Linear Unit (ReLU) activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with ReLU applied.
@@ -227,12 +227,12 @@ def relu(x: ArrayLike) -> Any:
     return _wrap(ops.maximum(x_t, _to_tensor(0.0)))
 
 
-def relu6(x: ArrayLike) -> Any:
+def relu6(x: _ArrayLike) -> Any:
     """
     Computes the ReLU6 activation function, capping at 6.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with ReLU6 applied.
@@ -241,12 +241,12 @@ def relu6(x: ArrayLike) -> Any:
     return _wrap(ops.minimum(ops.maximum(x, _to_tensor(0.0)), _to_tensor(6.0)))
 
 
-def hard_sigmoid(x: ArrayLike) -> Any:
+def hard_sigmoid(x: _ArrayLike) -> Any:
     """
     Computes the hard sigmoid activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with hard sigmoid applied.
@@ -263,12 +263,12 @@ def hard_sigmoid(x: ArrayLike) -> Any:
     )
 
 
-def hard_tanh(x: ArrayLike) -> Any:
+def hard_tanh(x: _ArrayLike) -> Any:
     """
     Computes the hard tanh activation function, bounding the input between -1 and 1.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with hard tanh applied.
@@ -277,12 +277,12 @@ def hard_tanh(x: ArrayLike) -> Any:
     return _wrap(ops.maximum(_to_tensor(-1.0), ops.minimum(_to_tensor(1.0), x)))
 
 
-def swish(x: ArrayLike) -> Any:
+def swish(x: _ArrayLike) -> Any:
     """
     Computes the Swish activation function (x * sigmoid(x)).
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with Swish applied.
@@ -291,12 +291,12 @@ def swish(x: ArrayLike) -> Any:
     return _wrap(ops.multiply(x_t, _to_tensor(sigmoid(x_t))))
 
 
-def silu(x: ArrayLike) -> Any:
+def silu(x: _ArrayLike) -> Any:
     """
     Computes the SiLU (Sigmoid Linear Unit) activation function, which is identical to Swish.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with SiLU applied.
@@ -304,12 +304,12 @@ def silu(x: ArrayLike) -> Any:
     return swish(x)
 
 
-def elu(x: ArrayLike, alpha: float = 1.0) -> Any:
+def elu(x: _ArrayLike, alpha: float = 1.0) -> Any:
     """
     Computes the Exponential Linear Unit (ELU) activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
         alpha (float, optional): Scaling factor for negative values. Defaults to 1.0.
 
     Returns:
@@ -324,12 +324,12 @@ def elu(x: ArrayLike, alpha: float = 1.0) -> Any:
     return _wrap(ops.add(pos, neg))
 
 
-def celu(x: ArrayLike, alpha: float = 1.0) -> Any:
+def celu(x: _ArrayLike, alpha: float = 1.0) -> Any:
     """
     Computes the Continuously Differentiable Exponential Linear Unit (CELU) activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
         alpha (float, optional): Scaling factor controlling the curvature for negative values. Defaults to 1.0.
 
     Returns:
@@ -347,12 +347,12 @@ def celu(x: ArrayLike, alpha: float = 1.0) -> Any:
     return _wrap(ops.add(pos, neg))
 
 
-def selu(x: ArrayLike) -> Any:
+def selu(x: _ArrayLike) -> Any:
     """
     Computes the Scaled Exponential Linear Unit (SELU) activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
 
     Returns:
         Any: Array with SELU applied.
@@ -360,12 +360,12 @@ def selu(x: ArrayLike) -> Any:
     return _wrap(nn.selu(_to_tensor(x)))
 
 
-def log_softmax(x: ArrayLike, axis: int = -1) -> Any:
+def log_softmax(x: _ArrayLike, axis: int = -1) -> Any:
     """
     Computes the logarithm of the softmax activation function.
 
     Args:
-        x (ArrayLike): Input array.
+        x (_ArrayLike): Input array.
         axis (int, optional): Axis along which to compute the log-softmax. Defaults to -1.
 
     Returns:

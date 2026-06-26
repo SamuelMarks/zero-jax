@@ -119,9 +119,40 @@ def tree_reduce(f: Any, tree: Any, initializer: Any = None, is_leaf: Any = None)
 def tree_transpose(
     outer_treedef: Any, inner_treedef: Any, pytree_to_transpose: Any
 ) -> Any:
-    # Extremely simplified mock logic since implementing true generic tree transpose is complex
-    # and this is just for API parity
-    return pytree_to_transpose
+    # JAX tree_transpose
+    leaves, treedef = tree_flatten(pytree_to_transpose)
+
+    # The pytree_to_transpose is an outer_tree of inner_trees.
+    # We need to chunk the leaves based on the inner and outer trees.
+    # outer_treedef has some number of leaves. Each is an inner_tree.
+    # inner_treedef has some number of leaves.
+    num_outer = outer_treedef.num_leaves
+    num_inner = inner_treedef.num_leaves
+
+    if len(leaves) != num_outer * num_inner:
+        raise ValueError("Mismatch in leaves")
+
+    # leaves are flattened as:
+    # outer0_inner0, outer0_inner1, ..., outer1_inner0, outer1_inner1...
+
+    # We want to group by inner index:
+    # inner0_outer0, inner0_outer1...
+
+    transposed_leaves = []
+    for i in range(num_inner):
+        for j in range(num_outer):
+            transposed_leaves.append(leaves[j * num_inner + i])
+
+    # Now we need to unflatten.
+    # But wait, inner_treedef's leaves will be outer_trees.
+
+    # First create the outer trees
+    inner_leaves_reconstructed = []
+    for i in range(num_inner):
+        outer_leaves = transposed_leaves[i * num_outer : (i + 1) * num_outer]
+        inner_leaves_reconstructed.append(tree_unflatten(outer_treedef, outer_leaves))
+
+    return tree_unflatten(inner_treedef, inner_leaves_reconstructed)
 
 
 def treedef_children(treedef: Any) -> Any:

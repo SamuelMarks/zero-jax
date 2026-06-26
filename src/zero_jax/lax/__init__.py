@@ -3,7 +3,7 @@
 
 from .primitives import *
 from .control_flow import *
-from .linalg import *
+from . import linalg
 
 from .missing_funcs import *
 from .types import *

@@ -57,7 +57,10 @@ def test_tree_util_added():
 
     assert jtu.tree_reduce(lambda x, y: x + y, tree) == 3
 
-    assert jtu.tree_transpose(treedef, treedef, tree) is not None
+    tree2 = {"a": {"x": 1}, "b": {"x": 2}}
+    _, outer_treedef = jtu.tree_flatten({"a": 0, "b": 0})
+    _, inner_treedef = jtu.tree_flatten({"x": 0})
+    assert jtu.tree_transpose(outer_treedef, inner_treedef, tree2) is not None
 
     assert jtu.treedef_children(treedef) == []
     assert not jtu.treedef_is_leaf(treedef)

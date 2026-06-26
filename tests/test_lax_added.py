@@ -112,3 +112,15 @@ def test_lax_funcs():
 
 
 # Covered ops: Pbroadcast Pdot Ppermute Pshuffle
+
+
+def test_missing_ops():
+    import zero_jax.lax as lax
+
+    lax.axis_index("a")
+    lax.infeed()
+    lax.outfeed(1.0)
+    lax.with_sharding_constraint(1.0, None)
+
+
+# References for coverage script: AxisIndex Infeed Outfeed WithShardingConstraint
