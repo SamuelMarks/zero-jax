@@ -614,3 +614,42 @@ def used_axis_names_jaxpr(*args: Any, **kwargs: Any) -> Any:
 def valid_jaxtype(*args: Any, **kwargs: Any) -> Any:
     """Mock implementation for valid_jaxtype."""
     raise NotImplementedError("valid_jaxtype not yet implemented in zero-jax")
+
+
+class Jaxpr:
+    """Mock implementation for Jaxpr."""
+
+    pass
+
+
+class Primitive:
+    """Mock implementation for Primitive."""
+
+    pass
+
+
+class ShapedArray:
+    """Mock implementation for ShapedArray."""
+
+    pass
+
+
+class Token:
+    """Mock implementation for Token."""
+
+    pass
+
+
+class Trace:
+    """Mock implementation for Trace."""
+
+    pass
+
+
+class Var:
+    """Mock implementation for Var."""
+
+    pass
+
+
+Value = Any

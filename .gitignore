@@ -223,3 +223,4 @@ cython_debug/
 **/*.m4a
 **/*.wma
 **/*.aac
+!src/zero_jax/lib/

@@ -1,6 +1,6 @@
 """Frontend API routing for jax.experimental.x64_context.config."""
 
-from typing import Any
+from typing import Any, Callable
 
 
 class Config:

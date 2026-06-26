@@ -1,4624 +1,968 @@
 # Frontend API Parity Plan (Tier 3/4)
 
-## API Namespace Cleanup & Corrections
-- [x] Remove `lax.equal` (should be `lax.eq`)
-- [x] Remove `lax.not_equal` (should be `lax.ne`)
-- [x] Remove `lax.greater` (should be `lax.gt`)
-- [x] Remove `lax.greater_equal` (should be `lax.ge`)
-- [x] Remove `lax.less` (should be `lax.lt`)
-- [x] Remove `lax.less_equal` (should be `lax.le`)
-- [x] Remove `lax.cholesky`, `lax.det`, `lax.eigh`, `lax.eigvalsh`, `lax.inv`, `lax.matrix_power`, `lax.pinv`, `lax.qr`, `lax.slogdet`, `lax.solve`, `lax.svd` (they belong in `lax.linalg`)
-- [x] Remove `nn.ArrayLike` from exports
-- [x] Export `random_gamma_p` from `zero_jax.random`
-- [x] Implement `tree_util` functions correctly in pure Python frontend instead of mocking (e.g. `tree_transpose`)
-
-## Missing Frontend API Surface (Target Framework Mimicry)
-The following modules, classes, and functions are missing and must be added to route correctly to `ml-switcheroo-compiler`.
+This document outlines the missing framework-specific API surface needed in `zero-jax` to reach 100% parity with JAX.
 
 - [x] `jax`
-  - [x] `api_util`
-    - [x] `argnums_partial`
-    - [x] `donation_vector`
-    - [x] `flatten_axes`
-    - [x] `flatten_fun`
-    - [x] `flatten_fun_nokwargs`
-    - [x] `rebase_donate_argnums`
-    - [x] `safe_map`
-    - [x] `shaped_abstractify`
+  - [x] `jax` (Module)
+  - [x] `lib` (Module)
+  - [x] `tree` (Module)
   - [x] `core`
-    - [x] `AbstractToken`
-    - [x] `AbstractValue`
-    - [x] `Atom`
-    - [x] `AxisSize`
-    - [x] `CallPrimitive`
-    - [x] `ClosedJaxpr`
-    - [x] `ConcreteArray`
-    - [x] `ConcretizationTypeError`
-    - [x] `DShapedArray`
-    - [x] `DropVar`
-    - [x] `Effect`
-    - [x] `Effects`
-    - [x] `EvalTrace`
-    - [x] `InDBIdx`
-    - [x] `InconclusiveDimensionOperation`
-    - [x] `InputType`
-    - [x] `Jaxpr`
-    - [x] `JaxprDebugInfo`
-    - [x] `JaxprEqn`
-    - [x] `JaxprPpContext`
-    - [x] `JaxprPpSettings`
-    - [x] `JaxprTypeError`
-    - [x] `Literal`
-    - [x] `MainTrace`
-    - [x] `MapPrimitive`
-    - [x] `NameGatheringSubst`
-    - [x] `NamedShape`
-    - [x] `OutDBIdx`
-    - [x] `OutputType`
-    - [x] `ParamDict`
-    - [x] `Primitive`
-    - [x] `ShapedArray`
-    - [x] `Sublevel`
-    - [x] `TRACER_LEAK_DEBUGGER_WARNING`
-    - [x] `ThreadLocalState`
-    - [x] `Token`
-    - [x] `Trace`
-    - [x] `TraceStack`
-    - [x] `TraceState`
-    - [x] `Tracer`
-    - [x] `UnshapedArray`
-    - [x] `Value`
-    - [x] `Var`
-    - [x] `abstract_token`
-    - [x] `apply_todos`
-    - [x] `as_named_shape`
-    - [x] `aval_mapping_handlers`
-    - [x] `axis_frame`
-    - [x] `call`
-    - [x] `call_bind_with_continuation`
-    - [x] `call_impl`
-    - [x] `call_p`
-    - [x] `check_eqn`
-    - [x] `check_jaxpr`
-    - [x] `check_type`
-    - [x] `check_valid_jaxtype`
-    - [x] `closed_call_p`
-    - [x] `concrete_aval`
-    - [x] `concrete_or_error`
-    - [x] `concretization_function_error`
-    - [x] `cur_sublevel`
-    - [x] `custom_typechecks`
-    - [x] `dedup_referents`
-    - [x] `do_subst_axis_names_jaxpr`
-    - [x] `ensure_compile_time_eval`
-    - [x] `escaped_tracer_error`
-    - [x] `eval_context`
-    - [x] `eval_jaxpr`
-    - [x] `extend_axis_env`
-    - [x] `extend_axis_env_nd`
-    - [x] `find_top_trace`
-    - [x] `full_lower`
-    - [x] `gensym`
-    - [x] `get_aval`
-    - [x] `get_referent`
-    - [x] `is_constant_dim`
-    - [x] `is_constant_shape`
-    - [x] `jaxpr_as_fun`
-    - [x] `jaxpr_uses_outfeed`
-    - [x] `jaxprs_in_params`
-    - [x] `join_effects`
-    - [x] `join_named_shapes`
-    - [x] `lattice_join`
-    - [x] `leaked_tracer_error`
-    - [x] `literalable_types`
-    - [x] `map_bind`
-    - [x] `map_bind_with_continuation`
-    - [x] `mapped_aval`
-    - [x] `max_dim`
-    - [x] `maybe_find_leaked_tracers`
-    - [x] `min_dim`
-    - [x] `new_base_main`
-    - [x] `new_jaxpr_eqn`
-    - [x] `new_main`
-    - [x] `new_sublevel`
-    - [x] `no_axis_name`
-    - [x] `no_effects`
-    - [x] `outfeed_primitives`
-    - [x] `primal_dtype_to_tangent_dtype`
-    - [x] `primitive_uses_outfeed`
-    - [x] `process_env_traces_call`
-    - [x] `process_env_traces_map`
-    - [x] `pytype_aval_mappings`
-    - [x] `raise_as_much_as_possible`
-    - [x] `raise_to_shaped`
-    - [x] `raise_to_shaped_mappings`
-    - [x] `reset_trace_state`
-    - [x] `stash_axis_env`
-    - [x] `str_eqn_compact`
-    - [x] `subjaxprs`
-    - [x] `subst_axis_names`
-    - [x] `subst_axis_names_eqn`
-    - [x] `subst_axis_names_jaxpr`
-    - [x] `subst_axis_names_var`
-    - [x] `substitute_vars_in_output_ty`
-    - [x] `thread_local_state`
-    - [x] `trace_state_clean`
-    - [x] `traverse_jaxpr_params`
-    - [x] `typecheck`
-    - [x] `typecompat`
-    - [x] `typematch`
-    - [x] `unmapped_aval`
-    - [x] `used_axis_names`
-    - [x] `used_axis_names_jaxpr`
-    - [x] `valid_jaxtype`
-  - [x] `custom_batching`
-    - [x] `custom_vmap`
-    - [x] `sequential_vmap`
+    - [x] `TRACER_LEAK_DEBUGGER_WARNING` (Attribute)
+    - [x] `Value` (Attribute)
+    - [x] `abstract_token` (Attribute)
+    - [x] `aval_mapping_handlers` (Attribute)
+    - [x] `call_p` (Attribute)
+    - [x] `closed_call_p` (Attribute)
+    - [x] `custom_typechecks` (Attribute)
+    - [x] `literalable_types` (Attribute)
+    - [x] `no_axis_name` (Attribute)
+    - [x] `no_effects` (Attribute)
+    - [x] `outfeed_primitives` (Attribute)
+    - [x] `pytype_aval_mappings` (Attribute)
+    - [x] `raise_to_shaped_mappings` (Attribute)
+    - [x] `thread_local_state` (Attribute)
+    - [x] `Jaxpr` (Class)
+    - [x] `Primitive` (Class)
+    - [x] `ShapedArray` (Class)
+    - [x] `Token` (Class)
+    - [x] `Trace` (Class)
+    - [x] `Var` (Class)
   - [x] `custom_derivatives`
-    - [x] `CustomVJPPrimal`
-    - [x] `SymbolicZero`
-    - [x] `closure_convert`
-    - [x] `custom_gradient`
-    - [x] `custom_jvp`
-    - [x] `custom_jvp_call_jaxpr_p`
-    - [x] `custom_jvp_call_p`
-    - [x] `custom_vjp`
-    - [x] `custom_vjp_call_jaxpr_p`
-    - [x] `custom_vjp_call_p`
-    - [x] `custom_vjp_primal_tree_values`
-    - [x] `linear_call`
-  - [x] `custom_transpose`
-    - [x] `custom_transpose`
-  - [x] `debug`
-    - [x] `DebugEffect`
-    - [x] `breakpoint`
-    - [x] `callback`
-    - [x] `inspect_array_sharding`
-    - [x] `print`
-    - [x] `visualize_array_sharding`
-    - [x] `visualize_sharding`
-  - [x] `distributed`
-    - [x] `initialize`
-    - [x] `shutdown`
+    - [x] `custom_jvp_call_jaxpr_p` (Attribute)
+    - [x] `custom_jvp_call_p` (Attribute)
+    - [x] `custom_vjp_call_jaxpr_p` (Attribute)
+    - [x] `custom_vjp_call_p` (Attribute)
   - [x] `dlpack`
-    - [x] `SUPPORTED_DTYPES`
-    - [x] `from_dlpack`
-    - [x] `to_dlpack`
+    - [x] `SUPPORTED_DTYPES` (Attribute)
   - [x] `dtypes`
-    - [x] `bfloat16`
-    - [x] `canonicalize_dtype`
-    - [x] `extended`
-    - [x] `finfo`
-    - [x] `float0`
-    - [x] `iinfo`
-    - [x] `issubdtype`
-    - [x] `prng_key`
-    - [x] `result_type`
-    - [x] `scalar_type_of`
-  - [x] `errors`
-    - [x] `ConcretizationTypeError`
-    - [x] `JAXIndexError`
-    - [x] `JAXTypeError`
-    - [x] `KeyReuseError`
-    - [x] `NonConcreteBooleanIndexError`
-    - [x] `SimplifiedTraceback`
-    - [x] `TracerArrayConversionError`
-    - [x] `TracerBoolConversionError`
-    - [x] `TracerIntegerConversionError`
-    - [x] `UnexpectedTracerError`
+    - [x] `float0` (Attribute)
   - [x] `experimental`
-    - [x] `EArray`
-    - [x] `compilation_cache`
-      - [x] `compilation_cache`
-        - [x] `initialize_cache`
-        - [x] `is_initialized`
-        - [x] `reset_cache`
-        - [x] `set_cache_dir`
-    - [x] `disable_x64`
-    - [x] `enable_x64`
-    - [x] `io_callback`
     - [x] `x64_context`
       - [x] `config`
-        - [x] `Config`
-        - [x] `DEFINE_bool`
-        - [x] `DEFINE_enum`
-        - [x] `DEFINE_float`
-        - [x] `DEFINE_integer`
-        - [x] `DEFINE_string`
-        - [x] `FlagHolder`
-        - [x] `Generic`
-        - [x] `Hashable`
-        - [x] `Iterator`
-        - [x] `NamedTuple`
-        - [x] `NoDefault`
-        - [x] `NoReturn`
-        - [x] `TypeVar`
-        - [x] `UPGRADE_BOOL_EXTRA_DESC`
-        - [x] `UPGRADE_BOOL_HELP`
-        - [x] `already_configured_with_absl`
-        - [x] `annotations`
-        - [x] `bcoo_cusparse_lowering`
-        - [x] `bool_env`
-        - [x] `cast`
-        - [x] `check_exists`
-        - [x] `check_tracer_leaks`
-        - [x] `checking_leaks`
-        - [x] `compilation_cache_dir`
-        - [x] `compilation_cache_include_metadata_in_key`
-        - [x] `compilation_cache_max_size`
-        - [x] `config`
-        - [x] `contextlib`
-        - [x] `custom_vjp_disable_shape_check`
-        - [x] `debug_infs`
-        - [x] `debug_key_reuse`
-        - [x] `debug_nans`
-        - [x] `default_device`
-        - [x] `default_dtype_bits`
-        - [x] `default_matmul_precision`
-        - [x] `default_prng_impl`
-        - [x] `define_bool_state`
-        - [x] `define_enum_state`
-        - [x] `define_float_state`
-        - [x] `define_int_state`
-        - [x] `define_optional_enum_state`
-        - [x] `define_optional_string_state`
-        - [x] `define_string_or_object_state`
-        - [x] `define_string_state`
-        - [x] `disable_jit`
-        - [x] `distributed_debug`
-        - [x] `dynamic_shapes`
-        - [x] `eager_pmap`
-        - [x] `enable_checks`
-        - [x] `enable_compilation_cache`
-        - [x] `enable_custom_prng`
-        - [x] `enable_custom_vjp_by_custom_transpose`
-        - [x] `enable_memories`
-        - [x] `enable_pgle`
-        - [x] `enable_x64`
-        - [x] `explain_cache_misses`
-        - [x] `explicit_device_get_scope`
-        - [x] `explicit_device_put_scope`
-        - [x] `functools`
-        - [x] `hlo_source_file_canonicalization_regex`
-        - [x] `include_full_tracebacks_in_locations`
-        - [x] `int_env`
-        - [x] `itertools`
-        - [x] `jax2tf_associative_scan_reductions`
-        - [x] `jax2tf_default_native_serialization`
-        - [x] `jax_export_calling_convention_version`
-        - [x] `jax_jit`
-          - [x] `JitState`
-          - [x] `PyArgSignature`
-          - [x] `get_enable_x64`
-          - [x] `global_state`
-          - [x] `set_thread_local_state_initialization_callback`
-          - [x] `swap_thread_local_state_disable_jit`
-          - [x] `thread_local_state`
-        - [x] `jax_pjrt_client_create_options`
-        - [x] `jax_platforms`
-        - [x] `jax_serialization_version`
-        - [x] `jax_xla_profile_version`
-        - [x] `legacy_prng_key`
-        - [x] `lib`
-          - [x] `Device`
-          - [x] `annotations`
-          - [x] `check_jaxlib_version`
-          - [x] `cpu_feature_guard`
-            - [x] `check_cpu_features`
-          - [x] `cuda_path`
-          - [x] `cuda_versions`
-          - [x] `gc`
-          - [x] `gpu_linalg`
-            - [x] `GpuLibNotLinkedError`
-            - [x] `cuda_cholesky_update`
-            - [x] `cuda_lu_pivots_to_permutation`
-            - [x] `cuda_module_name`
-            - [x] `custom_call`
-            - [x] `functools`
-            - [x] `hip_lu_pivots_to_permutation`
-            - [x] `importlib`
-            - [x] `ir`
-              - [x] `AffineAddExpr`
-              - [x] `AffineBinaryExpr`
-              - [x] `AffineCeilDivExpr`
-              - [x] `AffineConstantExpr`
-              - [x] `AffineDimExpr`
-              - [x] `AffineExpr`
-              - [x] `AffineExprList`
-              - [x] `AffineFloorDivExpr`
-              - [x] `AffineMap`
-              - [x] `AffineMapAttr`
-              - [x] `AffineModExpr`
-              - [x] `AffineMulExpr`
-              - [x] `AffineSymbolExpr`
-              - [x] `ArrayAttr`
-              - [x] `ArrayAttributeIterator`
-              - [x] `AsmState`
-              - [x] `AttrBuilder`
-              - [x] `Attribute`
-              - [x] `BF16Type`
-              - [x] `Block`
-              - [x] `BlockArgument`
-              - [x] `BlockArgumentList`
-              - [x] `BlockIterator`
-              - [x] `BlockList`
-              - [x] `BoolAttr`
-              - [x] `ComplexType`
-              - [x] `Context`
-              - [x] `DenseBoolArrayAttr`
-              - [x] `DenseBoolArrayIterator`
-              - [x] `DenseElementsAttr`
-              - [x] `DenseF32ArrayAttr`
-              - [x] `DenseF32ArrayIterator`
-              - [x] `DenseF64ArrayAttr`
-              - [x] `DenseF64ArrayIterator`
-              - [x] `DenseFPElementsAttr`
-              - [x] `DenseI16ArrayAttr`
-              - [x] `DenseI16ArrayIterator`
-              - [x] `DenseI32ArrayAttr`
-              - [x] `DenseI32ArrayIterator`
-              - [x] `DenseI64ArrayAttr`
-              - [x] `DenseI64ArrayIterator`
-              - [x] `DenseI8ArrayAttr`
-              - [x] `DenseI8ArrayIterator`
-              - [x] `DenseIntElementsAttr`
-              - [x] `DenseResourceElementsAttr`
-              - [x] `Diagnostic`
-              - [x] `DiagnosticHandler`
-              - [x] `DiagnosticInfo`
-              - [x] `DiagnosticSeverity`
-              - [x] `Dialect`
-              - [x] `DialectDescriptor`
-              - [x] `DialectRegistry`
-              - [x] `Dialects`
-              - [x] `DictAttr`
-              - [x] `F16Type`
-              - [x] `F32Type`
-              - [x] `F64Type`
-              - [x] `FlatSymbolRefAttr`
-              - [x] `Float8E4M3B11FNUZType`
-              - [x] `Float8E4M3FNType`
-              - [x] `Float8E4M3FNUZType`
-              - [x] `Float8E5M2FNUZType`
-              - [x] `Float8E5M2Type`
-              - [x] `FloatAttr`
-              - [x] `FloatTF32Type`
-              - [x] `FloatType`
-              - [x] `FunctionType`
-              - [x] `IndexType`
-              - [x] `InferShapedTypeOpInterface`
-              - [x] `InferTypeOpInterface`
-              - [x] `InsertionPoint`
-              - [x] `IntegerAttr`
-              - [x] `IntegerSet`
-              - [x] `IntegerSetConstraint`
-              - [x] `IntegerSetConstraintList`
-              - [x] `IntegerType`
-              - [x] `Location`
-              - [x] `MLIRError`
-              - [x] `MemRefType`
-              - [x] `Module`
-              - [x] `NamedAttribute`
-              - [x] `NoneType`
-              - [x] `OpAttributeMap`
-              - [x] `OpOperand`
-              - [x] `OpOperandIterator`
-              - [x] `OpOperandList`
-              - [x] `OpResult`
-              - [x] `OpResultList`
-              - [x] `OpSuccessors`
-              - [x] `OpView`
-              - [x] `OpaqueAttr`
-              - [x] `OpaqueType`
-              - [x] `Operation`
-              - [x] `OperationIterator`
-              - [x] `OperationList`
-              - [x] `RankedTensorType`
-              - [x] `Region`
-              - [x] `RegionIterator`
-              - [x] `RegionSequence`
-              - [x] `ShapedType`
-              - [x] `ShapedTypeComponents`
-              - [x] `StridedLayoutAttr`
-              - [x] `StringAttr`
-              - [x] `SymbolRefAttr`
-              - [x] `SymbolTable`
-              - [x] `TupleType`
-              - [x] `Type`
-              - [x] `TypeAttr`
-              - [x] `TypeID`
-              - [x] `UnitAttr`
-              - [x] `UnrankedMemRefType`
-              - [x] `UnrankedTensorType`
-              - [x] `Value`
-              - [x] `VectorType`
-              - [x] `WalkOrder`
-              - [x] `WalkResult`
-              - [x] `get_dialect_registry`
-              - [x] `np`
-              - [x] `register_attribute_builder`
-              - [x] `register_type_caster`
-              - [x] `register_value_caster`
-            - [x] `np`
-            - [x] `operator`
-            - [x] `partial`
-            - [x] `xla_client`
-              - [x] `ArrayImpl`
-              - [x] `Client`
-              - [x] `CompileOptions`
-              - [x] `ConvolutionDimensionNumbers`
-              - [x] `CurrentSourceInfoMetadata`
-              - [x] `CustomCallHandler`
-              - [x] `CustomCallTargetTraits`
-              - [x] `DTYPE_TO_XLA_ELEMENT_TYPE`
-              - [x] `Device`
-              - [x] `DeviceAssignment`
-              - [x] `DeviceList`
-              - [x] `DeviceTopology`
-              - [x] `DotDimensionNumbers`
-              - [x] `FftType`
-              - [x] `Frame`
-              - [x] `GSPMDSharding`
-              - [x] `GatherDimensionNumbers`
-              - [x] `HloSharding`
-              - [x] `HostBufferSemantics`
-              - [x] `Layout`
-              - [x] `LoadedExecutable`
-              - [x] `LoadedExecutable_execute`
-              - [x] `LoadedExecutable_execute_with_token`
-              - [x] `Mapping`
-              - [x] `Memory`
-              - [x] `NamedSharding`
-              - [x] `OpMetadata`
-              - [x] `OpSharding`
-              - [x] `PaddingConfig`
-              - [x] `PaddingConfigDimension`
-              - [x] `PaddingType`
-              - [x] `PjRtLayout`
-              - [x] `PmapSharding`
-              - [x] `PrecisionConfig`
-              - [x] `PrimitiveType`
-              - [x] `ProgramShape`
-              - [x] `Protocol`
-              - [x] `ReplicaGroup`
-              - [x] `ScatterDimensionNumbers`
-              - [x] `Shape`
-              - [x] `ShapeIndex`
-              - [x] `Sharding`
-              - [x] `SingleDeviceSharding`
-              - [x] `Traceback`
-              - [x] `XLA_ELEMENT_TYPE_TO_DTYPE`
-              - [x] `XlaBuilder`
-              - [x] `XlaComputation`
-              - [x] `XlaOp`
-              - [x] `XlaRuntimeError`
-              - [x] `annotations`
-              - [x] `array_result_handler`
-              - [x] `atexit`
-              - [x] `batched_block_until_ready`
-              - [x] `batched_copy_array_to_devices_with_sharding`
-              - [x] `batched_device_put`
-              - [x] `bfloat16`
-              - [x] `check_and_canonicalize_memory_kind`
-              - [x] `contextlib`
-              - [x] `custom_call_targets`
-              - [x] `dtype_to_etype`
-              - [x] `encode_inspect_sharding_callback`
-              - [x] `enum`
-              - [x] `execute_with_python_values`
-              - [x] `execute_with_python_values_replicated`
-              - [x] `float8_e4m3b11fnuz`
-              - [x] `float8_e4m3fn`
-              - [x] `float8_e4m3fnuz`
-              - [x] `float8_e5m2`
-              - [x] `float8_e5m2fnuz`
-              - [x] `generate_pjrt_gpu_plugin_options`
-              - [x] `get_topology_for_devices`
-              - [x] `gzip`
-              - [x] `heap_profile`
-              - [x] `hlo_sharding_util`
-                - [x] `PartiallyReplicateTiledShardingOnDims`
-              - [x] `ifrt_programs`
-                - [x] `CompileOptions`
-                - [x] `Program`
-                - [x] `make_hlo_program`
-                - [x] `make_plugin_compile_options`
-                - [x] `make_plugin_program`
-                - [x] `make_xla_compile_options`
-              - [x] `initialize_pjrt_plugin`
-              - [x] `inspect`
-              - [x] `load_pjrt_plugin_dynamically`
-              - [x] `load_pjrt_plugin_with_c_api`
-              - [x] `logger`
-              - [x] `logging`
-              - [x] `make_c_api_client`
-              - [x] `make_c_api_device_topology`
-              - [x] `make_convolution_dimension_numbers`
-              - [x] `make_cpu_client`
-              - [x] `make_dot_dimension_numbers`
-              - [x] `make_gpu_client`
-              - [x] `make_padding_config`
-              - [x] `make_replica_groups`
-              - [x] `make_tfrt_tpu_c_api_client`
-              - [x] `make_tfrt_tpu_c_api_device_topology`
-              - [x] `make_tpu_client`
-              - [x] `ml_dtypes`
-              - [x] `mlir_api_version`
-              - [x] `np`
-              - [x] `ops`
-                - [x] `Abs`
-                - [x] `Acos`
-                - [x] `Acosh`
-                - [x] `Add`
-                - [x] `AfterAll`
-                - [x] `AllGather`
-                - [x] `AllReduce`
-                - [x] `AllToAll`
-                - [x] `And`
-                - [x] `ApproxTopK`
-                - [x] `ApproxTopKFallback`
-                - [x] `ApproxTopKReductionOutputSize`
-                - [x] `Asin`
-                - [x] `Asinh`
-                - [x] `Atan`
-                - [x] `Atan2`
-                - [x] `Atanh`
-                - [x] `BesselI0e`
-                - [x] `BesselI1e`
-                - [x] `BitcastConvertType`
-                - [x] `Broadcast`
-                - [x] `BroadcastInDim`
-                - [x] `Call`
-                - [x] `Cbrt`
-                - [x] `Ceil`
-                - [x] `Cholesky`
-                - [x] `Clamp`
-                - [x] `Clz`
-                - [x] `Collapse`
-                - [x] `CollectivePermute`
-                - [x] `Complex`
-                - [x] `ConcatInDim`
-                - [x] `Conditional`
-                - [x] `Conj`
-                - [x] `Constant`
-                - [x] `ConstantLiteral`
-                - [x] `ConvGeneralDilated`
-                - [x] `ConvertElementType`
-                - [x] `Cos`
-                - [x] `Cosh`
-                - [x] `CreateToken`
-                - [x] `CrossReplicaSum`
-                - [x] `CustomCall`
-                - [x] `CustomCallApiVersion`
-                - [x] `CustomCallSchedule`
-                - [x] `CustomCallWithAliasing`
-                - [x] `CustomCallWithComputation`
-                - [x] `CustomCallWithLayout`
-                - [x] `Digamma`
-                - [x] `Div`
-                - [x] `Dot`
-                - [x] `DotGeneral`
-                - [x] `DynamicReshape`
-                - [x] `DynamicSlice`
-                - [x] `DynamicUpdateSlice`
-                - [x] `Eigh`
-                - [x] `Eq`
-                - [x] `Erf`
-                - [x] `ErfInv`
-                - [x] `Erfc`
-                - [x] `Exp`
-                - [x] `Expm1`
-                - [x] `Fft`
-                - [x] `Floor`
-                - [x] `Gather`
-                - [x] `Ge`
-                - [x] `GetDimensionSize`
-                - [x] `GetTupleElement`
-                - [x] `Gt`
-                - [x] `Igamma`
-                - [x] `IgammaGradA`
-                - [x] `Igammac`
-                - [x] `Imag`
-                - [x] `InfeedWithToken`
-                - [x] `Iota`
-                - [x] `IsFinite`
-                - [x] `LU`
-                - [x] `Le`
-                - [x] `Lgamma`
-                - [x] `Log`
-                - [x] `Log1p`
-                - [x] `Lt`
-                - [x] `Map`
-                - [x] `Max`
-                - [x] `Min`
-                - [x] `Mul`
-                - [x] `Ne`
-                - [x] `Neg`
-                - [x] `NextAfter`
-                - [x] `Not`
-                - [x] `OptimizationBarrier`
-                - [x] `Or`
-                - [x] `OutfeedWithToken`
-                - [x] `Pad`
-                - [x] `Parameter`
-                - [x] `PopulationCount`
-                - [x] `Pow`
-                - [x] `ProductOfElementaryHouseholderReflectors`
-                - [x] `QR`
-                - [x] `QrDecomposition`
-                - [x] `RandomAlgorithm`
-                - [x] `RandomGammaGrad`
-                - [x] `Real`
-                - [x] `Reciprocal`
-                - [x] `RecvFromHost`
-                - [x] `Reduce`
-                - [x] `ReducePrecision`
-                - [x] `ReduceScatter`
-                - [x] `ReduceWindowWithGeneralPadding`
-                - [x] `RegularizedIncompleteBeta`
-                - [x] `Rem`
-                - [x] `RemoveDynamicDimension`
-                - [x] `ReplicaId`
-                - [x] `Reshape`
-                - [x] `Rev`
-                - [x] `RngBitGenerator`
-                - [x] `RngNormal`
-                - [x] `RngUniform`
-                - [x] `Round`
-                - [x] `Rsqrt`
-                - [x] `SVD`
-                - [x] `Scatter`
-                - [x] `Select`
-                - [x] `SelectAndScatterWithGeneralPadding`
-                - [x] `SendToHost`
-                - [x] `SetDimensionSize`
-                - [x] `ShiftLeft`
-                - [x] `ShiftRightArithmetic`
-                - [x] `ShiftRightLogical`
-                - [x] `Sign`
-                - [x] `Sin`
-                - [x] `Sinh`
-                - [x] `Slice`
-                - [x] `SliceInDim`
-                - [x] `Sort`
-                - [x] `Sqrt`
-                - [x] `Square`
-                - [x] `Sub`
-                - [x] `Tan`
-                - [x] `Tanh`
-                - [x] `TopK`
-                - [x] `Transpose`
-                - [x] `TriangularSolve`
-                - [x] `TriangularSolveOptions_Transpose`
-                - [x] `While`
-                - [x] `Xor`
-                - [x] `Zeta`
-              - [x] `os`
-              - [x] `pjrt_plugin_initialized`
-              - [x] `pjrt_plugin_loaded`
-              - [x] `profiler`
-                - [x] `ProfileOptions`
-                - [x] `ProfilerServer`
-                - [x] `ProfilerSession`
-                - [x] `TraceMe`
-                - [x] `aggregate_profiled_instructions`
-                - [x] `get_fdo_profile`
-                - [x] `get_profiled_instructions_proto`
-                - [x] `register_plugin_profiler`
-                - [x] `start_server`
-              - [x] `register_custom_call_handler`
-              - [x] `register_custom_call_partitioner`
-              - [x] `register_custom_call_target`
-              - [x] `shape_from_pyval`
-              - [x] `threading`
-              - [x] `tracebacks`
-              - [x] `weakref_lru_cache`
-              - [x] `window_padding_type_to_pad_values`
-              - [x] `xla_platform_names`
-          - [x] `gpu_prng`
-            - [x] `GpuLibNotLinkedError`
-            - [x] `annotations`
-            - [x] `cuda_module_name`
-            - [x] `cuda_threefry2x32`
-            - [x] `custom_call`
-            - [x] `functools`
-            - [x] `importlib`
-            - [x] `ir`
-            - [x] `itertools`
-            - [x] `operator`
-            - [x] `partial`
-            - [x] `rocm_threefry2x32`
-            - [x] `xla_client`
-          - [x] `gpu_rnn`
-            - [x] `GpuLibNotLinkedError`
-            - [x] `cuda_module_name`
-            - [x] `cudnn_rnn_bwd_lowering`
-            - [x] `cudnn_rnn_lowering`
-            - [x] `hlo`
-              - [x] `AbsOp`
-              - [x] `AddOp`
-              - [x] `AfterAllOp`
-              - [x] `AllGatherOp`
-              - [x] `AllReduceOp`
-              - [x] `AllToAllOp`
-              - [x] `AndOp`
-              - [x] `Atan2Op`
-              - [x] `BatchNormGradOp`
-              - [x] `BatchNormInferenceOp`
-              - [x] `BatchNormTrainingOp`
-              - [x] `BitcastConvertOp`
-              - [x] `BroadcastInDimOp`
-              - [x] `BroadcastOp`
-              - [x] `CaseOp`
-              - [x] `CbrtOp`
-              - [x] `CeilOp`
-              - [x] `ChannelHandle`
-              - [x] `CholeskyOp`
-              - [x] `ClampOp`
-              - [x] `ClzOp`
-              - [x] `CollectiveBroadcastOp`
-              - [x] `CollectivePermuteOp`
-              - [x] `CompareOp`
-              - [x] `ComparisonDirectionAttr`
-              - [x] `ComparisonTypeAttr`
-              - [x] `ComplexOp`
-              - [x] `CompositeOp`
-              - [x] `ConcatenateOp`
-              - [x] `ConstantOp`
-              - [x] `ConvDimensionNumbers`
-              - [x] `ConvertOp`
-              - [x] `ConvolutionOp`
-              - [x] `CosineOp`
-              - [x] `CreateTokenOp`
-              - [x] `CrossReplicaSumOp`
-              - [x] `CustomCallOp`
-              - [x] `DivOp`
-              - [x] `DotDimensionNumbers`
-              - [x] `DotGeneralOp`
-              - [x] `DotOp`
-              - [x] `DynamicBroadcastInDimOp`
-              - [x] `DynamicConvOp`
-              - [x] `DynamicGatherOp`
-              - [x] `DynamicIotaOp`
-              - [x] `DynamicPadOp`
-              - [x] `DynamicReshapeOp`
-              - [x] `DynamicSliceOp`
-              - [x] `DynamicUpdateSliceOp`
-              - [x] `EinsumOp`
-              - [x] `ExpOp`
-              - [x] `Expm1Op`
-              - [x] `FftOp`
-              - [x] `FftTypeAttr`
-              - [x] `FloorOp`
-              - [x] `GatherDimensionNumbers`
-              - [x] `GatherOp`
-              - [x] `GetDimensionSizeOp`
-              - [x] `GetTupleElementOp`
-              - [x] `IfOp`
-              - [x] `ImagOp`
-              - [x] `InfeedOp`
-              - [x] `IotaOp`
-              - [x] `IsFiniteOp`
-              - [x] `Log1pOp`
-              - [x] `LogOp`
-              - [x] `LogisticOp`
-              - [x] `MapOp`
-              - [x] `MaxOp`
-              - [x] `MinOp`
-              - [x] `MulOp`
-              - [x] `NegOp`
-              - [x] `NotOp`
-              - [x] `OptimizationBarrierOp`
-              - [x] `OrOp`
-              - [x] `OutfeedOp`
-              - [x] `OutputOperandAlias`
-              - [x] `PadOp`
-              - [x] `PartitionIdOp`
-              - [x] `PopulationCountOp`
-              - [x] `PowOp`
-              - [x] `PrecisionAttr`
-              - [x] `RealDynamicSliceOp`
-              - [x] `RealOp`
-              - [x] `RecvOp`
-              - [x] `ReduceOp`
-              - [x] `ReducePrecisionOp`
-              - [x] `ReduceScatterOp`
-              - [x] `ReduceWindowOp`
-              - [x] `RemOp`
-              - [x] `ReplicaIdOp`
-              - [x] `ReshapeOp`
-              - [x] `ReturnOp`
-              - [x] `ReverseOp`
-              - [x] `RngAlgorithmAttr`
-              - [x] `RngBitGeneratorOp`
-              - [x] `RngDistributionAttr`
-              - [x] `RngOp`
-              - [x] `RoundNearestEvenOp`
-              - [x] `RoundOp`
-              - [x] `RsqrtOp`
-              - [x] `ScatterDimensionNumbers`
-              - [x] `ScatterOp`
-              - [x] `SelectAndScatterOp`
-              - [x] `SelectOp`
-              - [x] `SendOp`
-              - [x] `SetDimensionSizeOp`
-              - [x] `ShiftLeftOp`
-              - [x] `ShiftRightArithmeticOp`
-              - [x] `ShiftRightLogicalOp`
-              - [x] `SignOp`
-              - [x] `SineOp`
-              - [x] `SliceOp`
-              - [x] `SortOp`
-              - [x] `SqrtOp`
-              - [x] `SubtractOp`
-              - [x] `TanhOp`
-              - [x] `TokenType`
-              - [x] `TorchIndexSelectOp`
-              - [x] `TransposeAttr`
-              - [x] `TransposeOp`
-              - [x] `TriangularSolveOp`
-              - [x] `TupleOp`
-              - [x] `TypeExtensions`
-              - [x] `UnaryEinsumOp`
-              - [x] `UniformDequantizeOp`
-              - [x] `UniformQuantizeOp`
-              - [x] `WhileOp`
-              - [x] `XorOp`
-              - [x] `abs`
-              - [x] `add`
-              - [x] `after_all`
-              - [x] `all_gather`
-              - [x] `all_reduce`
-              - [x] `all_to_all`
-              - [x] `and_`
-              - [x] `atan2`
-              - [x] `batch_norm_grad`
-              - [x] `batch_norm_inference`
-              - [x] `batch_norm_training`
-              - [x] `bitcast_convert`
-              - [x] `broadcast`
-              - [x] `broadcast_in_dim`
-              - [x] `builtins`
-              - [x] `case`
-              - [x] `cbrt`
-              - [x] `ceil`
-              - [x] `cholesky`
-              - [x] `clamp`
-              - [x] `collective_broadcast`
-              - [x] `collective_permute`
-              - [x] `compare`
-              - [x] `complex`
-              - [x] `composite`
-              - [x] `concatenate`
-              - [x] `constant`
-              - [x] `convert`
-              - [x] `convolution`
-              - [x] `cosine`
-              - [x] `count_leading_zeros`
-              - [x] `create_token`
-              - [x] `cross_replica_sum`
-              - [x] `custom_call`
-              - [x] `deserialize_portable_artifact`
-              - [x] `divide`
-              - [x] `dot`
-              - [x] `dot_general`
-              - [x] `dynamic_broadcast_in_dim`
-              - [x] `dynamic_conv`
-              - [x] `dynamic_gather`
-              - [x] `dynamic_iota`
-              - [x] `dynamic_pad`
-              - [x] `dynamic_reshape`
-              - [x] `dynamic_slice`
-              - [x] `dynamic_update_slice`
-              - [x] `einsum`
-              - [x] `eval_module`
-              - [x] `exponential`
-              - [x] `exponential_minus_one`
-              - [x] `fft`
-              - [x] `floor`
-              - [x] `gather`
-              - [x] `get_api_version`
-              - [x] `get_current_version`
-              - [x] `get_dimension_size`
-              - [x] `get_minimum_version`
-              - [x] `get_tuple_element`
-              - [x] `if_`
-              - [x] `imag`
-              - [x] `infeed`
-              - [x] `iota`
-              - [x] `is_finite`
-              - [x] `log`
-              - [x] `log_plus_one`
-              - [x] `logistic`
-              - [x] `map`
-              - [x] `maximum`
-              - [x] `minimum`
-              - [x] `multiply`
-              - [x] `negate`
-              - [x] `not_`
-              - [x] `optimization_barrier`
-              - [x] `or_`
-              - [x] `outfeed`
-              - [x] `pad`
-              - [x] `partition_id`
-              - [x] `popcnt`
-              - [x] `power`
-              - [x] `real`
-              - [x] `real_dynamic_slice`
-              - [x] `recv`
-              - [x] `reduce`
-              - [x] `reduce_precision`
-              - [x] `reduce_scatter`
-              - [x] `reduce_window`
-              - [x] `register_dialect`
-              - [x] `remainder`
-              - [x] `replica_id`
-              - [x] `reshape`
-              - [x] `return_`
-              - [x] `reverse`
-              - [x] `rng`
-              - [x] `rng_bit_generator`
-              - [x] `round_nearest_afz`
-              - [x] `round_nearest_even`
-              - [x] `rsqrt`
-              - [x] `scatter`
-              - [x] `select`
-              - [x] `select_and_scatter`
-              - [x] `send`
-              - [x] `serialize_portable_artifact`
-              - [x] `set_dimension_size`
-              - [x] `shift_left`
-              - [x] `shift_right_arithmetic`
-              - [x] `shift_right_logical`
-              - [x] `sign`
-              - [x] `sine`
-              - [x] `slice`
-              - [x] `sort`
-              - [x] `sqrt`
-              - [x] `subtract`
-              - [x] `tanh`
-              - [x] `torch_index_select`
-              - [x] `transpose`
-              - [x] `triangular_solve`
-              - [x] `tuple`
-              - [x] `unary_einsum`
-              - [x] `uniform_dequantize`
-              - [x] `uniform_quantize`
-              - [x] `while_`
-              - [x] `xor`
-            - [x] `importlib`
-            - [x] `ir`
-            - [x] `np`
-            - [x] `xla_client`
-          - [x] `gpu_solver`
-            - [x] `DimensionSize`
-            - [x] `GpuLibNotLinkedError`
-            - [x] `ShapeTypePair`
-            - [x] `cuda_csrlsvqr`
-            - [x] `cuda_geqrf`
-            - [x] `cuda_geqrf_batched`
-            - [x] `cuda_gesvd`
-            - [x] `cuda_getrf`
-            - [x] `cuda_module_name`
-            - [x] `cuda_orgqr`
-            - [x] `cuda_syevd`
-            - [x] `cuda_sytrd`
-            - [x] `custom_call`
-            - [x] `dense_int_array`
-            - [x] `ensure_hlo_s32`
-            - [x] `hlo`
-            - [x] `hlo_s32`
-            - [x] `importlib`
-            - [x] `ir`
-            - [x] `math`
-            - [x] `mk_result_types_and_shapes`
-            - [x] `np`
-            - [x] `partial`
-            - [x] `rocm_geqrf`
-            - [x] `rocm_geqrf_batched`
-            - [x] `rocm_gesvd`
-            - [x] `rocm_getrf`
-            - [x] `rocm_orgqr`
-            - [x] `rocm_syevd`
-            - [x] `rocm_sytrd`
-            - [x] `xla_client`
-          - [x] `gpu_sparse`
-            - [x] `cuda_coo_fromdense`
-            - [x] `cuda_coo_matmat`
-            - [x] `cuda_coo_matvec`
-            - [x] `cuda_coo_todense`
-            - [x] `cuda_csr_fromdense`
-            - [x] `cuda_csr_matmat`
-            - [x] `cuda_csr_matvec`
-            - [x] `cuda_csr_todense`
-            - [x] `cuda_gtsv2`
-            - [x] `cuda_is_supported`
-            - [x] `cuda_module_name`
-            - [x] `custom_call`
-            - [x] `importlib`
-            - [x] `ir`
-            - [x] `math`
-            - [x] `mk_result_types_and_shapes`
-            - [x] `np`
-            - [x] `partial`
-            - [x] `rocm_coo_fromdense`
-            - [x] `rocm_coo_matmat`
-            - [x] `rocm_coo_matvec`
-            - [x] `rocm_coo_todense`
-            - [x] `rocm_csr_fromdense`
-            - [x] `rocm_csr_matmat`
-            - [x] `rocm_csr_matvec`
-            - [x] `rocm_csr_todense`
-            - [x] `rocm_gtsv2`
-            - [x] `rocm_is_supported`
-            - [x] `xla_client`
-          - [x] `gpu_triton`
-            - [x] `cuda_module_name`
-            - [x] `importlib`
-            - [x] `xla_client`
-          - [x] `hlo_helpers`
-            - [x] `DimensionSize`
-            - [x] `ShapeTypePair`
-            - [x] `annotations`
-            - [x] `custom_call`
-            - [x] `dense_int_array`
-            - [x] `dtype_to_ir_type`
-            - [x] `ensure_hlo_s32`
-            - [x] `hlo`
-            - [x] `hlo_add`
-            - [x] `hlo_const`
-            - [x] `hlo_min`
-            - [x] `hlo_s32`
-            - [x] `hlo_u8`
-            - [x] `ir`
-            - [x] `mk_result_types_and_shapes`
-            - [x] `np`
-            - [x] `partial`
-            - [x] `shape_dtype_to_ir_type`
-            - [x] `shape_tensor`
-          - [x] `jax`
-          - [x] `jax_jit`
-          - [x] `jaxlib`
-            - [x] `cpu`
-            - [x] `cpu_feature_guard`
-            - [x] `gpu_common_utils`
-              - [x] `GpuLibNotLinkedError`
-            - [x] `gpu_linalg`
-            - [x] `gpu_prng`
-            - [x] `gpu_rnn`
-            - [x] `gpu_solver`
-            - [x] `gpu_sparse`
-            - [x] `gpu_triton`
-            - [x] `hlo_helpers`
-            - [x] `lapack`
-              - [x] `DimensionSize`
-              - [x] `ShapeTypePair`
-              - [x] `custom_call`
-              - [x] `ensure_hlo_s32`
-              - [x] `gees_hlo`
-              - [x] `geev_hlo`
-              - [x] `gehrd_hlo`
-              - [x] `geqrf_hlo`
-              - [x] `gesdd_hlo`
-              - [x] `getrf_hlo`
-              - [x] `hlo`
-              - [x] `hlo_add`
-              - [x] `hlo_min`
-              - [x] `hlo_s32`
-              - [x] `hlo_u8`
-              - [x] `ir`
-              - [x] `mk_result_types_and_shapes`
-              - [x] `np`
-              - [x] `orgqr_hlo`
-              - [x] `potrf_hlo`
-              - [x] `syevd_hlo`
-              - [x] `sytrd_hlo`
-              - [x] `trsm_hlo`
-              - [x] `xla_client`
-            - [x] `mlir`
-              - [x] `dialects`
-                - [x] `arith`
-                  - [x] `AddFOp`
-                  - [x] `AddIOp`
-                  - [x] `AddUIExtendedOp`
-                  - [x] `AffineAddExpr`
-                  - [x] `AffineBinaryExpr`
-                  - [x] `AffineCeilDivExpr`
-                  - [x] `AffineConstantExpr`
-                  - [x] `AffineDimExpr`
-                  - [x] `AffineExpr`
-                  - [x] `AffineExprList`
-                  - [x] `AffineFloorDivExpr`
-                  - [x] `AffineMap`
-                  - [x] `AffineMapAttr`
-                  - [x] `AffineModExpr`
-                  - [x] `AffineMulExpr`
-                  - [x] `AffineSymbolExpr`
-                  - [x] `AndIOp`
-                  - [x] `ArrayAttr`
-                  - [x] `ArrayAttributeIterator`
-                  - [x] `AsmState`
-                  - [x] `AtomicRMWKind`
-                  - [x] `AttrBuilder`
-                  - [x] `Attribute`
-                  - [x] `BF16Type`
-                  - [x] `BitcastOp`
-                  - [x] `Block`
-                  - [x] `BlockArgument`
-                  - [x] `BlockArgumentList`
-                  - [x] `BlockIterator`
-                  - [x] `BlockList`
-                  - [x] `BoolAttr`
-                  - [x] `CeilDivSIOp`
-                  - [x] `CeilDivUIOp`
-                  - [x] `CmpFOp`
-                  - [x] `CmpFPredicate`
-                  - [x] `CmpIOp`
-                  - [x] `CmpIPredicate`
-                  - [x] `ComplexType`
-                  - [x] `ConstantOp`
-                  - [x] `Context`
-                  - [x] `DenseBoolArrayAttr`
-                  - [x] `DenseBoolArrayIterator`
-                  - [x] `DenseElementsAttr`
-                  - [x] `DenseF32ArrayAttr`
-                  - [x] `DenseF32ArrayIterator`
-                  - [x] `DenseF64ArrayAttr`
-                  - [x] `DenseF64ArrayIterator`
-                  - [x] `DenseFPElementsAttr`
-                  - [x] `DenseI16ArrayAttr`
-                  - [x] `DenseI16ArrayIterator`
-                  - [x] `DenseI32ArrayAttr`
-                  - [x] `DenseI32ArrayIterator`
-                  - [x] `DenseI64ArrayAttr`
-                  - [x] `DenseI64ArrayIterator`
-                  - [x] `DenseI8ArrayAttr`
-                  - [x] `DenseI8ArrayIterator`
-                  - [x] `DenseIntElementsAttr`
-                  - [x] `DenseResourceElementsAttr`
-                  - [x] `Diagnostic`
-                  - [x] `DiagnosticHandler`
-                  - [x] `DiagnosticInfo`
-                  - [x] `DiagnosticSeverity`
-                  - [x] `Dialect`
-                  - [x] `DialectDescriptor`
-                  - [x] `DialectRegistry`
-                  - [x] `Dialects`
-                  - [x] `DictAttr`
-                  - [x] `DivFOp`
-                  - [x] `DivSIOp`
-                  - [x] `DivUIOp`
-                  - [x] `ExtFOp`
-                  - [x] `ExtSIOp`
-                  - [x] `ExtUIOp`
-                  - [x] `F16Type`
-                  - [x] `F32Type`
-                  - [x] `F64Type`
-                  - [x] `FPToSIOp`
-                  - [x] `FPToUIOp`
-                  - [x] `FastMathFlags`
-                  - [x] `FlatSymbolRefAttr`
-                  - [x] `Float8E4M3B11FNUZType`
-                  - [x] `Float8E4M3FNType`
-                  - [x] `Float8E4M3FNUZType`
-                  - [x] `Float8E5M2FNUZType`
-                  - [x] `Float8E5M2Type`
-                  - [x] `FloatAttr`
-                  - [x] `FloatTF32Type`
-                  - [x] `FloatType`
-                  - [x] `FloorDivSIOp`
-                  - [x] `FunctionType`
-                  - [x] `IndexCastOp`
-                  - [x] `IndexCastUIOp`
-                  - [x] `IndexType`
-                  - [x] `InferShapedTypeOpInterface`
-                  - [x] `InferTypeOpInterface`
-                  - [x] `InsertionPoint`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `IntegerAttr`
-                  - [x] `IntegerOverflowFlags`
-                  - [x] `IntegerSet`
-                  - [x] `IntegerSetConstraint`
-                  - [x] `IntegerSetConstraintList`
-                  - [x] `IntegerType`
-                  - [x] `Location`
-                  - [x] `MLIRError`
-                  - [x] `MaxNumFOp`
-                  - [x] `MaxSIOp`
-                  - [x] `MaxUIOp`
-                  - [x] `MaximumFOp`
-                  - [x] `MemRefType`
-                  - [x] `MinNumFOp`
-                  - [x] `MinSIOp`
-                  - [x] `MinUIOp`
-                  - [x] `MinimumFOp`
-                  - [x] `Module`
-                  - [x] `MulFOp`
-                  - [x] `MulIOp`
-                  - [x] `MulSIExtendedOp`
-                  - [x] `MulUIExtendedOp`
-                  - [x] `NamedAttribute`
-                  - [x] `NegFOp`
-                  - [x] `NoneType`
-                  - [x] `OpAttributeMap`
-                  - [x] `OpOperand`
-                  - [x] `OpOperandIterator`
-                  - [x] `OpOperandList`
-                  - [x] `OpResult`
-                  - [x] `OpResultList`
-                  - [x] `OpSuccessors`
-                  - [x] `OpView`
-                  - [x] `OpaqueAttr`
-                  - [x] `OpaqueType`
-                  - [x] `Operation`
-                  - [x] `OperationIterator`
-                  - [x] `OperationList`
-                  - [x] `OrIOp`
-                  - [x] `RankedTensorType`
-                  - [x] `Region`
-                  - [x] `RegionIterator`
-                  - [x] `RegionSequence`
-                  - [x] `RemFOp`
-                  - [x] `RemSIOp`
-                  - [x] `RemUIOp`
-                  - [x] `RoundingMode`
-                  - [x] `SIToFPOp`
-                  - [x] `SelectOp`
-                  - [x] `ShLIOp`
-                  - [x] `ShRSIOp`
-                  - [x] `ShRUIOp`
-                  - [x] `ShapedType`
-                  - [x] `ShapedTypeComponents`
-                  - [x] `StridedLayoutAttr`
-                  - [x] `StringAttr`
-                  - [x] `SubFOp`
-                  - [x] `SubIOp`
-                  - [x] `SymbolRefAttr`
-                  - [x] `SymbolTable`
-                  - [x] `TruncFOp`
-                  - [x] `TruncIOp`
-                  - [x] `TupleType`
-                  - [x] `Type`
-                  - [x] `TypeAttr`
-                  - [x] `TypeID`
-                  - [x] `UIToFPOp`
-                  - [x] `UnitAttr`
-                  - [x] `UnrankedMemRefType`
-                  - [x] `UnrankedTensorType`
-                  - [x] `Value`
-                  - [x] `VectorType`
-                  - [x] `WalkOrder`
-                  - [x] `WalkResult`
-                  - [x] `XOrIOp`
-                  - [x] `addf`
-                  - [x] `addi`
-                  - [x] `addui_extended`
-                  - [x] `andi`
-                  - [x] `auto`
-                  - [x] `bitcast`
-                  - [x] `builtins`
-                  - [x] `ceildivsi`
-                  - [x] `ceildivui`
-                  - [x] `cmpf`
-                  - [x] `cmpi`
-                  - [x] `constant`
-                  - [x] `divf`
-                  - [x] `divsi`
-                  - [x] `divui`
-                  - [x] `extf`
-                  - [x] `extsi`
-                  - [x] `extui`
-                  - [x] `floordivsi`
-                  - [x] `fptosi`
-                  - [x] `fptoui`
-                  - [x] `get_dialect_registry`
-                  - [x] `index_cast`
-                  - [x] `index_castui`
-                  - [x] `maximumf`
-                  - [x] `maxnumf`
-                  - [x] `maxsi`
-                  - [x] `maxui`
-                  - [x] `minimumf`
-                  - [x] `minnumf`
-                  - [x] `minsi`
-                  - [x] `minui`
-                  - [x] `mulf`
-                  - [x] `muli`
-                  - [x] `mulsi_extended`
-                  - [x] `mului_extended`
-                  - [x] `negf`
-                  - [x] `np`
-                  - [x] `ori`
-                  - [x] `overload`
-                  - [x] `register_attribute_builder`
-                  - [x] `register_type_caster`
-                  - [x] `register_value_caster`
-                  - [x] `remf`
-                  - [x] `remsi`
-                  - [x] `remui`
-                  - [x] `select`
-                  - [x] `shli`
-                  - [x] `shrsi`
-                  - [x] `shrui`
-                  - [x] `sitofp`
-                  - [x] `subf`
-                  - [x] `subi`
-                  - [x] `truncf`
-                  - [x] `trunci`
-                  - [x] `uitofp`
-                  - [x] `xori`
-                - [x] `builtin`
-                  - [x] `AffineAddExpr`
-                  - [x] `AffineBinaryExpr`
-                  - [x] `AffineCeilDivExpr`
-                  - [x] `AffineConstantExpr`
-                  - [x] `AffineDimExpr`
-                  - [x] `AffineExpr`
-                  - [x] `AffineExprList`
-                  - [x] `AffineFloorDivExpr`
-                  - [x] `AffineMap`
-                  - [x] `AffineMapAttr`
-                  - [x] `AffineModExpr`
-                  - [x] `AffineMulExpr`
-                  - [x] `AffineSymbolExpr`
-                  - [x] `ArrayAttr`
-                  - [x] `ArrayAttributeIterator`
-                  - [x] `AsmState`
-                  - [x] `AttrBuilder`
-                  - [x] `Attribute`
-                  - [x] `BF16Type`
-                  - [x] `Block`
-                  - [x] `BlockArgument`
-                  - [x] `BlockArgumentList`
-                  - [x] `BlockIterator`
-                  - [x] `BlockList`
-                  - [x] `BoolAttr`
-                  - [x] `ComplexType`
-                  - [x] `Context`
-                  - [x] `DenseBoolArrayAttr`
-                  - [x] `DenseBoolArrayIterator`
-                  - [x] `DenseElementsAttr`
-                  - [x] `DenseF32ArrayAttr`
-                  - [x] `DenseF32ArrayIterator`
-                  - [x] `DenseF64ArrayAttr`
-                  - [x] `DenseF64ArrayIterator`
-                  - [x] `DenseFPElementsAttr`
-                  - [x] `DenseI16ArrayAttr`
-                  - [x] `DenseI16ArrayIterator`
-                  - [x] `DenseI32ArrayAttr`
-                  - [x] `DenseI32ArrayIterator`
-                  - [x] `DenseI64ArrayAttr`
-                  - [x] `DenseI64ArrayIterator`
-                  - [x] `DenseI8ArrayAttr`
-                  - [x] `DenseI8ArrayIterator`
-                  - [x] `DenseIntElementsAttr`
-                  - [x] `DenseResourceElementsAttr`
-                  - [x] `Diagnostic`
-                  - [x] `DiagnosticHandler`
-                  - [x] `DiagnosticInfo`
-                  - [x] `DiagnosticSeverity`
-                  - [x] `Dialect`
-                  - [x] `DialectDescriptor`
-                  - [x] `DialectRegistry`
-                  - [x] `Dialects`
-                  - [x] `DictAttr`
-                  - [x] `F16Type`
-                  - [x] `F32Type`
-                  - [x] `F64Type`
-                  - [x] `FlatSymbolRefAttr`
-                  - [x] `Float8E4M3B11FNUZType`
-                  - [x] `Float8E4M3FNType`
-                  - [x] `Float8E4M3FNUZType`
-                  - [x] `Float8E5M2FNUZType`
-                  - [x] `Float8E5M2Type`
-                  - [x] `FloatAttr`
-                  - [x] `FloatTF32Type`
-                  - [x] `FloatType`
-                  - [x] `FunctionType`
-                  - [x] `IndexType`
-                  - [x] `InferShapedTypeOpInterface`
-                  - [x] `InferTypeOpInterface`
-                  - [x] `InsertionPoint`
-                  - [x] `IntegerAttr`
-                  - [x] `IntegerSet`
-                  - [x] `IntegerSetConstraint`
-                  - [x] `IntegerSetConstraintList`
-                  - [x] `IntegerType`
-                  - [x] `Location`
-                  - [x] `MLIRError`
-                  - [x] `MemRefType`
-                  - [x] `Module`
-                  - [x] `ModuleOp`
-                  - [x] `NamedAttribute`
-                  - [x] `NoneType`
-                  - [x] `OpAttributeMap`
-                  - [x] `OpOperand`
-                  - [x] `OpOperandIterator`
-                  - [x] `OpOperandList`
-                  - [x] `OpResult`
-                  - [x] `OpResultList`
-                  - [x] `OpSuccessors`
-                  - [x] `OpView`
-                  - [x] `OpaqueAttr`
-                  - [x] `OpaqueType`
-                  - [x] `Operation`
-                  - [x] `OperationIterator`
-                  - [x] `OperationList`
-                  - [x] `RankedTensorType`
-                  - [x] `Region`
-                  - [x] `RegionIterator`
-                  - [x] `RegionSequence`
-                  - [x] `ShapedType`
-                  - [x] `ShapedTypeComponents`
-                  - [x] `StridedLayoutAttr`
-                  - [x] `StringAttr`
-                  - [x] `SymbolRefAttr`
-                  - [x] `SymbolTable`
-                  - [x] `TupleType`
-                  - [x] `Type`
-                  - [x] `TypeAttr`
-                  - [x] `TypeID`
-                  - [x] `UnitAttr`
-                  - [x] `UnrankedMemRefType`
-                  - [x] `UnrankedTensorType`
-                  - [x] `UnrealizedConversionCastOp`
-                  - [x] `Value`
-                  - [x] `VectorType`
-                  - [x] `WalkOrder`
-                  - [x] `WalkResult`
-                  - [x] `builtins`
-                  - [x] `get_dialect_registry`
-                  - [x] `module`
-                  - [x] `np`
-                  - [x] `region_op`
-                  - [x] `register_attribute_builder`
-                  - [x] `register_type_caster`
-                  - [x] `register_value_caster`
-                  - [x] `unrealized_conversion_cast`
-                - [x] `chlo`
-                  - [x] `AcosOp`
-                  - [x] `AcoshOp`
-                  - [x] `AsinOp`
-                  - [x] `AsinhOp`
-                  - [x] `AtanOp`
-                  - [x] `AtanhOp`
-                  - [x] `BesselI1eOp`
-                  - [x] `BroadcastAddOp`
-                  - [x] `BroadcastAndOp`
-                  - [x] `BroadcastAtan2Op`
-                  - [x] `BroadcastCompareOp`
-                  - [x] `BroadcastComplexOp`
-                  - [x] `BroadcastDivOp`
-                  - [x] `BroadcastMaxOp`
-                  - [x] `BroadcastMinOp`
-                  - [x] `BroadcastMulOp`
-                  - [x] `BroadcastNextAfterOp`
-                  - [x] `BroadcastOrOp`
-                  - [x] `BroadcastPolygammaOp`
-                  - [x] `BroadcastPowOp`
-                  - [x] `BroadcastRemOp`
-                  - [x] `BroadcastSelectOp`
-                  - [x] `BroadcastShiftLeftOp`
-                  - [x] `BroadcastShiftRightArithmeticOp`
-                  - [x] `BroadcastShiftRightLogicalOp`
-                  - [x] `BroadcastSubOp`
-                  - [x] `BroadcastXorOp`
-                  - [x] `BroadcastZetaOp`
-                  - [x] `ComparisonDirectionAttr`
-                  - [x] `ComparisonTypeAttr`
-                  - [x] `ConjOp`
-                  - [x] `ConstantLikeOp`
-                  - [x] `ConstantOp`
-                  - [x] `CoshOp`
-                  - [x] `DigammaOp`
-                  - [x] `ErfInvOp`
-                  - [x] `ErfOp`
-                  - [x] `ErfcOp`
-                  - [x] `IsInfOp`
-                  - [x] `IsNegInfOp`
-                  - [x] `IsPosInfOp`
-                  - [x] `LgammaOp`
-                  - [x] `NextAfterOp`
-                  - [x] `PolygammaOp`
-                  - [x] `SinhOp`
-                  - [x] `TanOp`
-                  - [x] `TopKOp`
-                  - [x] `ZetaOp`
-                  - [x] `acos`
-                  - [x] `acosh`
-                  - [x] `asin`
-                  - [x] `asinh`
-                  - [x] `atan`
-                  - [x] `atanh`
-                  - [x] `bessel_i1e`
-                  - [x] `broadcast_add`
-                  - [x] `broadcast_and`
-                  - [x] `broadcast_atan2`
-                  - [x] `broadcast_compare`
-                  - [x] `broadcast_complex`
-                  - [x] `broadcast_divide`
-                  - [x] `broadcast_maximum`
-                  - [x] `broadcast_minimum`
-                  - [x] `broadcast_multiply`
-                  - [x] `broadcast_next_after`
-                  - [x] `broadcast_or`
-                  - [x] `broadcast_polygamma`
-                  - [x] `broadcast_power`
-                  - [x] `broadcast_remainder`
-                  - [x] `broadcast_select`
-                  - [x] `broadcast_shift_left`
-                  - [x] `broadcast_shift_right_arithmetic`
-                  - [x] `broadcast_shift_right_logical`
-                  - [x] `broadcast_subtract`
-                  - [x] `broadcast_xor`
-                  - [x] `broadcast_zeta`
-                  - [x] `builtins`
-                  - [x] `conj`
-                  - [x] `constant`
-                  - [x] `constant_like`
-                  - [x] `cosh`
-                  - [x] `digamma`
-                  - [x] `erf`
-                  - [x] `erf_inv`
-                  - [x] `erfc`
-                  - [x] `is_inf`
-                  - [x] `is_neg_inf`
-                  - [x] `is_pos_inf`
-                  - [x] `lgamma`
-                  - [x] `next_after`
-                  - [x] `polygamma`
-                  - [x] `register_chlo_dialect`
-                  - [x] `register_dialect`
-                  - [x] `sinh`
-                  - [x] `tan`
-                  - [x] `top_k`
-                  - [x] `zeta`
-                - [x] `func`
-                  - [x] `ARGUMENT_ATTRIBUTE_NAME`
-                  - [x] `AffineAddExpr`
-                  - [x] `AffineBinaryExpr`
-                  - [x] `AffineCeilDivExpr`
-                  - [x] `AffineConstantExpr`
-                  - [x] `AffineDimExpr`
-                  - [x] `AffineExpr`
-                  - [x] `AffineExprList`
-                  - [x] `AffineFloorDivExpr`
-                  - [x] `AffineMap`
-                  - [x] `AffineMapAttr`
-                  - [x] `AffineModExpr`
-                  - [x] `AffineMulExpr`
-                  - [x] `AffineSymbolExpr`
-                  - [x] `ArrayAttr`
-                  - [x] `ArrayAttributeIterator`
-                  - [x] `AsmState`
-                  - [x] `AttrBuilder`
-                  - [x] `Attribute`
-                  - [x] `BF16Type`
-                  - [x] `Block`
-                  - [x] `BlockArgument`
-                  - [x] `BlockArgumentList`
-                  - [x] `BlockIterator`
-                  - [x] `BlockList`
-                  - [x] `BoolAttr`
-                  - [x] `CallIndirectOp`
-                  - [x] `CallOp`
-                  - [x] `ComplexType`
-                  - [x] `ConstantOp`
-                  - [x] `Context`
-                  - [x] `DenseBoolArrayAttr`
-                  - [x] `DenseBoolArrayIterator`
-                  - [x] `DenseElementsAttr`
-                  - [x] `DenseF32ArrayAttr`
-                  - [x] `DenseF32ArrayIterator`
-                  - [x] `DenseF64ArrayAttr`
-                  - [x] `DenseF64ArrayIterator`
-                  - [x] `DenseFPElementsAttr`
-                  - [x] `DenseI16ArrayAttr`
-                  - [x] `DenseI16ArrayIterator`
-                  - [x] `DenseI32ArrayAttr`
-                  - [x] `DenseI32ArrayIterator`
-                  - [x] `DenseI64ArrayAttr`
-                  - [x] `DenseI64ArrayIterator`
-                  - [x] `DenseI8ArrayAttr`
-                  - [x] `DenseI8ArrayIterator`
-                  - [x] `DenseIntElementsAttr`
-                  - [x] `DenseResourceElementsAttr`
-                  - [x] `Diagnostic`
-                  - [x] `DiagnosticHandler`
-                  - [x] `DiagnosticInfo`
-                  - [x] `DiagnosticSeverity`
-                  - [x] `Dialect`
-                  - [x] `DialectDescriptor`
-                  - [x] `DialectRegistry`
-                  - [x] `Dialects`
-                  - [x] `DictAttr`
-                  - [x] `F16Type`
-                  - [x] `F32Type`
-                  - [x] `F64Type`
-                  - [x] `FlatSymbolRefAttr`
-                  - [x] `Float8E4M3B11FNUZType`
-                  - [x] `Float8E4M3FNType`
-                  - [x] `Float8E4M3FNUZType`
-                  - [x] `Float8E5M2FNUZType`
-                  - [x] `Float8E5M2Type`
-                  - [x] `FloatAttr`
-                  - [x] `FloatTF32Type`
-                  - [x] `FloatType`
-                  - [x] `FuncOp`
-                  - [x] `FunctionType`
-                  - [x] `IndexType`
-                  - [x] `InferShapedTypeOpInterface`
-                  - [x] `InferTypeOpInterface`
-                  - [x] `InsertionPoint`
-                  - [x] `IntegerAttr`
-                  - [x] `IntegerSet`
-                  - [x] `IntegerSetConstraint`
-                  - [x] `IntegerSetConstraintList`
-                  - [x] `IntegerType`
-                  - [x] `Location`
-                  - [x] `MLIRError`
-                  - [x] `MemRefType`
-                  - [x] `Module`
-                  - [x] `NamedAttribute`
-                  - [x] `NoneType`
-                  - [x] `OpAttributeMap`
-                  - [x] `OpOperand`
-                  - [x] `OpOperandIterator`
-                  - [x] `OpOperandList`
-                  - [x] `OpResult`
-                  - [x] `OpResultList`
-                  - [x] `OpSuccessors`
-                  - [x] `OpView`
-                  - [x] `OpaqueAttr`
-                  - [x] `OpaqueType`
-                  - [x] `Operation`
-                  - [x] `OperationIterator`
-                  - [x] `OperationList`
-                  - [x] `RESULT_ATTRIBUTE_NAME`
-                  - [x] `RankedTensorType`
-                  - [x] `Region`
-                  - [x] `RegionIterator`
-                  - [x] `RegionSequence`
-                  - [x] `ReturnOp`
-                  - [x] `ShapedType`
-                  - [x] `ShapedTypeComponents`
-                  - [x] `StridedLayoutAttr`
-                  - [x] `StringAttr`
-                  - [x] `SymbolRefAttr`
-                  - [x] `SymbolTable`
-                  - [x] `TupleType`
-                  - [x] `Type`
-                  - [x] `TypeAttr`
-                  - [x] `TypeID`
-                  - [x] `UnitAttr`
-                  - [x] `UnrankedMemRefType`
-                  - [x] `UnrankedTensorType`
-                  - [x] `Value`
-                  - [x] `VectorType`
-                  - [x] `WalkOrder`
-                  - [x] `WalkResult`
-                  - [x] `builtins`
-                  - [x] `call`
-                  - [x] `call_indirect`
-                  - [x] `constant`
-                  - [x] `func`
-                  - [x] `get_dialect_registry`
-                  - [x] `inspect`
-                  - [x] `np`
-                  - [x] `register_attribute_builder`
-                  - [x] `register_type_caster`
-                  - [x] `register_value_caster`
-                  - [x] `return_`
-                - [x] `gpu`
-                  - [x] `AddressSpace`
-                  - [x] `AllReduceOp`
-                  - [x] `AllReduceOperation`
-                  - [x] `AllocOp`
-                  - [x] `BarrierOp`
-                  - [x] `BinaryOp`
-                  - [x] `BlockDimOp`
-                  - [x] `BlockIdOp`
-                  - [x] `ClusterBlockIdOp`
-                  - [x] `ClusterDimBlocksOp`
-                  - [x] `ClusterDimOp`
-                  - [x] `ClusterIdOp`
-                  - [x] `CompilationTarget`
-                  - [x] `Create2To4SpMatOp`
-                  - [x] `CreateBsrOp`
-                  - [x] `CreateCooAoSOp`
-                  - [x] `CreateCooOp`
-                  - [x] `CreateCscOp`
-                  - [x] `CreateCsrOp`
-                  - [x] `CreateDnTensorOp`
-                  - [x] `DeallocOp`
-                  - [x] `DestroyDnTensorOp`
-                  - [x] `DestroySpMatOp`
-                  - [x] `Dimension`
-                  - [x] `DynamicSharedMemoryOp`
-                  - [x] `GPUFuncOp`
-                  - [x] `GPUModuleOp`
-                  - [x] `GlobalIdOp`
-                  - [x] `GridDimOp`
-                  - [x] `HostRegisterOp`
-                  - [x] `HostUnregisterOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `LaneIdOp`
-                  - [x] `LaunchFuncOp`
-                  - [x] `LaunchOp`
-                  - [x] `MMAElementwiseOp`
-                  - [x] `MappingId`
-                  - [x] `MemcpyOp`
-                  - [x] `MemsetOp`
-                  - [x] `ModuleEndOp`
-                  - [x] `NumSubgroupsOp`
-                  - [x] `ObjectAttr`
-                  - [x] `PrintfOp`
-                  - [x] `Processor`
-                  - [x] `Prune2To4SpMatFlag`
-                  - [x] `ReturnOp`
-                  - [x] `SDDMMBufferSizeOp`
-                  - [x] `SDDMMOp`
-                  - [x] `SetCsrPointersOp`
-                  - [x] `SetDefaultDeviceOp`
-                  - [x] `ShuffleMode`
-                  - [x] `ShuffleOp`
-                  - [x] `SpGEMMCopyOp`
-                  - [x] `SpGEMMCreateDescrOp`
-                  - [x] `SpGEMMDestroyDescrOp`
-                  - [x] `SpGEMMWorkEstimationOrComputeKind`
-                  - [x] `SpGEMMWorkEstimationOrComputeOp`
-                  - [x] `SpMMBufferSizeOp`
-                  - [x] `SpMMOp`
-                  - [x] `SpMVBufferSizeOp`
-                  - [x] `SpMVOp`
-                  - [x] `SpMatGetSizeOp`
-                  - [x] `SubgroupIdOp`
-                  - [x] `SubgroupMmaComputeOp`
-                  - [x] `SubgroupMmaConstantMatrixOp`
-                  - [x] `SubgroupMmaElementwiseOp`
-                  - [x] `SubgroupMmaLoadMatrixOp`
-                  - [x] `SubgroupMmaStoreMatrixOp`
-                  - [x] `SubgroupReduceOp`
-                  - [x] `SubgroupSizeOp`
-                  - [x] `TerminatorOp`
-                  - [x] `ThreadIdOp`
-                  - [x] `TransposeMode`
-                  - [x] `WaitOp`
-                  - [x] `YieldOp`
-                  - [x] `all_reduce`
-                  - [x] `alloc`
-                  - [x] `auto`
-                  - [x] `barrier`
-                  - [x] `binary`
-                  - [x] `block_dim`
-                  - [x] `block_id`
-                  - [x] `builtins`
-                  - [x] `cluster_block_id`
-                  - [x] `cluster_dim`
-                  - [x] `cluster_dim_blocks`
-                  - [x] `cluster_id`
-                  - [x] `create_2to4_spmat`
-                  - [x] `create_bsr`
-                  - [x] `create_coo`
-                  - [x] `create_coo_aos`
-                  - [x] `create_csc`
-                  - [x] `create_csr`
-                  - [x] `create_dn_tensor`
-                  - [x] `dealloc`
-                  - [x] `destroy_dn_tensor`
-                  - [x] `destroy_sp_mat`
-                  - [x] `dynamic_shared_memory`
-                  - [x] `func`
-                  - [x] `global_id`
-                  - [x] `grid_dim`
-                  - [x] `host_register`
-                  - [x] `host_unregister`
-                  - [x] `lane_id`
-                  - [x] `launch`
-                  - [x] `launch_func`
-                  - [x] `memcpy`
-                  - [x] `memset`
-                  - [x] `module`
-                  - [x] `module_end`
-                  - [x] `num_subgroups`
-                  - [x] `printf`
-                  - [x] `register_attribute_builder`
-                  - [x] `return_`
-                  - [x] `sddmm`
-                  - [x] `sddmm_buffer_size`
-                  - [x] `set_csr_pointers`
-                  - [x] `set_default_device`
-                  - [x] `shuffle`
-                  - [x] `spgemm_copy`
-                  - [x] `spgemm_create_descr`
-                  - [x] `spgemm_destroy_descr`
-                  - [x] `spgemm_work_estimation_or_compute`
-                  - [x] `spmat_get_size`
-                  - [x] `spmm`
-                  - [x] `spmm_buffer_size`
-                  - [x] `spmv`
-                  - [x] `spmv_buffer_size`
-                  - [x] `subgroup_id`
-                  - [x] `subgroup_mma_compute`
-                  - [x] `subgroup_mma_constant_matrix`
-                  - [x] `subgroup_mma_elementwise`
-                  - [x] `subgroup_mma_load_matrix`
-                  - [x] `subgroup_mma_store_matrix`
-                  - [x] `subgroup_reduce`
-                  - [x] `subgroup_size`
-                  - [x] `terminator`
-                  - [x] `thread_id`
-                  - [x] `wait`
-                  - [x] `yield_`
-                - [x] `llvm`
-                  - [x] `AShrOp`
-                  - [x] `AbsOp`
-                  - [x] `AddOp`
-                  - [x] `AddrSpaceCastOp`
-                  - [x] `AddressOfOp`
-                  - [x] `AllocaOp`
-                  - [x] `AndOp`
-                  - [x] `Annotation`
-                  - [x] `AsmDialect`
-                  - [x] `AssumeOp`
-                  - [x] `AtomicBinOp`
-                  - [x] `AtomicCmpXchgOp`
-                  - [x] `AtomicOrdering`
-                  - [x] `AtomicRMWOp`
-                  - [x] `BitReverseOp`
-                  - [x] `BitcastOp`
-                  - [x] `BrOp`
-                  - [x] `ByteSwapOp`
-                  - [x] `CConv`
-                  - [x] `CallIntrinsicOp`
-                  - [x] `CallOp`
-                  - [x] `Comdat`
-                  - [x] `ComdatOp`
-                  - [x] `ComdatSelectorOp`
-                  - [x] `CondBrOp`
-                  - [x] `ConstantOp`
-                  - [x] `ConstrainedFPTruncIntr`
-                  - [x] `CopySignOp`
-                  - [x] `CoroAlignOp`
-                  - [x] `CoroBeginOp`
-                  - [x] `CoroEndOp`
-                  - [x] `CoroFreeOp`
-                  - [x] `CoroIdOp`
-                  - [x] `CoroPromiseOp`
-                  - [x] `CoroResumeOp`
-                  - [x] `CoroSaveOp`
-                  - [x] `CoroSizeOp`
-                  - [x] `CoroSuspendOp`
-                  - [x] `CosOp`
-                  - [x] `CountLeadingZerosOp`
-                  - [x] `CountTrailingZerosOp`
-                  - [x] `CtPopOp`
-                  - [x] `DIEmissionKind`
-                  - [x] `DIFlags`
-                  - [x] `DINameTableKind`
-                  - [x] `DISubprogramFlags`
-                  - [x] `DbgDeclareOp`
-                  - [x] `DbgLabelOp`
-                  - [x] `DbgValueOp`
-                  - [x] `DebugTrap`
-                  - [x] `EhTypeidForOp`
-                  - [x] `Exp2Op`
-                  - [x] `ExpOp`
-                  - [x] `ExpectOp`
-                  - [x] `ExpectWithProbabilityOp`
-                  - [x] `ExtractElementOp`
-                  - [x] `ExtractValueOp`
-                  - [x] `FAbsOp`
-                  - [x] `FAddOp`
-                  - [x] `FCeilOp`
-                  - [x] `FCmpOp`
-                  - [x] `FCmpPredicate`
-                  - [x] `FDivOp`
-                  - [x] `FFloorOp`
-                  - [x] `FMAOp`
-                  - [x] `FMulAddOp`
-                  - [x] `FMulOp`
-                  - [x] `FNegOp`
-                  - [x] `FPExceptionBehavior`
-                  - [x] `FPExtOp`
-                  - [x] `FPToSIOp`
-                  - [x] `FPToUIOp`
-                  - [x] `FPTruncOp`
-                  - [x] `FRemOp`
-                  - [x] `FSubOp`
-                  - [x] `FTruncOp`
-                  - [x] `FastmathFlags`
-                  - [x] `FenceOp`
-                  - [x] `FramePointerKind`
-                  - [x] `FreezeOp`
-                  - [x] `FshlOp`
-                  - [x] `FshrOp`
-                  - [x] `GEPOp`
-                  - [x] `GetActiveLaneMaskOp`
-                  - [x] `GlobalCtorsOp`
-                  - [x] `GlobalDtorsOp`
-                  - [x] `GlobalOp`
-                  - [x] `ICmpOp`
-                  - [x] `ICmpPredicate`
-                  - [x] `InlineAsmOp`
-                  - [x] `InsertElementOp`
-                  - [x] `InsertValueOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `IntToPtrOp`
-                  - [x] `IntegerOverflowFlags`
-                  - [x] `InvariantEndOp`
-                  - [x] `InvariantStartOp`
-                  - [x] `InvokeOp`
-                  - [x] `IsConstantOp`
-                  - [x] `IsFPClass`
-                  - [x] `LLVMFuncOp`
-                  - [x] `LShrOp`
-                  - [x] `LandingpadOp`
-                  - [x] `LifetimeEndOp`
-                  - [x] `LifetimeStartOp`
-                  - [x] `Linkage`
-                  - [x] `LinkerOptionsOp`
-                  - [x] `LlrintOp`
-                  - [x] `LlroundOp`
-                  - [x] `LoadOp`
-                  - [x] `Log10Op`
-                  - [x] `Log2Op`
-                  - [x] `LogOp`
-                  - [x] `LrintOp`
-                  - [x] `LroundOp`
-                  - [x] `MaskedLoadOp`
-                  - [x] `MaskedStoreOp`
-                  - [x] `MatrixColumnMajorLoadOp`
-                  - [x] `MatrixColumnMajorStoreOp`
-                  - [x] `MatrixMultiplyOp`
-                  - [x] `MatrixTransposeOp`
-                  - [x] `MaxNumOp`
-                  - [x] `MaximumOp`
-                  - [x] `MemcpyInlineOp`
-                  - [x] `MemcpyOp`
-                  - [x] `MemmoveOp`
-                  - [x] `MemsetOp`
-                  - [x] `MinNumOp`
-                  - [x] `MinimumOp`
-                  - [x] `ModRefInfo`
-                  - [x] `MulOp`
-                  - [x] `NearbyintOp`
-                  - [x] `NoAliasScopeDeclOp`
-                  - [x] `NoneTokenOp`
-                  - [x] `OrOp`
-                  - [x] `PointerType`
-                  - [x] `PoisonOp`
-                  - [x] `PowIOp`
-                  - [x] `PowOp`
-                  - [x] `Prefetch`
-                  - [x] `PtrAnnotation`
-                  - [x] `PtrToIntOp`
-                  - [x] `ResumeOp`
-                  - [x] `ReturnOp`
-                  - [x] `RintOp`
-                  - [x] `RoundEvenOp`
-                  - [x] `RoundOp`
-                  - [x] `RoundingMode`
-                  - [x] `SAddSat`
-                  - [x] `SAddWithOverflowOp`
-                  - [x] `SDivOp`
-                  - [x] `SExtOp`
-                  - [x] `SIToFPOp`
-                  - [x] `SMaxOp`
-                  - [x] `SMinOp`
-                  - [x] `SMulWithOverflowOp`
-                  - [x] `SRemOp`
-                  - [x] `SSACopyOp`
-                  - [x] `SSHLSat`
-                  - [x] `SSubSat`
-                  - [x] `SSubWithOverflowOp`
-                  - [x] `SelectOp`
-                  - [x] `ShlOp`
-                  - [x] `ShuffleVectorOp`
-                  - [x] `SinOp`
-                  - [x] `SqrtOp`
-                  - [x] `StackRestoreOp`
-                  - [x] `StackSaveOp`
-                  - [x] `StepVectorOp`
-                  - [x] `StoreOp`
-                  - [x] `StructType`
-                  - [x] `SubOp`
-                  - [x] `SwitchOp`
-                  - [x] `ThreadlocalAddressOp`
-                  - [x] `Trap`
-                  - [x] `TruncOp`
-                  - [x] `UAddSat`
-                  - [x] `UAddWithOverflowOp`
-                  - [x] `UBSanTrap`
-                  - [x] `UDivOp`
-                  - [x] `UIToFPOp`
-                  - [x] `UMaxOp`
-                  - [x] `UMinOp`
-                  - [x] `UMulWithOverflowOp`
-                  - [x] `URemOp`
-                  - [x] `USHLSat`
-                  - [x] `USubSat`
-                  - [x] `USubWithOverflowOp`
-                  - [x] `UndefOp`
-                  - [x] `UnnamedAddr`
-                  - [x] `UnreachableOp`
-                  - [x] `VPAShrOp`
-                  - [x] `VPAddOp`
-                  - [x] `VPAndOp`
-                  - [x] `VPFAddOp`
-                  - [x] `VPFDivOp`
-                  - [x] `VPFMulAddOp`
-                  - [x] `VPFMulOp`
-                  - [x] `VPFNegOp`
-                  - [x] `VPFPExtOp`
-                  - [x] `VPFPToSIOp`
-                  - [x] `VPFPToUIOp`
-                  - [x] `VPFPTruncOp`
-                  - [x] `VPFRemOp`
-                  - [x] `VPFSubOp`
-                  - [x] `VPFmaOp`
-                  - [x] `VPIntToPtrOp`
-                  - [x] `VPLShrOp`
-                  - [x] `VPLoadOp`
-                  - [x] `VPMergeMinOp`
-                  - [x] `VPMulOp`
-                  - [x] `VPOrOp`
-                  - [x] `VPPtrToIntOp`
-                  - [x] `VPReduceAddOp`
-                  - [x] `VPReduceAndOp`
-                  - [x] `VPReduceFAddOp`
-                  - [x] `VPReduceFMaxOp`
-                  - [x] `VPReduceFMinOp`
-                  - [x] `VPReduceFMulOp`
-                  - [x] `VPReduceMulOp`
-                  - [x] `VPReduceOrOp`
-                  - [x] `VPReduceSMaxOp`
-                  - [x] `VPReduceSMinOp`
-                  - [x] `VPReduceUMaxOp`
-                  - [x] `VPReduceUMinOp`
-                  - [x] `VPReduceXorOp`
-                  - [x] `VPSDivOp`
-                  - [x] `VPSExtOp`
-                  - [x] `VPSIToFPOp`
-                  - [x] `VPSRemOp`
-                  - [x] `VPSelectMinOp`
-                  - [x] `VPShlOp`
-                  - [x] `VPStoreOp`
-                  - [x] `VPStridedLoadOp`
-                  - [x] `VPStridedStoreOp`
-                  - [x] `VPSubOp`
-                  - [x] `VPTruncOp`
-                  - [x] `VPUDivOp`
-                  - [x] `VPUIToFPOp`
-                  - [x] `VPURemOp`
-                  - [x] `VPXorOp`
-                  - [x] `VPZExtOp`
-                  - [x] `VaCopyOp`
-                  - [x] `VaEndOp`
-                  - [x] `VaStartOp`
-                  - [x] `Value`
-                  - [x] `VarAnnotation`
-                  - [x] `Visibility`
-                  - [x] `XOrOp`
-                  - [x] `ZExtOp`
-                  - [x] `ZeroOp`
-                  - [x] `add`
-                  - [x] `addrspacecast`
-                  - [x] `alloca`
-                  - [x] `and_`
-                  - [x] `ashr`
-                  - [x] `atomicrmw`
-                  - [x] `auto`
-                  - [x] `bitcast`
-                  - [x] `br`
-                  - [x] `builtins`
-                  - [x] `call`
-                  - [x] `call_intrinsic`
-                  - [x] `cmpxchg`
-                  - [x] `comdat`
-                  - [x] `comdat_selector`
-                  - [x] `cond_br`
-                  - [x] `extractelement`
-                  - [x] `extractvalue`
-                  - [x] `fadd`
-                  - [x] `fcmp`
-                  - [x] `fdiv`
-                  - [x] `fence`
-                  - [x] `fmul`
-                  - [x] `fneg`
-                  - [x] `fpext`
-                  - [x] `fptosi`
-                  - [x] `fptoui`
-                  - [x] `fptrunc`
-                  - [x] `freeze`
-                  - [x] `frem`
-                  - [x] `fsub`
-                  - [x] `func`
-                  - [x] `getelementptr`
-                  - [x] `icmp`
-                  - [x] `inline_asm`
-                  - [x] `insertelement`
-                  - [x] `insertvalue`
-                  - [x] `intr_abs`
-                  - [x] `intr_annotation`
-                  - [x] `intr_assume`
-                  - [x] `intr_bitreverse`
-                  - [x] `intr_bswap`
-                  - [x] `intr_ceil`
-                  - [x] `intr_copysign`
-                  - [x] `intr_coro_align`
-                  - [x] `intr_coro_begin`
-                  - [x] `intr_coro_end`
-                  - [x] `intr_coro_free`
-                  - [x] `intr_coro_id`
-                  - [x] `intr_coro_promise`
-                  - [x] `intr_coro_resume`
-                  - [x] `intr_coro_save`
-                  - [x] `intr_coro_size`
-                  - [x] `intr_coro_suspend`
-                  - [x] `intr_cos`
-                  - [x] `intr_ctlz`
-                  - [x] `intr_ctpop`
-                  - [x] `intr_cttz`
-                  - [x] `intr_dbg_declare`
-                  - [x] `intr_dbg_label`
-                  - [x] `intr_dbg_value`
-                  - [x] `intr_debugtrap`
-                  - [x] `intr_eh_typeid_for`
-                  - [x] `intr_exp`
-                  - [x] `intr_exp2`
-                  - [x] `intr_expect`
-                  - [x] `intr_expect_with_probability`
-                  - [x] `intr_experimental_constrained_fptrunc`
-                  - [x] `intr_experimental_noalias_scope_decl`
-                  - [x] `intr_experimental_stepvector`
-                  - [x] `intr_experimental_vp_strided_load`
-                  - [x] `intr_experimental_vp_strided_store`
-                  - [x] `intr_fabs`
-                  - [x] `intr_floor`
-                  - [x] `intr_fma`
-                  - [x] `intr_fmuladd`
-                  - [x] `intr_fshl`
-                  - [x] `intr_fshr`
-                  - [x] `intr_get_active_lane_mask`
-                  - [x] `intr_invariant_end`
-                  - [x] `intr_invariant_start`
-                  - [x] `intr_is_constant`
-                  - [x] `intr_is_fpclass`
-                  - [x] `intr_lifetime_end`
-                  - [x] `intr_lifetime_start`
-                  - [x] `intr_llrint`
-                  - [x] `intr_llround`
-                  - [x] `intr_log`
-                  - [x] `intr_log10`
-                  - [x] `intr_log2`
-                  - [x] `intr_lrint`
-                  - [x] `intr_lround`
-                  - [x] `intr_masked_compressstore`
-                  - [x] `intr_masked_expandload`
-                  - [x] `intr_masked_gather`
-                  - [x] `intr_masked_load`
-                  - [x] `intr_masked_scatter`
-                  - [x] `intr_masked_store`
-                  - [x] `intr_matrix_column_major_load`
-                  - [x] `intr_matrix_column_major_store`
-                  - [x] `intr_matrix_multiply`
-                  - [x] `intr_matrix_transpose`
-                  - [x] `intr_maximum`
-                  - [x] `intr_maxnum`
-                  - [x] `intr_memcpy`
-                  - [x] `intr_memcpy_inline`
-                  - [x] `intr_memmove`
-                  - [x] `intr_memset`
-                  - [x] `intr_minimum`
-                  - [x] `intr_minnum`
-                  - [x] `intr_nearbyint`
-                  - [x] `intr_pow`
-                  - [x] `intr_powi`
-                  - [x] `intr_prefetch`
-                  - [x] `intr_ptr_annotation`
-                  - [x] `intr_rint`
-                  - [x] `intr_round`
-                  - [x] `intr_roundeven`
-                  - [x] `intr_sadd_sat`
-                  - [x] `intr_sadd_with_overflow`
-                  - [x] `intr_sin`
-                  - [x] `intr_smax`
-                  - [x] `intr_smin`
-                  - [x] `intr_smul_with_overflow`
-                  - [x] `intr_sqrt`
-                  - [x] `intr_ssa_copy`
-                  - [x] `intr_sshl_sat`
-                  - [x] `intr_ssub_sat`
-                  - [x] `intr_ssub_with_overflow`
-                  - [x] `intr_stackrestore`
-                  - [x] `intr_stacksave`
-                  - [x] `intr_threadlocal_address`
-                  - [x] `intr_trap`
-                  - [x] `intr_trunc`
-                  - [x] `intr_uadd_sat`
-                  - [x] `intr_uadd_with_overflow`
-                  - [x] `intr_ubsantrap`
-                  - [x] `intr_umax`
-                  - [x] `intr_umin`
-                  - [x] `intr_umul_with_overflow`
-                  - [x] `intr_ushl_sat`
-                  - [x] `intr_usub_sat`
-                  - [x] `intr_usub_with_overflow`
-                  - [x] `intr_vacopy`
-                  - [x] `intr_vaend`
-                  - [x] `intr_var_annotation`
-                  - [x] `intr_vastart`
-                  - [x] `intr_vector_deinterleave2`
-                  - [x] `intr_vector_extract`
-                  - [x] `intr_vector_insert`
-                  - [x] `intr_vector_interleave2`
-                  - [x] `intr_vector_reduce_add`
-                  - [x] `intr_vector_reduce_and`
-                  - [x] `intr_vector_reduce_fadd`
-                  - [x] `intr_vector_reduce_fmax`
-                  - [x] `intr_vector_reduce_fmaximum`
-                  - [x] `intr_vector_reduce_fmin`
-                  - [x] `intr_vector_reduce_fminimum`
-                  - [x] `intr_vector_reduce_fmul`
-                  - [x] `intr_vector_reduce_mul`
-                  - [x] `intr_vector_reduce_or`
-                  - [x] `intr_vector_reduce_smax`
-                  - [x] `intr_vector_reduce_smin`
-                  - [x] `intr_vector_reduce_umax`
-                  - [x] `intr_vector_reduce_umin`
-                  - [x] `intr_vector_reduce_xor`
-                  - [x] `intr_vp_add`
-                  - [x] `intr_vp_and`
-                  - [x] `intr_vp_ashr`
-                  - [x] `intr_vp_fadd`
-                  - [x] `intr_vp_fdiv`
-                  - [x] `intr_vp_fma`
-                  - [x] `intr_vp_fmul`
-                  - [x] `intr_vp_fmuladd`
-                  - [x] `intr_vp_fneg`
-                  - [x] `intr_vp_fpext`
-                  - [x] `intr_vp_fptosi`
-                  - [x] `intr_vp_fptoui`
-                  - [x] `intr_vp_fptrunc`
-                  - [x] `intr_vp_frem`
-                  - [x] `intr_vp_fsub`
-                  - [x] `intr_vp_inttoptr`
-                  - [x] `intr_vp_load`
-                  - [x] `intr_vp_lshr`
-                  - [x] `intr_vp_merge`
-                  - [x] `intr_vp_mul`
-                  - [x] `intr_vp_or`
-                  - [x] `intr_vp_ptrtoint`
-                  - [x] `intr_vp_reduce_add`
-                  - [x] `intr_vp_reduce_and`
-                  - [x] `intr_vp_reduce_fadd`
-                  - [x] `intr_vp_reduce_fmax`
-                  - [x] `intr_vp_reduce_fmin`
-                  - [x] `intr_vp_reduce_fmul`
-                  - [x] `intr_vp_reduce_mul`
-                  - [x] `intr_vp_reduce_or`
-                  - [x] `intr_vp_reduce_smax`
-                  - [x] `intr_vp_reduce_smin`
-                  - [x] `intr_vp_reduce_umax`
-                  - [x] `intr_vp_reduce_umin`
-                  - [x] `intr_vp_reduce_xor`
-                  - [x] `intr_vp_sdiv`
-                  - [x] `intr_vp_select`
-                  - [x] `intr_vp_sext`
-                  - [x] `intr_vp_shl`
-                  - [x] `intr_vp_sitofp`
-                  - [x] `intr_vp_srem`
-                  - [x] `intr_vp_store`
-                  - [x] `intr_vp_sub`
-                  - [x] `intr_vp_trunc`
-                  - [x] `intr_vp_udiv`
-                  - [x] `intr_vp_uitofp`
-                  - [x] `intr_vp_urem`
-                  - [x] `intr_vp_xor`
-                  - [x] `intr_vp_zext`
-                  - [x] `intr_vscale`
-                  - [x] `inttoptr`
-                  - [x] `invoke`
-                  - [x] `landingpad`
-                  - [x] `linker_options`
-                  - [x] `load`
-                  - [x] `lshr`
-                  - [x] `masked_compressstore`
-                  - [x] `masked_expandload`
-                  - [x] `masked_gather`
-                  - [x] `masked_scatter`
-                  - [x] `mlir_addressof`
-                  - [x] `mlir_constant`
-                  - [x] `mlir_global`
-                  - [x] `mlir_global_ctors`
-                  - [x] `mlir_global_dtors`
-                  - [x] `mlir_none`
-                  - [x] `mlir_poison`
-                  - [x] `mlir_undef`
-                  - [x] `mlir_zero`
-                  - [x] `mul`
-                  - [x] `or_`
-                  - [x] `ptrtoint`
-                  - [x] `register_attribute_builder`
-                  - [x] `resume`
-                  - [x] `return_`
-                  - [x] `sdiv`
-                  - [x] `select`
-                  - [x] `sext`
-                  - [x] `shl`
-                  - [x] `shufflevector`
-                  - [x] `sitofp`
-                  - [x] `srem`
-                  - [x] `store`
-                  - [x] `sub`
-                  - [x] `switch`
-                  - [x] `trunc`
-                  - [x] `udiv`
-                  - [x] `uitofp`
-                  - [x] `unreachable`
-                  - [x] `urem`
-                  - [x] `vector_deinterleave2`
-                  - [x] `vector_extract`
-                  - [x] `vector_insert`
-                  - [x] `vector_interleave2`
-                  - [x] `vector_reduce_add`
-                  - [x] `vector_reduce_and`
-                  - [x] `vector_reduce_fadd`
-                  - [x] `vector_reduce_fmax`
-                  - [x] `vector_reduce_fmaximum`
-                  - [x] `vector_reduce_fmin`
-                  - [x] `vector_reduce_fminimum`
-                  - [x] `vector_reduce_fmul`
-                  - [x] `vector_reduce_mul`
-                  - [x] `vector_reduce_or`
-                  - [x] `vector_reduce_smax`
-                  - [x] `vector_reduce_smin`
-                  - [x] `vector_reduce_umax`
-                  - [x] `vector_reduce_umin`
-                  - [x] `vector_reduce_xor`
-                  - [x] `vscale`
-                  - [x] `xor`
-                  - [x] `zext`
-                - [x] `math`
-                  - [x] `AbsFOp`
-                  - [x] `AbsIOp`
-                  - [x] `AcosOp`
-                  - [x] `AcoshOp`
-                  - [x] `AsinOp`
-                  - [x] `AsinhOp`
-                  - [x] `Atan2Op`
-                  - [x] `AtanOp`
-                  - [x] `AtanhOp`
-                  - [x] `CbrtOp`
-                  - [x] `CeilOp`
-                  - [x] `CopySignOp`
-                  - [x] `CosOp`
-                  - [x] `CoshOp`
-                  - [x] `CountLeadingZerosOp`
-                  - [x] `CountTrailingZerosOp`
-                  - [x] `CtPopOp`
-                  - [x] `ErfOp`
-                  - [x] `Exp2Op`
-                  - [x] `ExpM1Op`
-                  - [x] `ExpOp`
-                  - [x] `FPowIOp`
-                  - [x] `FloorOp`
-                  - [x] `FmaOp`
-                  - [x] `IPowIOp`
-                  - [x] `Log10Op`
-                  - [x] `Log1pOp`
-                  - [x] `Log2Op`
-                  - [x] `LogOp`
-                  - [x] `PowFOp`
-                  - [x] `RoundEvenOp`
-                  - [x] `RoundOp`
-                  - [x] `RsqrtOp`
-                  - [x] `SinOp`
-                  - [x] `SinhOp`
-                  - [x] `SqrtOp`
-                  - [x] `TanOp`
-                  - [x] `TanhOp`
-                  - [x] `TruncOp`
-                  - [x] `absf`
-                  - [x] `absi`
-                  - [x] `acos`
-                  - [x] `acosh`
-                  - [x] `asin`
-                  - [x] `asinh`
-                  - [x] `atan`
-                  - [x] `atan2`
-                  - [x] `atanh`
-                  - [x] `builtins`
-                  - [x] `cbrt`
-                  - [x] `ceil`
-                  - [x] `copysign`
-                  - [x] `cos`
-                  - [x] `cosh`
-                  - [x] `ctlz`
-                  - [x] `ctpop`
-                  - [x] `cttz`
-                  - [x] `erf`
-                  - [x] `exp`
-                  - [x] `exp2`
-                  - [x] `expm1`
-                  - [x] `floor`
-                  - [x] `fma`
-                  - [x] `fpowi`
-                  - [x] `ipowi`
-                  - [x] `log`
-                  - [x] `log10`
-                  - [x] `log1p`
-                  - [x] `log2`
-                  - [x] `powf`
-                  - [x] `round`
-                  - [x] `roundeven`
-                  - [x] `rsqrt`
-                  - [x] `sin`
-                  - [x] `sinh`
-                  - [x] `sqrt`
-                  - [x] `tan`
-                  - [x] `tanh`
-                  - [x] `trunc`
-                - [x] `memref`
-                  - [x] `AllocOp`
-                  - [x] `AllocaOp`
-                  - [x] `AllocaScopeOp`
-                  - [x] `AllocaScopeReturnOp`
-                  - [x] `AssumeAlignmentOp`
-                  - [x] `AtomicRMWOp`
-                  - [x] `AtomicYieldOp`
-                  - [x] `CastOp`
-                  - [x] `CollapseShapeOp`
-                  - [x] `ConstantOp`
-                  - [x] `CopyOp`
-                  - [x] `DeallocOp`
-                  - [x] `DimOp`
-                  - [x] `DmaStartOp`
-                  - [x] `DmaWaitOp`
-                  - [x] `ExpandShapeOp`
-                  - [x] `ExtractAlignedPointerAsIndexOp`
-                  - [x] `ExtractStridedMetadataOp`
-                  - [x] `GenericAtomicRMWOp`
-                  - [x] `GetGlobalOp`
-                  - [x] `GlobalOp`
-                  - [x] `LoadOp`
-                  - [x] `MemRefType`
-                  - [x] `MemorySpaceCastOp`
-                  - [x] `MixedValues`
-                  - [x] `Operation`
-                  - [x] `PrefetchOp`
-                  - [x] `RankOp`
-                  - [x] `ReallocOp`
-                  - [x] `ReinterpretCastOp`
-                  - [x] `ReshapeOp`
-                  - [x] `ShapedType`
-                  - [x] `StoreOp`
-                  - [x] `StridedLayoutAttr`
-                  - [x] `SubViewOp`
-                  - [x] `TransposeOp`
-                  - [x] `Value`
-                  - [x] `ViewOp`
-                  - [x] `accumulate`
-                  - [x] `alloc`
-                  - [x] `alloca`
-                  - [x] `alloca_scope`
-                  - [x] `alloca_scope_return`
-                  - [x] `assume_alignment`
-                  - [x] `atomic_rmw`
-                  - [x] `atomic_yield`
-                  - [x] `builtins`
-                  - [x] `cast`
-                  - [x] `collapse_shape`
-                  - [x] `copy`
-                  - [x] `dealloc`
-                  - [x] `dim`
-                  - [x] `dma_start`
-                  - [x] `dma_wait`
-                  - [x] `expand_shape`
-                  - [x] `extract_aligned_pointer_as_index`
-                  - [x] `extract_strided_metadata`
-                  - [x] `generic_atomic_rmw`
-                  - [x] `get_global`
-                  - [x] `global_`
-                  - [x] `load`
-                  - [x] `memory_space_cast`
-                  - [x] `operator`
-                  - [x] `prefetch`
-                  - [x] `rank`
-                  - [x] `realloc`
-                  - [x] `reinterpret_cast`
-                  - [x] `reshape`
-                  - [x] `store`
-                  - [x] `subview`
-                  - [x] `transpose`
-                  - [x] `view`
-                - [x] `mhlo`
-                  - [x] `AbsOp`
-                  - [x] `AddDependencyOp`
-                  - [x] `AddOp`
-                  - [x] `AfterAllOp`
-                  - [x] `AllGatherOp`
-                  - [x] `AllReduceOp`
-                  - [x] `AllToAllOp`
-                  - [x] `AndOp`
-                  - [x] `AsyncDoneOp`
-                  - [x] `AsyncStartOp`
-                  - [x] `AsyncUpdateOp`
-                  - [x] `Atan2Op`
-                  - [x] `BatchNormGradOp`
-                  - [x] `BatchNormInferenceOp`
-                  - [x] `BatchNormTrainingOp`
-                  - [x] `BitcastConvertOp`
-                  - [x] `BitcastOp`
-                  - [x] `BroadcastInDimOp`
-                  - [x] `BroadcastOp`
-                  - [x] `CaseOp`
-                  - [x] `CbrtOp`
-                  - [x] `CeilOp`
-                  - [x] `ChannelHandle`
-                  - [x] `CholeskyOp`
-                  - [x] `ClampOp`
-                  - [x] `ClzOp`
-                  - [x] `CollectiveBroadcastOp`
-                  - [x] `CollectivePermuteOp`
-                  - [x] `CompareOp`
-                  - [x] `ComparisonDirectionAttr`
-                  - [x] `ComparisonTypeAttr`
-                  - [x] `ComplexOp`
-                  - [x] `CompositeOp`
-                  - [x] `ConcatenateOp`
-                  - [x] `ConstantOp`
-                  - [x] `ConvDimensionNumbers`
-                  - [x] `ConvertOp`
-                  - [x] `ConvolutionOp`
-                  - [x] `CopyOp`
-                  - [x] `CosineOp`
-                  - [x] `CreateTokenOp`
-                  - [x] `CrossReplicaSumOp`
-                  - [x] `CustomCallOp`
-                  - [x] `DequantizeModeAttr`
-                  - [x] `DivOp`
-                  - [x] `DomainOp`
-                  - [x] `DotDimensionNumbers`
-                  - [x] `DotGeneralOp`
-                  - [x] `DotOp`
-                  - [x] `DynamicBroadcastInDimOp`
-                  - [x] `DynamicConvOp`
-                  - [x] `DynamicGatherOp`
-                  - [x] `DynamicIotaOp`
-                  - [x] `DynamicPadOp`
-                  - [x] `DynamicReshapeOp`
-                  - [x] `DynamicSliceOp`
-                  - [x] `DynamicUpdateSliceOp`
-                  - [x] `EinsumOp`
-                  - [x] `ErfOp`
-                  - [x] `ExpOp`
-                  - [x] `Expm1Op`
-                  - [x] `FftOp`
-                  - [x] `FftTypeAttr`
-                  - [x] `FloorOp`
-                  - [x] `FusionKindAttr`
-                  - [x] `FusionOp`
-                  - [x] `GatherDimensionNumbers`
-                  - [x] `GatherOp`
-                  - [x] `GetDimensionSizeOp`
-                  - [x] `GetTupleElementOp`
-                  - [x] `IfOp`
-                  - [x] `ImagOp`
-                  - [x] `InfeedOp`
-                  - [x] `IotaOp`
-                  - [x] `IsFiniteOp`
-                  - [x] `Log1pOp`
-                  - [x] `LogOp`
-                  - [x] `LogisticOp`
-                  - [x] `MapOp`
-                  - [x] `MaxOp`
-                  - [x] `MinOp`
-                  - [x] `MinimumBroadcastShapesOp`
-                  - [x] `MulOp`
-                  - [x] `NegOp`
-                  - [x] `NotOp`
-                  - [x] `OptimizationBarrierOp`
-                  - [x] `OrOp`
-                  - [x] `OutfeedOp`
-                  - [x] `OutputOperandAlias`
-                  - [x] `PadOp`
-                  - [x] `PartitionIdOp`
-                  - [x] `PopulationCountOp`
-                  - [x] `PowOp`
-                  - [x] `PrecisionAttr`
-                  - [x] `RealDynamicSliceOp`
-                  - [x] `RealOp`
-                  - [x] `RecvOp`
-                  - [x] `ReduceOp`
-                  - [x] `ReducePrecisionOp`
-                  - [x] `ReduceScatterOp`
-                  - [x] `ReduceWindowOp`
-                  - [x] `RemOp`
-                  - [x] `ReplicaIdOp`
-                  - [x] `ReshapeOp`
-                  - [x] `ReturnOp`
-                  - [x] `ReverseOp`
-                  - [x] `RngAlgorithmAttr`
-                  - [x] `RngBitGeneratorOp`
-                  - [x] `RngDistributionAttr`
-                  - [x] `RngOp`
-                  - [x] `RoundNearestEvenOp`
-                  - [x] `RoundOp`
-                  - [x] `RsqrtOp`
-                  - [x] `ScatterDimensionNumbers`
-                  - [x] `ScatterOp`
-                  - [x] `SelectAndScatterOp`
-                  - [x] `SelectOp`
-                  - [x] `SendOp`
-                  - [x] `SetDimensionSizeOp`
-                  - [x] `ShiftLeftOp`
-                  - [x] `ShiftRightArithmeticOp`
-                  - [x] `ShiftRightLogicalOp`
-                  - [x] `SignOp`
-                  - [x] `SineOp`
-                  - [x] `SliceOp`
-                  - [x] `SortOp`
-                  - [x] `SparseDotOp`
-                  - [x] `SparsityDescriptor`
-                  - [x] `SqrtOp`
-                  - [x] `StochasticConvertOp`
-                  - [x] `SubtractOp`
-                  - [x] `TanOp`
-                  - [x] `TanhOp`
-                  - [x] `TokenType`
-                  - [x] `TopKOp`
-                  - [x] `TorchIndexSelectOp`
-                  - [x] `TraceOp`
-                  - [x] `TransposeAttr`
-                  - [x] `TransposeOp`
-                  - [x] `TriangularSolveOp`
-                  - [x] `TupleOp`
-                  - [x] `TypeExtensions`
-                  - [x] `UnaryEinsumOp`
-                  - [x] `UniformDequantizeOp`
-                  - [x] `UniformQuantizeOp`
-                  - [x] `WhileOp`
-                  - [x] `XlaRngGetAndUpdateStateOp`
-                  - [x] `XorOp`
-                  - [x] `abs`
-                  - [x] `add`
-                  - [x] `add_dependency`
-                  - [x] `after_all`
-                  - [x] `all_gather`
-                  - [x] `all_reduce`
-                  - [x] `all_to_all`
-                  - [x] `and_`
-                  - [x] `async_done`
-                  - [x] `async_start`
-                  - [x] `async_update`
-                  - [x] `atan2`
-                  - [x] `batch_norm_grad`
-                  - [x] `batch_norm_inference`
-                  - [x] `batch_norm_training`
-                  - [x] `bitcast`
-                  - [x] `bitcast_convert`
-                  - [x] `broadcast`
-                  - [x] `broadcast_in_dim`
-                  - [x] `builtins`
-                  - [x] `case`
-                  - [x] `cbrt`
-                  - [x] `ceil`
-                  - [x] `cholesky`
-                  - [x] `clamp`
-                  - [x] `collective_broadcast`
-                  - [x] `collective_permute`
-                  - [x] `compare`
-                  - [x] `complex`
-                  - [x] `composite`
-                  - [x] `concatenate`
-                  - [x] `constant`
-                  - [x] `convert`
-                  - [x] `convolution`
-                  - [x] `copy`
-                  - [x] `cosine`
-                  - [x] `count_leading_zeros`
-                  - [x] `create_token`
-                  - [x] `cross_replica_sum`
-                  - [x] `custom_call`
-                  - [x] `divide`
-                  - [x] `domain`
-                  - [x] `dot`
-                  - [x] `dot_general`
-                  - [x] `dynamic_broadcast_in_dim`
-                  - [x] `dynamic_conv`
-                  - [x] `dynamic_gather`
-                  - [x] `dynamic_iota`
-                  - [x] `dynamic_pad`
-                  - [x] `dynamic_reshape`
-                  - [x] `dynamic_slice`
-                  - [x] `dynamic_update_slice`
-                  - [x] `einsum`
-                  - [x] `erf`
-                  - [x] `exponential`
-                  - [x] `exponential_minus_one`
-                  - [x] `fft`
-                  - [x] `floor`
-                  - [x] `fusion`
-                  - [x] `gather`
-                  - [x] `get_dimension_size`
-                  - [x] `get_tuple_element`
-                  - [x] `if_`
-                  - [x] `imag`
-                  - [x] `infeed`
-                  - [x] `iota`
-                  - [x] `is_finite`
-                  - [x] `log`
-                  - [x] `log_plus_one`
-                  - [x] `logistic`
-                  - [x] `map`
-                  - [x] `maximum`
-                  - [x] `minimum`
-                  - [x] `minimum_broadcast_shapes`
-                  - [x] `multiply`
-                  - [x] `negate`
-                  - [x] `not_`
-                  - [x] `optimization_barrier`
-                  - [x] `or_`
-                  - [x] `outfeed`
-                  - [x] `pad`
-                  - [x] `partition_id`
-                  - [x] `popcnt`
-                  - [x] `power`
-                  - [x] `real`
-                  - [x] `real_dynamic_slice`
-                  - [x] `recv`
-                  - [x] `reduce`
-                  - [x] `reduce_precision`
-                  - [x] `reduce_scatter`
-                  - [x] `reduce_window`
-                  - [x] `register_mhlo_dialect`
-                  - [x] `register_mhlo_passes`
-                  - [x] `remainder`
-                  - [x] `replica_id`
-                  - [x] `reshape`
-                  - [x] `return_`
-                  - [x] `reverse`
-                  - [x] `rng`
-                  - [x] `rng_bit_generator`
-                  - [x] `round_nearest_afz`
-                  - [x] `round_nearest_even`
-                  - [x] `rsqrt`
-                  - [x] `scatter`
-                  - [x] `select`
-                  - [x] `select_and_scatter`
-                  - [x] `send`
-                  - [x] `set_dimension_size`
-                  - [x] `shift_left`
-                  - [x] `shift_right_arithmetic`
-                  - [x] `shift_right_logical`
-                  - [x] `sign`
-                  - [x] `sine`
-                  - [x] `slice`
-                  - [x] `sort`
-                  - [x] `sparse_dot`
-                  - [x] `sqrt`
-                  - [x] `stochastic_convert`
-                  - [x] `subtract`
-                  - [x] `tan`
-                  - [x] `tanh`
-                  - [x] `topk`
-                  - [x] `torch_index_select`
-                  - [x] `trace`
-                  - [x] `transpose`
-                  - [x] `triangular_solve`
-                  - [x] `tuple`
-                  - [x] `unary_einsum`
-                  - [x] `uniform_dequantize`
-                  - [x] `uniform_quantize`
-                  - [x] `while_`
-                  - [x] `xla_rng_get_and_update_state`
-                  - [x] `xor`
-                - [x] `nvgpu`
-                  - [x] `DeviceAsyncCopyOp`
-                  - [x] `DeviceAsyncCreateGroupOp`
-                  - [x] `DeviceAsyncWaitOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `LdMatrixOp`
-                  - [x] `MBarrierArriveExpectTxOp`
-                  - [x] `MBarrierArriveNoCompleteOp`
-                  - [x] `MBarrierArriveOp`
-                  - [x] `MBarrierCreateOp`
-                  - [x] `MBarrierInitOp`
-                  - [x] `MBarrierTestWaitOp`
-                  - [x] `MBarrierTryWaitParityOp`
-                  - [x] `MmaSparseSyncOp`
-                  - [x] `MmaSyncOp`
-                  - [x] `TensorMapDescriptorType`
-                  - [x] `TensorMapInterleaveKind`
-                  - [x] `TensorMapL2PromoKind`
-                  - [x] `TensorMapOOBKind`
-                  - [x] `TensorMapSwizzleKind`
-                  - [x] `TmaAsyncLoadOp`
-                  - [x] `TmaAsyncStoreOp`
-                  - [x] `TmaCreateDescriptorOp`
-                  - [x] `TmaPrefetchOp`
-                  - [x] `WarpgroupGenerateDescriptorOp`
-                  - [x] `WarpgroupMmaInitAccumulatorOp`
-                  - [x] `WarpgroupMmaOp`
-                  - [x] `WarpgroupMmaStoreOp`
-                  - [x] `auto`
-                  - [x] `builtins`
-                  - [x] `device_async_copy`
-                  - [x] `device_async_create_group`
-                  - [x] `device_async_wait`
-                  - [x] `ldmatrix`
-                  - [x] `mbarrier_arrive`
-                  - [x] `mbarrier_arrive_expect_tx`
-                  - [x] `mbarrier_arrive_nocomplete`
-                  - [x] `mbarrier_create`
-                  - [x] `mbarrier_init`
-                  - [x] `mbarrier_test_wait`
-                  - [x] `mbarrier_try_wait_parity`
-                  - [x] `mma_sp_sync`
-                  - [x] `mma_sync`
-                  - [x] `register_attribute_builder`
-                  - [x] `tma_async_load`
-                  - [x] `tma_async_store`
-                  - [x] `tma_create_descriptor`
-                  - [x] `tma_prefetch_descriptor`
-                  - [x] `warpgroup_generate_descriptor`
-                  - [x] `warpgroup_mma`
-                  - [x] `warpgroup_mma_init_accumulator`
-                  - [x] `warpgroup_mma_store`
-                - [x] `nvvm`
-                  - [x] `Barrier0Op`
-                  - [x] `BarrierArriveOp`
-                  - [x] `BarrierOp`
-                  - [x] `BlockDimXOp`
-                  - [x] `BlockDimYOp`
-                  - [x] `BlockDimZOp`
-                  - [x] `BlockIdXOp`
-                  - [x] `BlockIdYOp`
-                  - [x] `BlockIdZOp`
-                  - [x] `BlockInClusterIdXOp`
-                  - [x] `BlockInClusterIdYOp`
-                  - [x] `BlockInClusterIdZOp`
-                  - [x] `Clock64Op`
-                  - [x] `ClockOp`
-                  - [x] `ClusterArriveOp`
-                  - [x] `ClusterArriveRelaxedOp`
-                  - [x] `ClusterDim`
-                  - [x] `ClusterDimBlocksXOp`
-                  - [x] `ClusterDimBlocksYOp`
-                  - [x] `ClusterDimBlocksZOp`
-                  - [x] `ClusterDimXOp`
-                  - [x] `ClusterDimYOp`
-                  - [x] `ClusterDimZOp`
-                  - [x] `ClusterId`
-                  - [x] `ClusterIdXOp`
-                  - [x] `ClusterIdYOp`
-                  - [x] `ClusterIdZOp`
-                  - [x] `ClusterWaitOp`
-                  - [x] `CpAsyncBulkCommitGroupOp`
-                  - [x] `CpAsyncBulkTensorGlobalToSharedClusterOp`
-                  - [x] `CpAsyncBulkTensorSharedCTAToGlobalOp`
-                  - [x] `CpAsyncBulkWaitGroupOp`
-                  - [x] `CpAsyncCommitGroupOp`
-                  - [x] `CpAsyncMBarrierArriveOp`
-                  - [x] `CpAsyncMBarrierArriveSharedOp`
-                  - [x] `CpAsyncOp`
-                  - [x] `CpAsyncWaitGroupOp`
-                  - [x] `ElectSyncOp`
-                  - [x] `FenceMbarrierInitOp`
-                  - [x] `FenceProxyOp`
-                  - [x] `FenceScClusterOp`
-                  - [x] `GridDimXOp`
-                  - [x] `GridDimYOp`
-                  - [x] `GridDimZOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `LaneIdOp`
-                  - [x] `LdMatrixOp`
-                  - [x] `LoadCacheModifierKind`
-                  - [x] `MBarrierArriveExpectTxOp`
-                  - [x] `MBarrierArriveExpectTxSharedOp`
-                  - [x] `MBarrierArriveNocompleteOp`
-                  - [x] `MBarrierArriveNocompleteSharedOp`
-                  - [x] `MBarrierArriveOp`
-                  - [x] `MBarrierArriveSharedOp`
-                  - [x] `MBarrierInitOp`
-                  - [x] `MBarrierInitSharedOp`
-                  - [x] `MBarrierInvalOp`
-                  - [x] `MBarrierInvalSharedOp`
-                  - [x] `MBarrierTestWaitOp`
-                  - [x] `MBarrierTestWaitSharedOp`
-                  - [x] `MBarrierTryWaitParityOp`
-                  - [x] `MBarrierTryWaitParitySharedOp`
-                  - [x] `MMAB1Op`
-                  - [x] `MMAFrag`
-                  - [x] `MMAIntOverflow`
-                  - [x] `MMALayout`
-                  - [x] `MMATypes`
-                  - [x] `MmaOp`
-                  - [x] `PrefetchTensorMapOp`
-                  - [x] `ProxyKind`
-                  - [x] `RcpApproxFtzF32Op`
-                  - [x] `ReduxKind`
-                  - [x] `ReduxOp`
-                  - [x] `SetMaxRegisterAction`
-                  - [x] `SetMaxRegisterOp`
-                  - [x] `SharedSpace`
-                  - [x] `ShflKind`
-                  - [x] `ShflOp`
-                  - [x] `StMatrixOp`
-                  - [x] `SyncWarpOp`
-                  - [x] `ThreadIdXOp`
-                  - [x] `ThreadIdYOp`
-                  - [x] `ThreadIdZOp`
-                  - [x] `VoteBallotOp`
-                  - [x] `WGMMAScaleIn`
-                  - [x] `WGMMAScaleOut`
-                  - [x] `WGMMATypes`
-                  - [x] `WMMALoadOp`
-                  - [x] `WMMAMmaOp`
-                  - [x] `WMMAStoreOp`
-                  - [x] `WarpSizeOp`
-                  - [x] `WgmmaFenceAlignedOp`
-                  - [x] `WgmmaGroupSyncAlignedOp`
-                  - [x] `WgmmaMmaAsyncOp`
-                  - [x] `WgmmaWaitGroupSyncOp`
-                  - [x] `auto`
-                  - [x] `bar_warp_sync`
-                  - [x] `barrier`
-                  - [x] `barrier0`
-                  - [x] `barrier_arrive`
-                  - [x] `builtins`
-                  - [x] `cluster_arrive`
-                  - [x] `cluster_arrive_relaxed`
-                  - [x] `cluster_wait`
-                  - [x] `cp_async_bulk_commit_group`
-                  - [x] `cp_async_bulk_tensor_global_shared_cta`
-                  - [x] `cp_async_bulk_tensor_shared_cluster_global`
-                  - [x] `cp_async_bulk_wait_group`
-                  - [x] `cp_async_commit_group`
-                  - [x] `cp_async_mbarrier_arrive`
-                  - [x] `cp_async_mbarrier_arrive_shared`
-                  - [x] `cp_async_shared_global`
-                  - [x] `cp_async_wait_group`
-                  - [x] `elect_sync`
-                  - [x] `fence_mbarrier_init`
-                  - [x] `fence_proxy`
-                  - [x] `fence_sc_cluster`
-                  - [x] `ldmatrix`
-                  - [x] `mbarrier_arrive`
-                  - [x] `mbarrier_arrive_expect_tx`
-                  - [x] `mbarrier_arrive_expect_tx_shared`
-                  - [x] `mbarrier_arrive_nocomplete`
-                  - [x] `mbarrier_arrive_nocomplete_shared`
-                  - [x] `mbarrier_arrive_shared`
-                  - [x] `mbarrier_init`
-                  - [x] `mbarrier_init_shared`
-                  - [x] `mbarrier_inval`
-                  - [x] `mbarrier_inval_shared`
-                  - [x] `mbarrier_test_wait`
-                  - [x] `mbarrier_test_wait_shared`
-                  - [x] `mbarrier_try_wait_parity`
-                  - [x] `mbarrier_try_wait_parity_shared`
-                  - [x] `mma_sync`
-                  - [x] `prefetch_tensormap`
-                  - [x] `rcp_approx_ftz_f`
-                  - [x] `read_ptx_sreg_clock`
-                  - [x] `read_ptx_sreg_clock64`
-                  - [x] `read_ptx_sreg_cluster_ctaid_x`
-                  - [x] `read_ptx_sreg_cluster_ctaid_y`
-                  - [x] `read_ptx_sreg_cluster_ctaid_z`
-                  - [x] `read_ptx_sreg_cluster_ctarank`
-                  - [x] `read_ptx_sreg_cluster_nctaid_x`
-                  - [x] `read_ptx_sreg_cluster_nctaid_y`
-                  - [x] `read_ptx_sreg_cluster_nctaid_z`
-                  - [x] `read_ptx_sreg_cluster_nctarank`
-                  - [x] `read_ptx_sreg_clusterid_x`
-                  - [x] `read_ptx_sreg_clusterid_y`
-                  - [x] `read_ptx_sreg_clusterid_z`
-                  - [x] `read_ptx_sreg_ctaid_x`
-                  - [x] `read_ptx_sreg_ctaid_y`
-                  - [x] `read_ptx_sreg_ctaid_z`
-                  - [x] `read_ptx_sreg_laneid`
-                  - [x] `read_ptx_sreg_nclusterid_x`
-                  - [x] `read_ptx_sreg_nclusterid_y`
-                  - [x] `read_ptx_sreg_nclusterid_z`
-                  - [x] `read_ptx_sreg_nctaid_x`
-                  - [x] `read_ptx_sreg_nctaid_y`
-                  - [x] `read_ptx_sreg_nctaid_z`
-                  - [x] `read_ptx_sreg_ntid_x`
-                  - [x] `read_ptx_sreg_ntid_y`
-                  - [x] `read_ptx_sreg_ntid_z`
-                  - [x] `read_ptx_sreg_tid_x`
-                  - [x] `read_ptx_sreg_tid_y`
-                  - [x] `read_ptx_sreg_tid_z`
-                  - [x] `read_ptx_sreg_warpsize`
-                  - [x] `redux_sync`
-                  - [x] `register_attribute_builder`
-                  - [x] `setmaxregister`
-                  - [x] `shfl_sync`
-                  - [x] `stmatrix`
-                  - [x] `vote_ballot_sync`
-                  - [x] `wgmma_commit_group_sync_aligned`
-                  - [x] `wgmma_fence_aligned`
-                  - [x] `wgmma_mma_async`
-                  - [x] `wgmma_wait_group_sync_aligned`
-                  - [x] `wmma_load`
-                  - [x] `wmma_mma`
-                  - [x] `wmma_store`
-                - [x] `scf`
-                  - [x] `AffineAddExpr`
-                  - [x] `AffineBinaryExpr`
-                  - [x] `AffineCeilDivExpr`
-                  - [x] `AffineConstantExpr`
-                  - [x] `AffineDimExpr`
-                  - [x] `AffineExpr`
-                  - [x] `AffineExprList`
-                  - [x] `AffineFloorDivExpr`
-                  - [x] `AffineMap`
-                  - [x] `AffineMapAttr`
-                  - [x] `AffineModExpr`
-                  - [x] `AffineMulExpr`
-                  - [x] `AffineSymbolExpr`
-                  - [x] `ArrayAttr`
-                  - [x] `ArrayAttributeIterator`
-                  - [x] `AsmState`
-                  - [x] `AttrBuilder`
-                  - [x] `Attribute`
-                  - [x] `BF16Type`
-                  - [x] `Block`
-                  - [x] `BlockArgument`
-                  - [x] `BlockArgumentList`
-                  - [x] `BlockIterator`
-                  - [x] `BlockList`
-                  - [x] `BoolAttr`
-                  - [x] `ComplexType`
-                  - [x] `ConditionOp`
-                  - [x] `Context`
-                  - [x] `DenseBoolArrayAttr`
-                  - [x] `DenseBoolArrayIterator`
-                  - [x] `DenseElementsAttr`
-                  - [x] `DenseF32ArrayAttr`
-                  - [x] `DenseF32ArrayIterator`
-                  - [x] `DenseF64ArrayAttr`
-                  - [x] `DenseF64ArrayIterator`
-                  - [x] `DenseFPElementsAttr`
-                  - [x] `DenseI16ArrayAttr`
-                  - [x] `DenseI16ArrayIterator`
-                  - [x] `DenseI32ArrayAttr`
-                  - [x] `DenseI32ArrayIterator`
-                  - [x] `DenseI64ArrayAttr`
-                  - [x] `DenseI64ArrayIterator`
-                  - [x] `DenseI8ArrayAttr`
-                  - [x] `DenseI8ArrayIterator`
-                  - [x] `DenseIntElementsAttr`
-                  - [x] `DenseResourceElementsAttr`
-                  - [x] `Diagnostic`
-                  - [x] `DiagnosticHandler`
-                  - [x] `DiagnosticInfo`
-                  - [x] `DiagnosticSeverity`
-                  - [x] `Dialect`
-                  - [x] `DialectDescriptor`
-                  - [x] `DialectRegistry`
-                  - [x] `Dialects`
-                  - [x] `DictAttr`
-                  - [x] `ExecuteRegionOp`
-                  - [x] `F16Type`
-                  - [x] `F32Type`
-                  - [x] `F64Type`
-                  - [x] `FlatSymbolRefAttr`
-                  - [x] `Float8E4M3B11FNUZType`
-                  - [x] `Float8E4M3FNType`
-                  - [x] `Float8E4M3FNUZType`
-                  - [x] `Float8E5M2FNUZType`
-                  - [x] `Float8E5M2Type`
-                  - [x] `FloatAttr`
-                  - [x] `FloatTF32Type`
-                  - [x] `FloatType`
-                  - [x] `ForOp`
-                  - [x] `ForallOp`
-                  - [x] `FunctionType`
-                  - [x] `IfOp`
-                  - [x] `InParallelOp`
-                  - [x] `IndexSwitchOp`
-                  - [x] `IndexType`
-                  - [x] `InferShapedTypeOpInterface`
-                  - [x] `InferTypeOpInterface`
-                  - [x] `InsertionPoint`
-                  - [x] `IntegerAttr`
-                  - [x] `IntegerSet`
-                  - [x] `IntegerSetConstraint`
-                  - [x] `IntegerSetConstraintList`
-                  - [x] `IntegerType`
-                  - [x] `Location`
-                  - [x] `MLIRError`
-                  - [x] `MemRefType`
-                  - [x] `Module`
-                  - [x] `NamedAttribute`
-                  - [x] `NoneType`
-                  - [x] `OpAttributeMap`
-                  - [x] `OpOperand`
-                  - [x] `OpOperandIterator`
-                  - [x] `OpOperandList`
-                  - [x] `OpResult`
-                  - [x] `OpResultList`
-                  - [x] `OpSuccessors`
-                  - [x] `OpView`
-                  - [x] `OpaqueAttr`
-                  - [x] `OpaqueType`
-                  - [x] `Operation`
-                  - [x] `OperationIterator`
-                  - [x] `OperationList`
-                  - [x] `ParallelOp`
-                  - [x] `RankedTensorType`
-                  - [x] `ReduceOp`
-                  - [x] `ReduceReturnOp`
-                  - [x] `Region`
-                  - [x] `RegionIterator`
-                  - [x] `RegionSequence`
-                  - [x] `ShapedType`
-                  - [x] `ShapedTypeComponents`
-                  - [x] `StridedLayoutAttr`
-                  - [x] `StringAttr`
-                  - [x] `SymbolRefAttr`
-                  - [x] `SymbolTable`
-                  - [x] `TupleType`
-                  - [x] `Type`
-                  - [x] `TypeAttr`
-                  - [x] `TypeID`
-                  - [x] `UnitAttr`
-                  - [x] `UnrankedMemRefType`
-                  - [x] `UnrankedTensorType`
-                  - [x] `Value`
-                  - [x] `VectorType`
-                  - [x] `WalkOrder`
-                  - [x] `WalkResult`
-                  - [x] `WhileOp`
-                  - [x] `YieldOp`
-                  - [x] `builtins`
-                  - [x] `condition`
-                  - [x] `constant`
-                  - [x] `execute_region`
-                  - [x] `for_`
-                  - [x] `forall`
-                  - [x] `forall_in_parallel`
-                  - [x] `get_dialect_registry`
-                  - [x] `if_`
-                  - [x] `index_switch`
-                  - [x] `np`
-                  - [x] `parallel`
-                  - [x] `reduce`
-                  - [x] `reduce_return`
-                  - [x] `register_attribute_builder`
-                  - [x] `register_type_caster`
-                  - [x] `register_value_caster`
-                  - [x] `while_`
-                  - [x] `yield_`
-                - [x] `sparse_tensor`
-                  - [x] `AssembleOp`
-                  - [x] `BinaryOp`
-                  - [x] `CompressOp`
-                  - [x] `ConcatenateOp`
-                  - [x] `ConvertOp`
-                  - [x] `CrdTransDirectionKind`
-                  - [x] `CrdTranslateOp`
-                  - [x] `DisassembleOp`
-                  - [x] `EncodingAttr`
-                  - [x] `ExpandOp`
-                  - [x] `ExtractIterSpaceOp`
-                  - [x] `ForeachOp`
-                  - [x] `GetStorageSpecifierOp`
-                  - [x] `HasRuntimeLibraryOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `IterateOp`
-                  - [x] `LevelFormat`
-                  - [x] `LevelProperty`
-                  - [x] `LoadOp`
-                  - [x] `LvlOp`
-                  - [x] `NewOp`
-                  - [x] `NumberOfEntriesOp`
-                  - [x] `OutOp`
-                  - [x] `PrintOp`
-                  - [x] `PushBackOp`
-                  - [x] `ReduceOp`
-                  - [x] `ReinterpretMapOp`
-                  - [x] `ReorderCOOOp`
-                  - [x] `SelectOp`
-                  - [x] `SetStorageSpecifierOp`
-                  - [x] `SortOp`
-                  - [x] `SparseTensorSortKind`
-                  - [x] `StorageSpecifierInitOp`
-                  - [x] `StorageSpecifierKind`
-                  - [x] `ToCoordinatesBufferOp`
-                  - [x] `ToCoordinatesOp`
-                  - [x] `ToPositionsOp`
-                  - [x] `ToSliceOffsetOp`
-                  - [x] `ToSliceStrideOp`
-                  - [x] `ToValuesOp`
-                  - [x] `UnaryOp`
-                  - [x] `YieldOp`
-                  - [x] `assemble`
-                  - [x] `auto`
-                  - [x] `binary`
-                  - [x] `builtins`
-                  - [x] `compress`
-                  - [x] `concatenate`
-                  - [x] `convert`
-                  - [x] `coordinates`
-                  - [x] `coordinates_buffer`
-                  - [x] `crd_translate`
-                  - [x] `disassemble`
-                  - [x] `expand`
-                  - [x] `extract_iteration_space`
-                  - [x] `foreach`
-                  - [x] `has_runtime_library`
-                  - [x] `iterate`
-                  - [x] `load`
-                  - [x] `lvl`
-                  - [x] `new`
-                  - [x] `number_of_entries`
-                  - [x] `out`
-                  - [x] `positions`
-                  - [x] `print_`
-                  - [x] `push_back`
-                  - [x] `reduce`
-                  - [x] `register_attribute_builder`
-                  - [x] `reinterpret_map`
-                  - [x] `reorder_coo`
-                  - [x] `select`
-                  - [x] `slice_offset`
-                  - [x] `slice_stride`
-                  - [x] `sort`
-                  - [x] `storage_specifier_get`
-                  - [x] `storage_specifier_init`
-                  - [x] `storage_specifier_set`
-                  - [x] `unary`
-                  - [x] `values`
-                  - [x] `yield_`
-                - [x] `stablehlo`
-                - [x] `vector`
-                  - [x] `BitCastOp`
-                  - [x] `BroadcastOp`
-                  - [x] `CombiningKind`
-                  - [x] `CompressStoreOp`
-                  - [x] `ConstantMaskOp`
-                  - [x] `ContractionOp`
-                  - [x] `CreateMaskOp`
-                  - [x] `DeinterleaveOp`
-                  - [x] `ExpandLoadOp`
-                  - [x] `ExtractElementOp`
-                  - [x] `ExtractOp`
-                  - [x] `ExtractStridedSliceOp`
-                  - [x] `FMAOp`
-                  - [x] `FlatTransposeOp`
-                  - [x] `GatherOp`
-                  - [x] `InsertElementOp`
-                  - [x] `InsertOp`
-                  - [x] `InsertStridedSliceOp`
-                  - [x] `IntEnum`
-                  - [x] `IntFlag`
-                  - [x] `InterleaveOp`
-                  - [x] `IteratorType`
-                  - [x] `LoadOp`
-                  - [x] `MaskOp`
-                  - [x] `MaskedLoadOp`
-                  - [x] `MaskedStoreOp`
-                  - [x] `MatmulOp`
-                  - [x] `MultiDimReductionOp`
-                  - [x] `OuterProductOp`
-                  - [x] `PrintOp`
-                  - [x] `PrintPunctuation`
-                  - [x] `ReductionOp`
-                  - [x] `ReshapeOp`
-                  - [x] `ScalableExtractOp`
-                  - [x] `ScalableInsertOp`
-                  - [x] `ScanOp`
-                  - [x] `ScatterOp`
-                  - [x] `ShapeCastOp`
-                  - [x] `ShuffleOp`
-                  - [x] `SplatOp`
-                  - [x] `StoreOp`
-                  - [x] `TransferReadOp`
-                  - [x] `TransferWriteOp`
-                  - [x] `TransposeOp`
-                  - [x] `TypeCastOp`
-                  - [x] `VectorScaleOp`
-                  - [x] `WarpExecuteOnLane0Op`
-                  - [x] `YieldOp`
-                  - [x] `auto`
-                  - [x] `bitcast`
-                  - [x] `broadcast`
-                  - [x] `builtins`
-                  - [x] `compressstore`
-                  - [x] `constant_mask`
-                  - [x] `contract`
-                  - [x] `create_mask`
-                  - [x] `deinterleave`
-                  - [x] `expandload`
-                  - [x] `extract`
-                  - [x] `extract_strided_slice`
-                  - [x] `extractelement`
-                  - [x] `flat_transpose`
-                  - [x] `fma`
-                  - [x] `gather`
-                  - [x] `insert`
-                  - [x] `insert_strided_slice`
-                  - [x] `insertelement`
-                  - [x] `interleave`
-                  - [x] `load`
-                  - [x] `mask`
-                  - [x] `maskedload`
-                  - [x] `maskedstore`
-                  - [x] `matrix_multiply`
-                  - [x] `multi_reduction`
-                  - [x] `outerproduct`
-                  - [x] `print_`
-                  - [x] `reduction`
-                  - [x] `register_attribute_builder`
-                  - [x] `reshape`
-                  - [x] `scalable_extract`
-                  - [x] `scalable_insert`
-                  - [x] `scan`
-                  - [x] `scatter`
-                  - [x] `shape_cast`
-                  - [x] `shuffle`
-                  - [x] `splat`
-                  - [x] `store`
-                  - [x] `transfer_read`
-                  - [x] `transfer_write`
-                  - [x] `transpose`
-                  - [x] `type_cast`
-                  - [x] `vscale`
-                  - [x] `warp_execute_on_lane_0`
-                  - [x] `yield_`
-              - [x] `extras`
-                - [x] `meta`
-                  - [x] `InsertionPoint`
-                  - [x] `Type`
-                  - [x] `get_op_result_or_op_results`
-                  - [x] `inspect`
-                  - [x] `op_region_builder`
-                  - [x] `region_op`
-                  - [x] `wraps`
-              - [x] `ir`
-              - [x] `passmanager`
-                - [x] `PassManager`
-            - [x] `mosaic`
-              - [x] `python`
-                - [x] `tpu`
-                  - [x] `AllReduceOp`
-                  - [x] `AllocaSemaphoreOp`
-                  - [x] `AssumeLayoutOp`
-                  - [x] `AssumeMultipleOp`
-                  - [x] `BitcastOp`
-                  - [x] `BitcastVregOp`
-                  - [x] `BroadcastInSublanesOp`
-                  - [x] `ConcatenateOp`
-                  - [x] `CreateMaskOp`
-                  - [x] `CreateSubelementMaskOp`
-                  - [x] `DelayOp`
-                  - [x] `DeviceIdOp`
-                  - [x] `DynamicGatherOp`
-                  - [x] `EnqueueDMAOp`
-                  - [x] `EraseLayoutOp`
-                  - [x] `GatherOp`
-                  - [x] `GetBarrierSemaphoreOp`
-                  - [x] `GetInternalScratchOp`
-                  - [x] `GetIterationBoundOp`
-                  - [x] `IotaOp`
-                  - [x] `LoadOp`
-                  - [x] `LogOp`
-                  - [x] `MaskCastOp`
-                  - [x] `MatmulOp`
-                  - [x] `MemRefSliceOp`
-                  - [x] `MemRefSqueezeOp`
-                  - [x] `PRNGRandomBitsOp`
-                  - [x] `PRNGSeed32Op`
-                  - [x] `PackSubelementsOp`
-                  - [x] `RegionOp`
-                  - [x] `ReinterpretCastOp`
-                  - [x] `RepeatOp`
-                  - [x] `RollVectorsOp`
-                  - [x] `RotateOp`
-                  - [x] `SemaphoreReadOp`
-                  - [x] `SemaphoreSignalOp`
-                  - [x] `SemaphoreWaitOp`
-                  - [x] `StoreOp`
-                  - [x] `StridedLoadOp`
-                  - [x] `StridedStoreOp`
-                  - [x] `TraceOp`
-                  - [x] `TraceStartOp`
-                  - [x] `TraceStopOp`
-                  - [x] `UnpackSubelementsOp`
-                  - [x] `UnrollVectorsOp`
-                  - [x] `VRegDataBounds`
-                  - [x] `VectorLayout`
-                  - [x] `WaitDMAOp`
-                  - [x] `YieldOp`
-                  - [x] `all_reduce`
-                  - [x] `apply_layout_op`
-                  - [x] `assemble`
-                  - [x] `assume_layout`
-                  - [x] `assume_multiple`
-                  - [x] `bitcast`
-                  - [x] `bitcast_vreg`
-                  - [x] `broadcast_in_sublanes`
-                  - [x] `builtins`
-                  - [x] `concatenate`
-                  - [x] `create_mask`
-                  - [x] `create_subelement_mask`
-                  - [x] `delay`
-                  - [x] `device_id`
-                  - [x] `disassemble`
-                  - [x] `dynamic_gather`
-                  - [x] `enqueue_dma`
-                  - [x] `erase_memref_layout`
-                  - [x] `gather`
-                  - [x] `internal_scratch`
-                  - [x] `iota`
-                  - [x] `iteration_bound`
-                  - [x] `load`
-                  - [x] `log`
-                  - [x] `mask_cast`
-                  - [x] `matmul`
-                  - [x] `memref_slice`
-                  - [x] `memref_squeeze`
-                  - [x] `pack_subelements`
-                  - [x] `private_get_tiles`
-                  - [x] `private_has_communication`
-                  - [x] `private_has_no_memory_space`
-                  - [x] `private_insert_argument`
-                  - [x] `private_is_identity`
-                  - [x] `private_is_tiled_layout`
-                  - [x] `private_move_all_regions`
-                  - [x] `private_replace_all_uses_except`
-                  - [x] `private_replace_all_uses_with`
-                  - [x] `private_set_arg_attr`
-                  - [x] `private_set_operand`
-                  - [x] `private_set_operands`
-                  - [x] `prng_random_bits`
-                  - [x] `prng_set_seed_32`
-                  - [x] `region`
-                  - [x] `register_dialect`
-                  - [x] `reinterpret_cast`
-                  - [x] `relayout`
-                  - [x] `repeat`
-                  - [x] `roll_vectors`
-                  - [x] `rotate`
-                  - [x] `sem_alloc`
-                  - [x] `sem_barrier`
-                  - [x] `sem_read`
-                  - [x] `sem_signal`
-                  - [x] `sem_wait`
-                  - [x] `store`
-                  - [x] `strided_load`
-                  - [x] `strided_store`
-                  - [x] `trace`
-                  - [x] `trace_start`
-                  - [x] `trace_stop`
-                  - [x] `unpack_subelements`
-                  - [x] `unroll_vectors`
-                  - [x] `wait_dma`
-                  - [x] `yield_`
-            - [x] `utils`
-              - [x] `safe_map`
-              - [x] `safe_zip`
-            - [x] `version`
-              - [x] `annotations`
-              - [x] `datetime`
-              - [x] `os`
-              - [x] `pathlib`
-              - [x] `subprocess`
-            - [x] `xla_client`
-            - [x] `xla_extension`
-              - [x] `ArrayImpl`
-              - [x] `CallInliner`
-              - [x] `Client`
-              - [x] `CompileOnlyPyClient`
-              - [x] `CompileOptions`
-              - [x] `CompiledMemoryStats`
-              - [x] `CpuCollectives`
-              - [x] `DebugOptions`
-              - [x] `Device`
-              - [x] `DeviceAssignment`
-              - [x] `DeviceList`
-              - [x] `DeviceTopology`
-              - [x] `DistributedRuntimeClient`
-              - [x] `DistributedRuntimeService`
-              - [x] `Executable`
-              - [x] `ExecutableBuildOptions`
-              - [x] `ExecuteResults`
-              - [x] `FftType`
-              - [x] `FlattenCallGraph`
-              - [x] `Frame`
-              - [x] `FrontendAttributes`
-              - [x] `GSPMDSharding`
-              - [x] `HloComputation`
-              - [x] `HloDCE`
-              - [x] `HloModule`
-              - [x] `HloModuleGroup`
-              - [x] `HloPassInterface`
-              - [x] `HloPrintOptions`
-              - [x] `HloSharding`
-              - [x] `HostBufferSemantics`
-              - [x] `Layout`
-              - [x] `Literal`
-              - [x] `LoadedExecutable`
-              - [x] `Memory`
-              - [x] `MpiCollectives`
-              - [x] `NamedSharding`
-              - [x] `OpSharding`
-              - [x] `OpSharding_ShardGroupType`
-              - [x] `OpSharding_Type`
-              - [x] `PjRtLayout`
-              - [x] `PjRtXlaLayout`
-              - [x] `PjitFunction`
-              - [x] `PjitFunctionCache`
-              - [x] `PmapFunction`
-              - [x] `PmapSharding`
-              - [x] `PrecisionConfig_Precision`
-              - [x] `PreemptionSyncManager`
-              - [x] `PrimitiveType`
-              - [x] `ProgramShape`
-              - [x] `PyTreeRegistry`
-              - [x] `ResultHandler`
-              - [x] `Shape`
-              - [x] `ShapeIndex`
-              - [x] `ShardedToken`
-              - [x] `Sharding`
-              - [x] `SingleDeviceSharding`
-              - [x] `Token`
-              - [x] `Traceback`
-              - [x] `TupleSimplifier`
-              - [x] `WeakrefLRUCache`
-              - [x] `XlaBuilder`
-              - [x] `XlaComputation`
-              - [x] `XlaOp`
-              - [x] `XlaRuntimeError`
-              - [x] `array_result_handler`
-              - [x] `batched_block_until_ready`
-              - [x] `batched_copy_array_to_devices_with_sharding`
-              - [x] `batched_device_put`
-              - [x] `buffer_to_dlpack_managed_tensor`
-              - [x] `check_and_canonicalize_memory_kind`
-              - [x] `collect_garbage`
-              - [x] `create_preemption_sync_manager`
-              - [x] `cuda_array_interface_to_buffer`
-              - [x] `custom_call_targets`
-              - [x] `dlpack_managed_tensor_to_buffer`
-              - [x] `encode_inspect_sharding_callback`
-              - [x] `get_c_api_client`
-              - [x] `get_c_api_topology`
-              - [x] `get_default_c_api_topology`
-              - [x] `get_distributed_runtime_client`
-              - [x] `get_distributed_runtime_service`
-              - [x] `get_tfrt_cpu_client`
-              - [x] `get_topology_for_devices`
-              - [x] `hlo_module_cost_analysis`
-              - [x] `hlo_module_from_text`
-              - [x] `hlo_module_to_dot_graph`
-              - [x] `hlo_sharding_util`
-              - [x] `ifrt_programs`
-              - [x] `ifrt_proxy`
-                - [x] `ClientConnectionOptions`
-                - [x] `get_client`
-              - [x] `initialize_pjrt_plugin`
-              - [x] `is_asan`
-              - [x] `is_msan`
-              - [x] `is_optimized_build`
-              - [x] `is_sanitized`
-              - [x] `is_tsan`
-              - [x] `jax_jit`
-              - [x] `json_to_pprof_profile`
-              - [x] `load_pjrt_plugin`
-              - [x] `make_gloo_tcp_collectives`
-              - [x] `make_mpi_collectives`
-              - [x] `mlir`
-                - [x] `deserialize_portable_artifact`
-                - [x] `mhlo_to_stablehlo`
-                - [x] `mlir_module_to_xla_computation`
-                - [x] `refine_polymorphic_shapes`
-                - [x] `serialize_portable_artifact`
-                - [x] `stablehlo_to_mhlo`
-                - [x] `xla_computation_to_mlir_module`
-              - [x] `ops`
-              - [x] `outfeed_receiver`
-                - [x] `OutfeedReceiverForPython`
-                - [x] `start`
-              - [x] `pjit`
-              - [x] `pjrt_plugin_initialized`
-              - [x] `pjrt_plugin_loaded`
-              - [x] `pmap_lib`
-                - [x] `Chunked`
-                - [x] `NoSharding`
-                - [x] `Replicated`
-                - [x] `ShardedAxis`
-                - [x] `ShardingSpec`
-                - [x] `Unstacked`
-                - [x] `pmap`
-              - [x] `pprof_profile_to_json`
-              - [x] `profiler`
-              - [x] `pytree`
-                - [x] `PyTreeDef`
-                - [x] `PyTreeRegistry`
-                - [x] `all_leaves`
-                - [x] `default_registry`
-                - [x] `tuple`
-                - [x] `version`
-              - [x] `register_custom_call_partitioner`
-              - [x] `register_custom_call_target`
-              - [x] `replace_thread_exc_traceback`
-              - [x] `transfer_guard_lib`
-                - [x] `TransferGuardLevel`
-                - [x] `TransferGuardState`
-                - [x] `global_state`
-                - [x] `thread_local_state`
-              - [x] `weakref_lru_cache`
-          - [x] `lapack`
-          - [x] `mlir`
-            - [x] `dialects`
-              - [x] `arith`
-              - [x] `builtin`
-              - [x] `chlo`
-              - [x] `func`
-              - [x] `gpu`
-              - [x] `hlo`
-              - [x] `lib`
-              - [x] `llvm`
-              - [x] `math`
-              - [x] `memref`
-              - [x] `mhlo`
-              - [x] `nvgpu`
-              - [x] `nvvm`
-              - [x] `scf`
-              - [x] `sparse_tensor`
-              - [x] `vector`
-            - [x] `ir`
-            - [x] `passmanager`
-            - [x] `register_jax_dialects`
-              - [x] `register_dialects`
-          - [x] `mlir_api_version`
-          - [x] `pathlib`
-          - [x] `pmap_lib`
-          - [x] `pytree`
-          - [x] `re`
-          - [x] `tpu`
-          - [x] `transfer_guard_lib`
-          - [x] `utils`
-          - [x] `version`
-          - [x] `version_str`
-          - [x] `xla_client`
-          - [x] `xla_extension`
-          - [x] `xla_extension_version`
-        - [x] `log_checkpoint_residuals`
-        - [x] `log_compiles`
-        - [x] `logger`
-        - [x] `logging`
-        - [x] `logging_config`
-          - [x] `disable_all_debug_logging`
-          - [x] `enable_debug_logging`
-          - [x] `logging`
-          - [x] `sys`
-        - [x] `no_default`
-        - [x] `numpy_dtype_promotion`
-        - [x] `numpy_rank_promotion`
-        - [x] `os`
-        - [x] `parse_flags_with_absl`
-        - [x] `persistent_cache_min_compile_time_secs`
-        - [x] `persistent_cache_min_entry_size_bytes`
-        - [x] `pgle_aggregation_percentile`
-        - [x] `pgle_profiling_runs`
-        - [x] `pmap_no_rank_reduction`
-        - [x] `pmap_shmap_merge`
-        - [x] `raise_persistent_cache_errors`
-        - [x] `random_seed_offset`
-        - [x] `remat_opt_barrier`
-        - [x] `share_autotune_config_between_hosts`
-        - [x] `share_binary_between_hosts`
-        - [x] `share_binary_between_hosts_timeout_ms`
-        - [x] `softmax_custom_jvp`
-        - [x] `spmd_mode`
-        - [x] `sys`
-        - [x] `threading`
-        - [x] `threefry_gpu_kernel_lowering`
-        - [x] `threefry_partitionable`
-        - [x] `trace_context`
-        - [x] `traceback_filtering`
-        - [x] `traceback_in_locations_limit`
-        - [x] `transfer_guard`
-        - [x] `transfer_guard_device_to_device`
-        - [x] `transfer_guard_device_to_host`
-        - [x] `transfer_guard_host_to_device`
+        - [x] `Callable` (Attribute)
+        - [x] `UPGRADE_BOOL_EXTRA_DESC` (Attribute)
+        - [x] `UPGRADE_BOOL_HELP` (Attribute)
+        - [x] `already_configured_with_absl` (Attribute)
+        - [x] `annotations` (Attribute)
+        - [x] `config` (Attribute)
+        - [x] `logger` (Attribute)
+        - [x] `no_default` (Attribute)
+        - [x] `unset` (Attribute)
+        - [x] `lib` (Module)
         - [x] `transfer_guard_lib`
-        - [x] `unset`
-        - [x] `update`
-        - [x] `update_thread_local_jit_state`
+          - [x] `global_state` (Attribute)
+          - [x] `thread_local_state` (Attribute)
+          - [x] `TransferGuardLevel` (Class)
+          - [x] `TransferGuardState` (Class)
         - [x] `xla_client`
-        - [x] `xla_runtime_errors`
-      - [x] `contextmanager`
-      - [x] `disable_x64`
-      - [x] `enable_x64`
-  - [x] `image`
-    - [x] `ResizeMethod`
-    - [x] `resize`
-    - [x] `scale_and_translate`
+          - [x] `DTYPE_TO_XLA_ELEMENT_TYPE` (Attribute)
+          - [x] `Union` (Attribute)
+          - [x] `XLA_ELEMENT_TYPE_TO_DTYPE` (Attribute)
+          - [x] `annotations` (Attribute)
+          - [x] `array_result_handler` (Attribute)
+          - [x] `batched_block_until_ready` (Attribute)
+          - [x] `batched_copy_array_to_devices_with_sharding` (Attribute)
+          - [x] `batched_device_put` (Attribute)
+          - [x] `check_and_canonicalize_memory_kind` (Attribute)
+          - [x] `custom_call_targets` (Attribute)
+          - [x] `encode_inspect_sharding_callback` (Attribute)
+          - [x] `get_topology_for_devices` (Attribute)
+          - [x] `logger` (Attribute)
+          - [x] `mlir_api_version` (Attribute)
+          - [x] `register_custom_call_partitioner` (Attribute)
+          - [x] `weakref_lru_cache` (Attribute)
+          - [x] `xla_platform_names` (Attribute)
+          - [x] `ArrayImpl` (Class)
+          - [x] `Client` (Class)
+          - [x] `CompileOptions` (Class)
+          - [x] `ConvolutionDimensionNumbers` (Class)
+          - [x] `CustomCallHandler` (Class)
+          - [x] `CustomCallTargetTraits` (Class)
+          - [x] `Device` (Class)
+          - [x] `DeviceAssignment` (Class)
+          - [x] `DeviceList` (Class)
+          - [x] `DeviceTopology` (Class)
+          - [x] `DotDimensionNumbers` (Class)
+          - [x] `FftType` (Class)
+          - [x] `Frame` (Class)
+          - [x] `GSPMDSharding` (Class)
+          - [x] `GatherDimensionNumbers` (Class)
+          - [x] `HloSharding` (Class)
+          - [x] `HostBufferSemantics` (Class)
+          - [x] `Layout` (Class)
+          - [x] `LoadedExecutable` (Class)
+          - [x] `Mapping` (Class)
+          - [x] `Memory` (Class)
+          - [x] `NamedSharding` (Class)
+          - [x] `OpMetadata` (Class)
+          - [x] `OpSharding` (Class)
+          - [x] `PaddingConfig` (Class)
+          - [x] `PaddingConfigDimension` (Class)
+          - [x] `PaddingType` (Class)
+          - [x] `PjRtLayout` (Class)
+          - [x] `PmapSharding` (Class)
+          - [x] `PrecisionConfig` (Class)
+          - [x] `PrimitiveType` (Class)
+          - [x] `ProgramShape` (Class)
+          - [x] `Protocol` (Class)
+          - [x] `ReplicaGroup` (Class)
+          - [x] `ScatterDimensionNumbers` (Class)
+          - [x] `Sequence` (Class)
+          - [x] `Shape` (Class)
+          - [x] `ShapeIndex` (Class)
+          - [x] `Sharding` (Class)
+          - [x] `SingleDeviceSharding` (Class)
+          - [x] `Traceback` (Class)
+          - [x] `XlaBuilder` (Class)
+          - [x] `XlaComputation` (Class)
+          - [x] `XlaOp` (Class)
+          - [x] `XlaRuntimeError` (Class)
+          - [x] `bfloat16` (Class)
+          - [x] `float8_e4m3b11fnuz` (Class)
+          - [x] `float8_e4m3fn` (Class)
+          - [x] `float8_e4m3fnuz` (Class)
+          - [x] `float8_e5m2` (Class)
+          - [x] `float8_e5m2fnuz` (Class)
+          - [x] `CurrentSourceInfoMetadata` (Function)
+          - [x] `LoadedExecutable_execute` (Function)
+          - [x] `LoadedExecutable_execute_with_token` (Function)
+          - [x] `dtype_to_etype` (Function)
+          - [x] `execute_with_python_values` (Function)
+          - [x] `execute_with_python_values_replicated` (Function)
+          - [x] `generate_pjrt_gpu_plugin_options` (Function)
+          - [x] `heap_profile` (Function)
+          - [x] `initialize_pjrt_plugin` (Function)
+          - [x] `load_pjrt_plugin_dynamically` (Function)
+          - [x] `load_pjrt_plugin_with_c_api` (Function)
+          - [x] `make_c_api_client` (Function)
+          - [x] `make_c_api_device_topology` (Function)
+          - [x] `make_convolution_dimension_numbers` (Function)
+          - [x] `make_cpu_client` (Function)
+          - [x] `make_dot_dimension_numbers` (Function)
+          - [x] `make_gpu_client` (Function)
+          - [x] `make_padding_config` (Function)
+          - [x] `make_replica_groups` (Function)
+          - [x] `make_tfrt_tpu_c_api_client` (Function)
+          - [x] `make_tfrt_tpu_c_api_device_topology` (Function)
+          - [x] `make_tpu_client` (Function)
+          - [x] `pjrt_plugin_initialized` (Function)
+          - [x] `pjrt_plugin_loaded` (Function)
+          - [x] `register_custom_call_handler` (Function)
+          - [x] `register_custom_call_target` (Function)
+          - [x] `shape_from_pyval` (Function)
+          - [x] `tracebacks` (Function)
+          - [x] `window_padding_type_to_pad_values` (Function)
+          - [x] `atexit` (Module)
+          - [x] `contextlib` (Module)
+          - [x] `enum` (Module)
+          - [x] `gzip` (Module)
+          - [x] `hlo_sharding_util` (Module)
+          - [x] `ifrt_programs` (Module)
+          - [x] `inspect` (Module)
+          - [x] `logging` (Module)
+          - [x] `ml_dtypes` (Module)
+          - [x] `np` (Module)
+          - [x] `ops` (Module)
+          - [x] `os` (Module)
+          - [x] `profiler` (Module)
+          - [x] `threading` (Module)
   - [x] `interpreters`
     - [x] `ad`
-      - [x] `CustomJVPException`
-      - [x] `CustomVJPException`
-      - [x] `JVPTrace`
-      - [x] `JVPTracer`
-      - [x] `UndefinedPrimal`
-      - [x] `Zero`
-      - [x] `add_jaxvals`
-      - [x] `add_jaxvals_p`
-      - [x] `add_tangents`
-      - [x] `annotations`
-      - [x] `backward_pass`
-      - [x] `backward_pass_internal`
-      - [x] `bilinear_transpose`
-      - [x] `call_param_updaters`
-      - [x] `call_transpose`
-      - [x] `call_transpose_param_updaters`
-      - [x] `closed_backward_pass`
-      - [x] `custom_lin_p`
-      - [x] `defbilinear`
-      - [x] `defjvp`
-      - [x] `defjvp2`
-      - [x] `defjvp_zero`
-      - [x] `deflinear`
-      - [x] `deflinear2`
-      - [x] `f_jvp_traceable`
-      - [x] `get_primitive_transpose`
-      - [x] `instantiate_zeros`
-      - [x] `is_undefined_primal`
-      - [x] `jvp`
-      - [x] `jvp_jaxpr`
-      - [x] `jvp_subtrace`
-      - [x] `jvp_subtrace_aux`
-      - [x] `jvpfun`
-      - [x] `linear_jvp`
-      - [x] `linear_transpose`
-      - [x] `linear_transpose2`
-      - [x] `linearize`
-      - [x] `map_transpose`
-      - [x] `nonzero_outputs`
-      - [x] `nonzero_tangent_outputs`
-      - [x] `primitive_jvps`
-      - [x] `primitive_transposes`
-      - [x] `rearrange_binders`
-      - [x] `recast_to_float0`
-      - [x] `reducing_transposes`
-      - [x] `replace_float0s`
-      - [x] `standard_jvp`
-      - [x] `standard_jvp2`
-      - [x] `traceable`
-      - [x] `unpair_pval`
-      - [x] `vjp`
-      - [x] `zero_jvp`
-      - [x] `zeros_like_aval`
-      - [x] `zeros_like_jaxval`
-      - [x] `zeros_like_p`
+      - [x] `add_jaxvals_p` (Attribute)
+      - [x] `annotations` (Attribute)
+      - [x] `call_param_updaters` (Attribute)
+      - [x] `call_transpose_param_updaters` (Attribute)
+      - [x] `custom_lin_p` (Attribute)
+      - [x] `primitive_jvps` (Attribute)
+      - [x] `primitive_transposes` (Attribute)
+      - [x] `reducing_transposes` (Attribute)
+      - [x] `zeros_like_p` (Attribute)
     - [x] `batching`
-      - [x] `Array`
-      - [x] `AxisSize`
-      - [x] `BatchTrace`
-      - [x] `BatchTracer`
-      - [x] `BatchingRule`
-      - [x] `Elt`
-      - [x] `FromEltHandler`
-      - [x] `GetIdx`
-      - [x] `IndexedAxisSize`
-      - [x] `Jumble`
-      - [x] `JumbleAxis`
-      - [x] `JumbleTy`
-      - [x] `MakeIotaHandler`
-      - [x] `MapSpec`
-      - [x] `NotMapped`
-      - [x] `RaggedAxis`
-      - [x] `ToEltHandler`
-      - [x] `Vmappable`
-      - [x] `Zero`
-      - [x] `ZeroIfMapped`
-      - [x] `axis_primitive_batchers`
-      - [x] `batch`
-      - [x] `batch_custom_jvp_subtrace`
-      - [x] `batch_custom_vjp_bwd`
-      - [x] `batch_jaxpr`
-      - [x] `batch_jaxpr2`
-      - [x] `batch_jaxpr_axes`
-      - [x] `batch_subtrace`
-      - [x] `bdim_at_front`
-      - [x] `broadcast`
-      - [x] `broadcast_batcher`
-      - [x] `defbroadcasting`
-      - [x] `defreducer`
-      - [x] `defvectorized`
-      - [x] `flatten_fun_for_vmap`
-      - [x] `from_elt`
-      - [x] `from_elt_handlers`
-      - [x] `is_vmappable`
-      - [x] `jumble_axis`
-      - [x] `make_iota`
-      - [x] `make_iota_handlers`
-      - [x] `matchaxis`
-      - [x] `moveaxis`
-      - [x] `not_mapped`
-      - [x] `primitive_batchers`
-      - [x] `reducer_batcher`
-      - [x] `register_vmappable`
-      - [x] `spec_types`
-      - [x] `spmd_axis_primitive_batchers`
-      - [x] `to_elt`
-      - [x] `to_elt_handlers`
-      - [x] `unregister_vmappable`
-      - [x] `vectorized_batcher`
-      - [x] `vmappables`
-      - [x] `vtile`
-      - [x] `zero_if_mapped`
+      - [x] `axis_primitive_batchers` (Attribute)
+      - [x] `from_elt_handlers` (Attribute)
+      - [x] `jumble_axis` (Attribute)
+      - [x] `make_iota_handlers` (Attribute)
+      - [x] `not_mapped` (Attribute)
+      - [x] `primitive_batchers` (Attribute)
+      - [x] `spec_types` (Attribute)
+      - [x] `spmd_axis_primitive_batchers` (Attribute)
+      - [x] `to_elt_handlers` (Attribute)
+      - [x] `vmappables` (Attribute)
+      - [x] `zero_if_mapped` (Attribute)
     - [x] `mlir`
-      - [x] `AxisContext`
-      - [x] `ConstantHandler`
-      - [x] `DEVICE_TO_DEVICE_TYPE`
-      - [x] `LoweringParameters`
-      - [x] `LoweringResult`
-      - [x] `LoweringRule`
-      - [x] `LoweringRuleContext`
-      - [x] `Mesh`
-      - [x] `MeshAxisName`
-      - [x] `ModuleContext`
-      - [x] `RECV_FROM_HOST_TYPE`
-      - [x] `ReplicaAxisContext`
-      - [x] `SEND_TO_HOST_TYPE`
-      - [x] `SPMDAxisContext`
-      - [x] `ShapePolyLoweringState`
-      - [x] `ShardingContext`
-      - [x] `Token`
-      - [x] `TokenSet`
-      - [x] `Value`
-      - [x] `aval_to_ir_type`
-      - [x] `aval_to_ir_types`
-      - [x] `core_call_lowering`
-      - [x] `custom_call`
-      - [x] `dense_bool_array`
-      - [x] `dense_bool_elements`
-      - [x] `dense_int_array`
-      - [x] `dense_int_elements`
-      - [x] `dtype_to_ir_type`
-      - [x] `emit_python_callback`
-      - [x] `flatten_lowering_ir_args`
+      - [x] `DEVICE_TO_DEVICE_TYPE` (Attribute)
+      - [x] `RECV_FROM_HOST_TYPE` (Attribute)
+      - [x] `SEND_TO_HOST_TYPE` (Attribute)
+      - [x] `ir_type_handlers` (Attribute)
+      - [x] `lowerable_effects` (Attribute)
       - [x] `func_dialect`
+        - [x] `ARGUMENT_ATTRIBUTE_NAME` (Attribute)
+        - [x] `List` (Attribute)
+        - [x] `Optional` (Attribute)
+        - [x] `RESULT_ATTRIBUTE_NAME` (Attribute)
+        - [x] `Sequence` (Attribute)
+        - [x] `Union` (Attribute)
+        - [x] `func` (Attribute)
+        - [x] `AffineAddExpr` (Class)
+        - [x] `AffineBinaryExpr` (Class)
+        - [x] `AffineCeilDivExpr` (Class)
+        - [x] `AffineConstantExpr` (Class)
+        - [x] `AffineDimExpr` (Class)
+        - [x] `AffineExpr` (Class)
+        - [x] `AffineExprList` (Class)
+        - [x] `AffineFloorDivExpr` (Class)
+        - [x] `AffineMap` (Class)
+        - [x] `AffineMapAttr` (Class)
+        - [x] `AffineModExpr` (Class)
+        - [x] `AffineMulExpr` (Class)
+        - [x] `AffineSymbolExpr` (Class)
+        - [x] `ArrayAttr` (Class)
+        - [x] `ArrayAttributeIterator` (Class)
+        - [x] `AsmState` (Class)
+        - [x] `AttrBuilder` (Class)
+        - [x] `Attribute` (Class)
+        - [x] `BF16Type` (Class)
+        - [x] `Block` (Class)
+        - [x] `BlockArgument` (Class)
+        - [x] `BlockArgumentList` (Class)
+        - [x] `BlockIterator` (Class)
+        - [x] `BlockList` (Class)
+        - [x] `BoolAttr` (Class)
+        - [x] `CallIndirectOp` (Class)
+        - [x] `CallOp` (Class)
+        - [x] `ComplexType` (Class)
+        - [x] `ConstantOp` (Class)
+        - [x] `Context` (Class)
+        - [x] `DenseBoolArrayAttr` (Class)
+        - [x] `DenseBoolArrayIterator` (Class)
+        - [x] `DenseElementsAttr` (Class)
+        - [x] `DenseF32ArrayAttr` (Class)
+        - [x] `DenseF32ArrayIterator` (Class)
+        - [x] `DenseF64ArrayAttr` (Class)
+        - [x] `DenseF64ArrayIterator` (Class)
+        - [x] `DenseFPElementsAttr` (Class)
+        - [x] `DenseI16ArrayAttr` (Class)
+        - [x] `DenseI16ArrayIterator` (Class)
+        - [x] `DenseI32ArrayAttr` (Class)
+        - [x] `DenseI32ArrayIterator` (Class)
+        - [x] `DenseI64ArrayAttr` (Class)
+        - [x] `DenseI64ArrayIterator` (Class)
+        - [x] `DenseI8ArrayAttr` (Class)
+        - [x] `DenseI8ArrayIterator` (Class)
+        - [x] `DenseIntElementsAttr` (Class)
+        - [x] `DenseResourceElementsAttr` (Class)
+        - [x] `Diagnostic` (Class)
+        - [x] `DiagnosticHandler` (Class)
+        - [x] `DiagnosticInfo` (Class)
+        - [x] `DiagnosticSeverity` (Class)
+        - [x] `Dialect` (Class)
+        - [x] `DialectDescriptor` (Class)
+        - [x] `DialectRegistry` (Class)
+        - [x] `Dialects` (Class)
+        - [x] `DictAttr` (Class)
+        - [x] `F16Type` (Class)
+        - [x] `F32Type` (Class)
+        - [x] `F64Type` (Class)
+        - [x] `FlatSymbolRefAttr` (Class)
+        - [x] `Float8E4M3B11FNUZType` (Class)
+        - [x] `Float8E4M3FNType` (Class)
+        - [x] `Float8E4M3FNUZType` (Class)
+        - [x] `Float8E5M2FNUZType` (Class)
+        - [x] `Float8E5M2Type` (Class)
+        - [x] `FloatAttr` (Class)
+        - [x] `FloatTF32Type` (Class)
+        - [x] `FloatType` (Class)
+        - [x] `FuncOp` (Class)
+        - [x] `FunctionType` (Class)
+        - [x] `IndexType` (Class)
+        - [x] `InferShapedTypeOpInterface` (Class)
+        - [x] `InferTypeOpInterface` (Class)
+        - [x] `InsertionPoint` (Class)
+        - [x] `IntegerAttr` (Class)
+        - [x] `IntegerSet` (Class)
+        - [x] `IntegerSetConstraint` (Class)
+        - [x] `IntegerSetConstraintList` (Class)
+        - [x] `IntegerType` (Class)
+        - [x] `Location` (Class)
+        - [x] `MLIRError` (Class)
+        - [x] `MemRefType` (Class)
+        - [x] `Module` (Class)
+        - [x] `NamedAttribute` (Class)
+        - [x] `NoneType` (Class)
+        - [x] `OpAttributeMap` (Class)
+        - [x] `OpOperand` (Class)
+        - [x] `OpOperandIterator` (Class)
+        - [x] `OpOperandList` (Class)
+        - [x] `OpResult` (Class)
+        - [x] `OpResultList` (Class)
+        - [x] `OpSuccessors` (Class)
+        - [x] `OpView` (Class)
+        - [x] `OpaqueAttr` (Class)
+        - [x] `OpaqueType` (Class)
+        - [x] `Operation` (Class)
+        - [x] `OperationIterator` (Class)
+        - [x] `OperationList` (Class)
+        - [x] `RankedTensorType` (Class)
+        - [x] `Region` (Class)
+        - [x] `RegionIterator` (Class)
+        - [x] `RegionSequence` (Class)
+        - [x] `ReturnOp` (Class)
+        - [x] `ShapedType` (Class)
+        - [x] `ShapedTypeComponents` (Class)
+        - [x] `StridedLayoutAttr` (Class)
+        - [x] `StringAttr` (Class)
+        - [x] `SymbolRefAttr` (Class)
+        - [x] `SymbolTable` (Class)
+        - [x] `TupleType` (Class)
+        - [x] `Type` (Class)
+        - [x] `TypeAttr` (Class)
+        - [x] `TypeID` (Class)
+        - [x] `UnitAttr` (Class)
+        - [x] `UnrankedMemRefType` (Class)
+        - [x] `UnrankedTensorType` (Class)
+        - [x] `Value` (Class)
+        - [x] `VectorType` (Class)
+        - [x] `WalkOrder` (Class)
+        - [x] `WalkResult` (Class)
+        - [x] `call` (Function)
+        - [x] `call_indirect` (Function)
+        - [x] `constant` (Function)
+        - [x] `get_dialect_registry` (Function)
+        - [x] `register_attribute_builder` (Function)
+        - [x] `register_type_caster` (Function)
+        - [x] `register_value_caster` (Function)
+        - [x] `return_` (Function)
+        - [x] `builtins` (Module)
+        - [x] `inspect` (Module)
+        - [x] `np` (Module)
       - [x] `hlo`
-      - [x] `i32_attr`
-      - [x] `i64_attr`
+        - [x] `AbsOp` (Class)
+        - [x] `AddOp` (Class)
+        - [x] `AfterAllOp` (Class)
+        - [x] `AllGatherOp` (Class)
+        - [x] `AllReduceOp` (Class)
+        - [x] `AllToAllOp` (Class)
+        - [x] `AndOp` (Class)
+        - [x] `Atan2Op` (Class)
+        - [x] `BatchNormGradOp` (Class)
+        - [x] `BatchNormInferenceOp` (Class)
+        - [x] `BatchNormTrainingOp` (Class)
+        - [x] `BitcastConvertOp` (Class)
+        - [x] `BroadcastInDimOp` (Class)
+        - [x] `BroadcastOp` (Class)
+        - [x] `CaseOp` (Class)
+        - [x] `CbrtOp` (Class)
+        - [x] `CeilOp` (Class)
+        - [x] `ChannelHandle` (Class)
+        - [x] `CholeskyOp` (Class)
+        - [x] `ClampOp` (Class)
+        - [x] `ClzOp` (Class)
+        - [x] `CollectiveBroadcastOp` (Class)
+        - [x] `CollectivePermuteOp` (Class)
+        - [x] `CompareOp` (Class)
+        - [x] `ComparisonDirectionAttr` (Class)
+        - [x] `ComparisonTypeAttr` (Class)
+        - [x] `ComplexOp` (Class)
+        - [x] `CompositeOp` (Class)
+        - [x] `ConcatenateOp` (Class)
+        - [x] `ConstantOp` (Class)
+        - [x] `ConvDimensionNumbers` (Class)
+        - [x] `ConvertOp` (Class)
+        - [x] `ConvolutionOp` (Class)
+        - [x] `CosineOp` (Class)
+        - [x] `CreateTokenOp` (Class)
+        - [x] `CrossReplicaSumOp` (Class)
+        - [x] `CustomCallOp` (Class)
+        - [x] `DivOp` (Class)
+        - [x] `DotDimensionNumbers` (Class)
+        - [x] `DotGeneralOp` (Class)
+        - [x] `DotOp` (Class)
+        - [x] `DynamicBroadcastInDimOp` (Class)
+        - [x] `DynamicConvOp` (Class)
+        - [x] `DynamicGatherOp` (Class)
+        - [x] `DynamicIotaOp` (Class)
+        - [x] `DynamicPadOp` (Class)
+        - [x] `DynamicReshapeOp` (Class)
+        - [x] `DynamicSliceOp` (Class)
+        - [x] `DynamicUpdateSliceOp` (Class)
+        - [x] `EinsumOp` (Class)
+        - [x] `ExpOp` (Class)
+        - [x] `Expm1Op` (Class)
+        - [x] `FftOp` (Class)
+        - [x] `FftTypeAttr` (Class)
+        - [x] `FloorOp` (Class)
+        - [x] `GatherDimensionNumbers` (Class)
+        - [x] `GatherOp` (Class)
+        - [x] `GetDimensionSizeOp` (Class)
+        - [x] `GetTupleElementOp` (Class)
+        - [x] `IfOp` (Class)
+        - [x] `ImagOp` (Class)
+        - [x] `InfeedOp` (Class)
+        - [x] `IotaOp` (Class)
+        - [x] `IsFiniteOp` (Class)
+        - [x] `Log1pOp` (Class)
+        - [x] `LogOp` (Class)
+        - [x] `LogisticOp` (Class)
+        - [x] `MapOp` (Class)
+        - [x] `MaxOp` (Class)
+        - [x] `MinOp` (Class)
+        - [x] `MulOp` (Class)
+        - [x] `NegOp` (Class)
+        - [x] `NotOp` (Class)
+        - [x] `OptimizationBarrierOp` (Class)
+        - [x] `OrOp` (Class)
+        - [x] `OutfeedOp` (Class)
+        - [x] `OutputOperandAlias` (Class)
+        - [x] `PadOp` (Class)
+        - [x] `PartitionIdOp` (Class)
+        - [x] `PopulationCountOp` (Class)
+        - [x] `PowOp` (Class)
+        - [x] `PrecisionAttr` (Class)
+        - [x] `RealDynamicSliceOp` (Class)
+        - [x] `RealOp` (Class)
+        - [x] `RecvOp` (Class)
+        - [x] `ReduceOp` (Class)
+        - [x] `ReducePrecisionOp` (Class)
+        - [x] `ReduceScatterOp` (Class)
+        - [x] `ReduceWindowOp` (Class)
+        - [x] `RemOp` (Class)
+        - [x] `ReplicaIdOp` (Class)
+        - [x] `ReshapeOp` (Class)
+        - [x] `ReturnOp` (Class)
+        - [x] `ReverseOp` (Class)
+        - [x] `RngAlgorithmAttr` (Class)
+        - [x] `RngBitGeneratorOp` (Class)
+        - [x] `RngDistributionAttr` (Class)
+        - [x] `RngOp` (Class)
+        - [x] `RoundNearestEvenOp` (Class)
+        - [x] `RoundOp` (Class)
+        - [x] `RsqrtOp` (Class)
+        - [x] `ScatterDimensionNumbers` (Class)
+        - [x] `ScatterOp` (Class)
+        - [x] `SelectAndScatterOp` (Class)
+        - [x] `SelectOp` (Class)
+        - [x] `SendOp` (Class)
+        - [x] `SetDimensionSizeOp` (Class)
+        - [x] `ShiftLeftOp` (Class)
+        - [x] `ShiftRightArithmeticOp` (Class)
+        - [x] `ShiftRightLogicalOp` (Class)
+        - [x] `SignOp` (Class)
+        - [x] `SineOp` (Class)
+        - [x] `SliceOp` (Class)
+        - [x] `SortOp` (Class)
+        - [x] `SqrtOp` (Class)
+        - [x] `SubtractOp` (Class)
+        - [x] `TanhOp` (Class)
+        - [x] `TokenType` (Class)
+        - [x] `TorchIndexSelectOp` (Class)
+        - [x] `TransposeAttr` (Class)
+        - [x] `TransposeOp` (Class)
+        - [x] `TriangularSolveOp` (Class)
+        - [x] `TupleOp` (Class)
+        - [x] `TypeExtensions` (Class)
+        - [x] `UnaryEinsumOp` (Class)
+        - [x] `UniformDequantizeOp` (Class)
+        - [x] `UniformQuantizeOp` (Class)
+        - [x] `WhileOp` (Class)
+        - [x] `XorOp` (Class)
+        - [x] `abs` (Function)
+        - [x] `add` (Function)
+        - [x] `after_all` (Function)
+        - [x] `all_gather` (Function)
+        - [x] `all_reduce` (Function)
+        - [x] `all_to_all` (Function)
+        - [x] `and_` (Function)
+        - [x] `atan2` (Function)
+        - [x] `batch_norm_grad` (Function)
+        - [x] `batch_norm_inference` (Function)
+        - [x] `batch_norm_training` (Function)
+        - [x] `bitcast_convert` (Function)
+        - [x] `broadcast` (Function)
+        - [x] `broadcast_in_dim` (Function)
+        - [x] `case` (Function)
+        - [x] `cbrt` (Function)
+        - [x] `ceil` (Function)
+        - [x] `cholesky` (Function)
+        - [x] `clamp` (Function)
+        - [x] `collective_broadcast` (Function)
+        - [x] `collective_permute` (Function)
+        - [x] `compare` (Function)
+        - [x] `complex` (Function)
+        - [x] `composite` (Function)
+        - [x] `concatenate` (Function)
+        - [x] `constant` (Function)
+        - [x] `convert` (Function)
+        - [x] `convolution` (Function)
+        - [x] `cosine` (Function)
+        - [x] `count_leading_zeros` (Function)
+        - [x] `create_token` (Function)
+        - [x] `cross_replica_sum` (Function)
+        - [x] `custom_call` (Function)
+        - [x] `deserialize_portable_artifact` (Function)
+        - [x] `divide` (Function)
+        - [x] `dot` (Function)
+        - [x] `dot_general` (Function)
+        - [x] `dynamic_broadcast_in_dim` (Function)
+        - [x] `dynamic_conv` (Function)
+        - [x] `dynamic_gather` (Function)
+        - [x] `dynamic_iota` (Function)
+        - [x] `dynamic_pad` (Function)
+        - [x] `dynamic_reshape` (Function)
+        - [x] `dynamic_slice` (Function)
+        - [x] `dynamic_update_slice` (Function)
+        - [x] `einsum` (Function)
+        - [x] `eval_module` (Function)
+        - [x] `exponential` (Function)
+        - [x] `exponential_minus_one` (Function)
+        - [x] `fft` (Function)
+        - [x] `floor` (Function)
+        - [x] `gather` (Function)
+        - [x] `get_api_version` (Function)
+        - [x] `get_current_version` (Function)
+        - [x] `get_dimension_size` (Function)
+        - [x] `get_minimum_version` (Function)
+        - [x] `get_tuple_element` (Function)
+        - [x] `if_` (Function)
+        - [x] `imag` (Function)
+        - [x] `infeed` (Function)
+        - [x] `iota` (Function)
+        - [x] `is_finite` (Function)
+        - [x] `log` (Function)
+        - [x] `log_plus_one` (Function)
+        - [x] `logistic` (Function)
+        - [x] `map` (Function)
+        - [x] `maximum` (Function)
+        - [x] `minimum` (Function)
+        - [x] `multiply` (Function)
+        - [x] `negate` (Function)
+        - [x] `not_` (Function)
+        - [x] `optimization_barrier` (Function)
+        - [x] `or_` (Function)
+        - [x] `outfeed` (Function)
+        - [x] `pad` (Function)
+        - [x] `partition_id` (Function)
+        - [x] `popcnt` (Function)
+        - [x] `power` (Function)
+        - [x] `real` (Function)
+        - [x] `real_dynamic_slice` (Function)
+        - [x] `recv` (Function)
+        - [x] `reduce` (Function)
+        - [x] `reduce_precision` (Function)
+        - [x] `reduce_scatter` (Function)
+        - [x] `reduce_window` (Function)
+        - [x] `register_dialect` (Function)
+        - [x] `remainder` (Function)
+        - [x] `replica_id` (Function)
+        - [x] `reshape` (Function)
+        - [x] `return_` (Function)
+        - [x] `reverse` (Function)
+        - [x] `rng` (Function)
+        - [x] `rng_bit_generator` (Function)
+        - [x] `round_nearest_afz` (Function)
+        - [x] `round_nearest_even` (Function)
+        - [x] `rsqrt` (Function)
+        - [x] `scatter` (Function)
+        - [x] `select` (Function)
+        - [x] `select_and_scatter` (Function)
+        - [x] `send` (Function)
+        - [x] `serialize_portable_artifact` (Function)
+        - [x] `set_dimension_size` (Function)
+        - [x] `shift_left` (Function)
+        - [x] `shift_right_arithmetic` (Function)
+        - [x] `shift_right_logical` (Function)
+        - [x] `sign` (Function)
+        - [x] `sine` (Function)
+        - [x] `slice` (Function)
+        - [x] `sort` (Function)
+        - [x] `sqrt` (Function)
+        - [x] `subtract` (Function)
+        - [x] `tanh` (Function)
+        - [x] `torch_index_select` (Function)
+        - [x] `transpose` (Function)
+        - [x] `triangular_solve` (Function)
+        - [x] `tuple` (Function)
+        - [x] `unary_einsum` (Function)
+        - [x] `uniform_dequantize` (Function)
+        - [x] `uniform_quantize` (Function)
+        - [x] `while_` (Function)
+        - [x] `xor` (Function)
+        - [x] `builtins` (Module)
       - [x] `ir`
-      - [x] `ir_constant`
-      - [x] `ir_constants`
-      - [x] `ir_type_handlers`
-      - [x] `jaxpr_subcomp`
-      - [x] `lower_fun`
-      - [x] `lower_jaxpr_to_fun`
-      - [x] `lower_jaxpr_to_module`
-      - [x] `lowerable_effects`
-      - [x] `make_ir_context`
-      - [x] `merge_mlir_modules`
-      - [x] `module_to_bytecode`
-      - [x] `module_to_string`
-      - [x] `register_constant_handler`
-      - [x] `register_lowering`
-      - [x] `shape_tensor`
-      - [x] `token_type`
-      - [x] `xla_computation_to_mlir_module`
-    - [x] `os`
+        - [x] `AffineAddExpr` (Class)
+        - [x] `AffineBinaryExpr` (Class)
+        - [x] `AffineCeilDivExpr` (Class)
+        - [x] `AffineConstantExpr` (Class)
+        - [x] `AffineDimExpr` (Class)
+        - [x] `AffineExpr` (Class)
+        - [x] `AffineExprList` (Class)
+        - [x] `AffineFloorDivExpr` (Class)
+        - [x] `AffineMap` (Class)
+        - [x] `AffineMapAttr` (Class)
+        - [x] `AffineModExpr` (Class)
+        - [x] `AffineMulExpr` (Class)
+        - [x] `AffineSymbolExpr` (Class)
+        - [x] `ArrayAttr` (Class)
+        - [x] `ArrayAttributeIterator` (Class)
+        - [x] `AsmState` (Class)
+        - [x] `AttrBuilder` (Class)
+        - [x] `Attribute` (Class)
+        - [x] `BF16Type` (Class)
+        - [x] `Block` (Class)
+        - [x] `BlockArgument` (Class)
+        - [x] `BlockArgumentList` (Class)
+        - [x] `BlockIterator` (Class)
+        - [x] `BlockList` (Class)
+        - [x] `BoolAttr` (Class)
+        - [x] `ComplexType` (Class)
+        - [x] `Context` (Class)
+        - [x] `DenseBoolArrayAttr` (Class)
+        - [x] `DenseBoolArrayIterator` (Class)
+        - [x] `DenseElementsAttr` (Class)
+        - [x] `DenseF32ArrayAttr` (Class)
+        - [x] `DenseF32ArrayIterator` (Class)
+        - [x] `DenseF64ArrayAttr` (Class)
+        - [x] `DenseF64ArrayIterator` (Class)
+        - [x] `DenseFPElementsAttr` (Class)
+        - [x] `DenseI16ArrayAttr` (Class)
+        - [x] `DenseI16ArrayIterator` (Class)
+        - [x] `DenseI32ArrayAttr` (Class)
+        - [x] `DenseI32ArrayIterator` (Class)
+        - [x] `DenseI64ArrayAttr` (Class)
+        - [x] `DenseI64ArrayIterator` (Class)
+        - [x] `DenseI8ArrayAttr` (Class)
+        - [x] `DenseI8ArrayIterator` (Class)
+        - [x] `DenseIntElementsAttr` (Class)
+        - [x] `DenseResourceElementsAttr` (Class)
+        - [x] `Diagnostic` (Class)
+        - [x] `DiagnosticHandler` (Class)
+        - [x] `DiagnosticInfo` (Class)
+        - [x] `DiagnosticSeverity` (Class)
+        - [x] `Dialect` (Class)
+        - [x] `DialectDescriptor` (Class)
+        - [x] `DialectRegistry` (Class)
+        - [x] `Dialects` (Class)
+        - [x] `DictAttr` (Class)
+        - [x] `F16Type` (Class)
+        - [x] `F32Type` (Class)
+        - [x] `F64Type` (Class)
+        - [x] `FlatSymbolRefAttr` (Class)
+        - [x] `Float8E4M3B11FNUZType` (Class)
+        - [x] `Float8E4M3FNType` (Class)
+        - [x] `Float8E4M3FNUZType` (Class)
+        - [x] `Float8E5M2FNUZType` (Class)
+        - [x] `Float8E5M2Type` (Class)
+        - [x] `FloatAttr` (Class)
+        - [x] `FloatTF32Type` (Class)
+        - [x] `FloatType` (Class)
+        - [x] `FunctionType` (Class)
+        - [x] `IndexType` (Class)
+        - [x] `InferShapedTypeOpInterface` (Class)
+        - [x] `InferTypeOpInterface` (Class)
+        - [x] `InsertionPoint` (Class)
+        - [x] `IntegerAttr` (Class)
+        - [x] `IntegerSet` (Class)
+        - [x] `IntegerSetConstraint` (Class)
+        - [x] `IntegerSetConstraintList` (Class)
+        - [x] `IntegerType` (Class)
+        - [x] `Location` (Class)
+        - [x] `MLIRError` (Class)
+        - [x] `MemRefType` (Class)
+        - [x] `Module` (Class)
+        - [x] `NamedAttribute` (Class)
+        - [x] `NoneType` (Class)
+        - [x] `OpAttributeMap` (Class)
+        - [x] `OpOperand` (Class)
+        - [x] `OpOperandIterator` (Class)
+        - [x] `OpOperandList` (Class)
+        - [x] `OpResult` (Class)
+        - [x] `OpResultList` (Class)
+        - [x] `OpSuccessors` (Class)
+        - [x] `OpView` (Class)
+        - [x] `OpaqueAttr` (Class)
+        - [x] `OpaqueType` (Class)
+        - [x] `Operation` (Class)
+        - [x] `OperationIterator` (Class)
+        - [x] `OperationList` (Class)
+        - [x] `RankedTensorType` (Class)
+        - [x] `Region` (Class)
+        - [x] `RegionIterator` (Class)
+        - [x] `RegionSequence` (Class)
+        - [x] `ShapedType` (Class)
+        - [x] `ShapedTypeComponents` (Class)
+        - [x] `StridedLayoutAttr` (Class)
+        - [x] `StringAttr` (Class)
+        - [x] `SymbolRefAttr` (Class)
+        - [x] `SymbolTable` (Class)
+        - [x] `TupleType` (Class)
+        - [x] `Type` (Class)
+        - [x] `TypeAttr` (Class)
+        - [x] `TypeID` (Class)
+        - [x] `UnitAttr` (Class)
+        - [x] `UnrankedMemRefType` (Class)
+        - [x] `UnrankedTensorType` (Class)
+        - [x] `Value` (Class)
+        - [x] `VectorType` (Class)
+        - [x] `WalkOrder` (Class)
+        - [x] `WalkResult` (Class)
+        - [x] `get_dialect_registry` (Function)
+        - [x] `register_attribute_builder` (Function)
+        - [x] `register_type_caster` (Function)
+        - [x] `register_value_caster` (Function)
+        - [x] `np` (Module)
     - [x] `partial_eval`
-      - [x] `AbstractedAxesSpec`
-      - [x] `AbstractedAxisName`
-      - [x] `BoundedAxisSize`
-      - [x] `Const`
-      - [x] `ConstFoldRule`
-      - [x] `ConstVar`
-      - [x] `DCERule`
-      - [x] `DebugInfo`
-      - [x] `DynamicJaxprTrace`
-      - [x] `DynamicJaxprTracer`
-      - [x] `ForwardingRule`
-      - [x] `FreeVar`
-      - [x] `Jaxpr`
-      - [x] `JaxprEqnRecipe`
-      - [x] `JaxprStackFrame`
-      - [x] `JaxprTrace`
-      - [x] `JaxprTracer`
-      - [x] `JaxprTracerRecipe`
-      - [x] `LambdaBinding`
-      - [x] `ParamsUpdater`
-      - [x] `PartialEvalCustomResult`
-      - [x] `PartialEvalCustomRule`
-      - [x] `PartialVal`
-      - [x] `ResAvalUpdater`
-      - [x] `TracerAsName`
-      - [x] `TracerId`
-      - [x] `Val`
-      - [x] `abstract_eval_fun`
-      - [x] `arg_info_all`
-      - [x] `call_padding_rule`
-      - [x] `call_param_updaters`
-      - [x] `call_partial_eval_custom_rule`
-      - [x] `call_partial_eval_rules`
-      - [x] `close_jaxpr`
-      - [x] `closed_call_partial_eval_custom_rule`
-      - [x] `config`
-      - [x] `const_fold_rules`
-      - [x] `convert_constvars_jaxpr`
-      - [x] `convert_envvars_to_constvars`
-      - [x] `convert_invars_to_constvars`
-      - [x] `custom_partial_eval_rules`
-      - [x] `custom_staging_rules`
-      - [x] `dce_jaxpr`
-      - [x] `dce_jaxpr_call_rule`
-      - [x] `dce_jaxpr_closed_call_rule`
-      - [x] `dce_jaxpr_consts`
-      - [x] `dce_rules`
-      - [x] `debug_info`
-      - [x] `debug_info_final`
-      - [x] `def_trivial_padding`
-      - [x] `extend_jaxpr_stack`
-      - [x] `forwarding_rules`
-      - [x] `infer_lambda_input_type`
-      - [x] `instantiate_const_at`
-      - [x] `make_jaxpr_effects`
-      - [x] `move_binders_to_back`
-      - [x] `move_binders_to_front`
-      - [x] `new_eqn_recipe`
-      - [x] `pad_jaxpr`
-      - [x] `padding_rules`
-      - [x] `partial_eval_jaxpr_custom`
-      - [x] `partial_eval_jaxpr_custom_rule_not_implemented`
-      - [x] `partial_eval_jaxpr_custom_rules`
-      - [x] `partial_eval_jaxpr_nounits`
-      - [x] `partial_eval_wrapper_nounits`
-      - [x] `partition_pvals`
-      - [x] `recipe_to_eqn`
-      - [x] `result_info`
-      - [x] `sig_info`
-      - [x] `trace_to_jaxpr`
-      - [x] `trace_to_jaxpr_dynamic`
-      - [x] `trace_to_jaxpr_dynamic2`
-      - [x] `trace_to_jaxpr_final`
-      - [x] `trace_to_jaxpr_final2`
-      - [x] `trace_to_jaxpr_nounits`
-      - [x] `trace_to_subjaxpr`
-      - [x] `trace_to_subjaxpr_dynamic`
-      - [x] `trace_to_subjaxpr_dynamic2`
-      - [x] `trace_to_subjaxpr_nounits`
-      - [x] `trace_to_subjaxpr_nounits_dyn`
-      - [x] `trace_to_subjaxpr_nounits_fwd`
-      - [x] `tracers_to_jaxpr`
-      - [x] `trivial_ctx`
+      - [x] `Val` (Attribute)
+      - [x] `call_param_updaters` (Attribute)
+      - [x] `call_partial_eval_rules` (Attribute)
+      - [x] `const_fold_rules` (Attribute)
+      - [x] `custom_partial_eval_rules` (Attribute)
+      - [x] `custom_staging_rules` (Attribute)
+      - [x] `dce_rules` (Attribute)
+      - [x] `forwarding_rules` (Attribute)
+      - [x] `padding_rules` (Attribute)
+      - [x] `partial_eval_jaxpr_custom_rules` (Attribute)
+      - [x] `JaxprTrace` (Class)
+      - [x] `JaxprTracer` (Class)
     - [x] `pxla`
-      - [x] `ArrayMapping`
-      - [x] `Chunked`
-      - [x] `Index`
-      - [x] `MapTracer`
-      - [x] `MeshAxisName`
-      - [x] `MeshComputation`
-      - [x] `MeshExecutable`
-      - [x] `NoSharding`
-      - [x] `PmapExecutable`
-      - [x] `Replicated`
-      - [x] `ShardedAxis`
-      - [x] `ShardingSpec`
-      - [x] `Unstacked`
-      - [x] `are_op_shardings_equal`
-      - [x] `array_mapping_to_axis_resources`
-      - [x] `global_aval_to_result_handler`
-      - [x] `global_avals_to_results_handler`
-      - [x] `global_result_handlers`
-      - [x] `is_op_sharding_replicated`
-      - [x] `op_sharding_to_indices`
-      - [x] `parallel_callable`
-      - [x] `shard_args`
-      - [x] `spec_to_indices`
-      - [x] `thread_resources`
-      - [x] `xla_pmap_p`
+      - [x] `global_result_handlers` (Attribute)
+      - [x] `thread_resources` (Attribute)
+      - [x] `xla_pmap_p` (Attribute)
     - [x] `traceback_util`
-      - [x] `C`
-      - [x] `SimplifiedTraceback`
-      - [x] `TypeVar`
-      - [x] `UnfilteredStackTrace`
-      - [x] `annotations`
-      - [x] `api_boundary`
-      - [x] `cast`
-      - [x] `config`
-      - [x] `filter_traceback`
-      - [x] `format_exception_only`
-      - [x] `functools`
-      - [x] `include_frame`
-      - [x] `os`
-      - [x] `register_exclusion`
-      - [x] `sys`
-      - [x] `traceback`
-      - [x] `types`
+      - [x] `C` (Attribute)
+      - [x] `Callable` (Attribute)
+      - [x] `annotations` (Attribute)
       - [x] `util`
-        - [x] `Generic`
-        - [x] `Hashable`
-        - [x] `HashableFunction`
-        - [x] `HashablePartial`
-        - [x] `HashableWrapper`
-        - [x] `Iterable`
-        - [x] `Iterator`
-        - [x] `NumpyComplexWarning`
-        - [x] `OrderedSet`
-        - [x] `Seq`
-        - [x] `StrictABC`
-        - [x] `StrictABCMeta`
-        - [x] `T`
-        - [x] `T1`
-        - [x] `T2`
-        - [x] `T3`
-        - [x] `TYPE_CHECKING`
-        - [x] `TypeVar`
-        - [x] `Unhashable`
-        - [x] `WrapKwArgs`
-        - [x] `abc`
-        - [x] `annotations`
-        - [x] `as_hashable_function`
-        - [x] `assert_unreachable`
-        - [x] `cache`
-        - [x] `cache_clearing_funs`
-        - [x] `canonicalize_axis`
-        - [x] `cast`
-        - [x] `ceil_of_ratio`
-        - [x] `check_toposort`
-        - [x] `clear_all_caches`
-        - [x] `clear_all_weakref_lru_caches`
-        - [x] `concatenate`
-        - [x] `config`
-        - [x] `curry`
-        - [x] `dataclasses`
-        - [x] `distributed_debug_log`
-        - [x] `flatten`
-        - [x] `fun_name`
-        - [x] `functools`
-        - [x] `it`
+        - [x] `Callable` (Attribute)
+        - [x] `T` (Attribute)
+        - [x] `T1` (Attribute)
+        - [x] `T2` (Attribute)
+        - [x] `T3` (Attribute)
+        - [x] `TYPE_CHECKING` (Attribute)
+        - [x] `annotations` (Attribute)
+        - [x] `cache_clearing_funs` (Attribute)
+        - [x] `logger` (Attribute)
+        - [x] `Sequence` (Class)
         - [x] `jaxlib_utils`
-        - [x] `logger`
-        - [x] `logging`
-        - [x] `maybe_named_axis`
-        - [x] `memoize`
-        - [x] `merge_lists`
-        - [x] `moveaxis`
-        - [x] `np`
-        - [x] `operator`
-        - [x] `overload`
-        - [x] `partial`
-        - [x] `partition_list`
-        - [x] `safe_map`
-        - [x] `safe_zip`
-        - [x] `set_module`
-        - [x] `split_dict`
-        - [x] `split_list`
-        - [x] `split_list_checked`
-        - [x] `split_merge`
-        - [x] `stable_unique`
-        - [x] `subs_list`
-        - [x] `subs_list2`
-        - [x] `subvals`
-        - [x] `toposort`
-        - [x] `tuple_delete`
-        - [x] `tuple_insert`
-        - [x] `tuple_update`
-        - [x] `unflatten`
-        - [x] `unzip2`
-        - [x] `unzip3`
-        - [x] `use_cpp_class`
-        - [x] `use_cpp_method`
-        - [x] `weakref`
-        - [x] `weakref_lru_cache`
-        - [x] `wrap_name`
-        - [x] `wraps`
-        - [x] `xc`
+          - [x] `safe_map` (Function)
+          - [x] `safe_zip` (Function)
       - [x] `xla_extension`
+        - [x] `array_result_handler` (Attribute)
+        - [x] `batched_block_until_ready` (Attribute)
+        - [x] `batched_copy_array_to_devices_with_sharding` (Attribute)
+        - [x] `batched_device_put` (Attribute)
+        - [x] `buffer_to_dlpack_managed_tensor` (Attribute)
+        - [x] `check_and_canonicalize_memory_kind` (Attribute)
+        - [x] `collect_garbage` (Attribute)
+        - [x] `create_preemption_sync_manager` (Attribute)
+        - [x] `cuda_array_interface_to_buffer` (Attribute)
+        - [x] `custom_call_targets` (Attribute)
+        - [x] `dlpack_managed_tensor_to_buffer` (Attribute)
+        - [x] `encode_inspect_sharding_callback` (Attribute)
+        - [x] `get_c_api_client` (Attribute)
+        - [x] `get_c_api_topology` (Attribute)
+        - [x] `get_default_c_api_topology` (Attribute)
+        - [x] `get_distributed_runtime_client` (Attribute)
+        - [x] `get_distributed_runtime_service` (Attribute)
+        - [x] `get_tfrt_cpu_client` (Attribute)
+        - [x] `get_topology_for_devices` (Attribute)
+        - [x] `hlo_module_cost_analysis` (Attribute)
+        - [x] `hlo_module_from_text` (Attribute)
+        - [x] `hlo_module_to_dot_graph` (Attribute)
+        - [x] `initialize_pjrt_plugin` (Attribute)
+        - [x] `is_asan` (Attribute)
+        - [x] `is_msan` (Attribute)
+        - [x] `is_optimized_build` (Attribute)
+        - [x] `is_sanitized` (Attribute)
+        - [x] `is_tsan` (Attribute)
+        - [x] `json_to_pprof_profile` (Attribute)
+        - [x] `load_pjrt_plugin` (Attribute)
+        - [x] `make_gloo_tcp_collectives` (Attribute)
+        - [x] `make_mpi_collectives` (Attribute)
+        - [x] `pjit` (Attribute)
+        - [x] `pjrt_plugin_initialized` (Attribute)
+        - [x] `pjrt_plugin_loaded` (Attribute)
+        - [x] `pprof_profile_to_json` (Attribute)
+        - [x] `register_custom_call_partitioner` (Attribute)
+        - [x] `register_custom_call_target` (Attribute)
+        - [x] `replace_thread_exc_traceback` (Attribute)
+        - [x] `weakref_lru_cache` (Attribute)
+        - [x] `ArrayImpl` (Class)
+        - [x] `CallInliner` (Class)
+        - [x] `Client` (Class)
+        - [x] `CompileOnlyPyClient` (Class)
+        - [x] `CompileOptions` (Class)
+        - [x] `CompiledMemoryStats` (Class)
+        - [x] `CpuCollectives` (Class)
+        - [x] `DebugOptions` (Class)
+        - [x] `Device` (Class)
+        - [x] `DeviceAssignment` (Class)
+        - [x] `DeviceList` (Class)
+        - [x] `DeviceTopology` (Class)
+        - [x] `DistributedRuntimeClient` (Class)
+        - [x] `DistributedRuntimeService` (Class)
+        - [x] `Executable` (Class)
+        - [x] `ExecutableBuildOptions` (Class)
+        - [x] `ExecuteResults` (Class)
+        - [x] `FftType` (Class)
+        - [x] `FlattenCallGraph` (Class)
+        - [x] `Frame` (Class)
+        - [x] `FrontendAttributes` (Class)
+        - [x] `GSPMDSharding` (Class)
+        - [x] `HloComputation` (Class)
+        - [x] `HloDCE` (Class)
+        - [x] `HloModule` (Class)
+        - [x] `HloModuleGroup` (Class)
+        - [x] `HloPassInterface` (Class)
+        - [x] `HloPrintOptions` (Class)
+        - [x] `HloSharding` (Class)
+        - [x] `HostBufferSemantics` (Class)
+        - [x] `Layout` (Class)
+        - [x] `Literal` (Class)
+        - [x] `LoadedExecutable` (Class)
+        - [x] `Memory` (Class)
+        - [x] `MpiCollectives` (Class)
+        - [x] `NamedSharding` (Class)
+        - [x] `OpSharding` (Class)
+        - [x] `OpSharding_ShardGroupType` (Class)
+        - [x] `OpSharding_Type` (Class)
+        - [x] `PjRtLayout` (Class)
+        - [x] `PjRtXlaLayout` (Class)
+        - [x] `PjitFunction` (Class)
+        - [x] `PjitFunctionCache` (Class)
+        - [x] `PmapFunction` (Class)
+        - [x] `PmapSharding` (Class)
+        - [x] `PrecisionConfig_Precision` (Class)
+        - [x] `PreemptionSyncManager` (Class)
+        - [x] `PrimitiveType` (Class)
+        - [x] `ProgramShape` (Class)
+        - [x] `PyTreeRegistry` (Class)
+        - [x] `ResultHandler` (Class)
+        - [x] `Shape` (Class)
+        - [x] `ShapeIndex` (Class)
+        - [x] `ShardedToken` (Class)
+        - [x] `Sharding` (Class)
+        - [x] `SingleDeviceSharding` (Class)
+        - [x] `Token` (Class)
+        - [x] `Traceback` (Class)
+        - [x] `TupleSimplifier` (Class)
+        - [x] `WeakrefLRUCache` (Class)
+        - [x] `XlaBuilder` (Class)
+        - [x] `XlaComputation` (Class)
+        - [x] `XlaOp` (Class)
+        - [x] `XlaRuntimeError` (Class)
+        - [x] `hlo_sharding_util` (Module)
+        - [x] `ifrt_programs` (Module)
+        - [x] `ifrt_proxy` (Module)
+        - [x] `jax_jit` (Module)
+        - [x] `mlir` (Module)
+        - [x] `ops` (Module)
+        - [x] `outfeed_receiver` (Module)
+        - [x] `pmap_lib` (Module)
+        - [x] `profiler` (Module)
+        - [x] `pytree` (Module)
+        - [x] `transfer_guard_lib` (Module)
     - [x] `xla`
-      - [x] `Backend`
-      - [x] `abstractify`
-      - [x] `apply_primitive`
-      - [x] `canonicalize_dtype`
-      - [x] `canonicalize_dtype_handlers`
-      - [x] `pytype_aval_mappings`
+      - [x] `canonicalize_dtype_handlers` (Attribute)
+      - [x] `pytype_aval_mappings` (Attribute)
       - [x] `xb`
-        - [x] `BACKEND_TARGET`
-        - [x] `BackendFactory`
-        - [x] `BackendRegistration`
-        - [x] `CUDA_VISIBLE_DEVICES`
-        - [x] `MIN_COMPUTE_CAPABILITY`
-        - [x] `Mapping`
-        - [x] `TopologyFactory`
-        - [x] `XlaBackend`
-        - [x] `annotations`
-        - [x] `atexit`
-        - [x] `backend_pjrt_c_api_version`
-        - [x] `backend_xla_version`
-        - [x] `backends`
-        - [x] `backends_are_initialized`
-        - [x] `canonicalize_platform`
-        - [x] `config`
-        - [x] `cuda_versions`
-        - [x] `dataclasses`
-        - [x] `default_backend`
-        - [x] `device_count`
-        - [x] `devices`
-        - [x] `discover_pjrt_plugins`
+        - [x] `BACKEND_TARGET` (Attribute)
+        - [x] `CUDA_VISIBLE_DEVICES` (Attribute)
+        - [x] `Callable` (Attribute)
+        - [x] `MIN_COMPUTE_CAPABILITY` (Attribute)
+        - [x] `Union` (Attribute)
+        - [x] `annotations` (Attribute)
+        - [x] `cuda_versions` (Attribute)
+        - [x] `logger` (Attribute)
+        - [x] `xla_extension_version` (Attribute)
         - [x] `distributed`
-          - [x] `State`
-          - [x] `annotations`
-          - [x] `atexit`
+          - [x] `annotations` (Attribute)
+          - [x] `global_state` (Attribute)
+          - [x] `logger` (Attribute)
+          - [x] `Sequence` (Class)
           - [x] `clusters`
-            - [x] `ClusterEnv`
-            - [x] `GceTpuCluster`
-            - [x] `GkeTpuCluster`
-            - [x] `OmpiCluster`
-            - [x] `SlurmCluster`
             - [x] `cloud_tpu_cluster`
-              - [x] `BaseTpuCluster`
-              - [x] `GceTpuCluster`
-              - [x] `GkeTpuCluster`
-              - [x] `annotations`
-              - [x] `clusters`
-              - [x] `coordinator_port`
-              - [x] `get_metadata`
-              - [x] `get_tpu_env_value`
-              - [x] `has_megascale_address`
-              - [x] `logger`
-              - [x] `logging`
-              - [x] `metadata_response_code_success`
-              - [x] `os`
-              - [x] `re`
-              - [x] `running_in_cloud_tpu_vm`
-              - [x] `socket`
-              - [x] `time`
+              - [x] `annotations` (Attribute)
+              - [x] `coordinator_port` (Attribute)
+              - [x] `logger` (Attribute)
+              - [x] `metadata_response_code_success` (Attribute)
+              - [x] `running_in_cloud_tpu_vm` (Attribute)
             - [x] `cluster`
-              - [x] `ClusterEnv`
-              - [x] `annotations`
-              - [x] `logger`
-              - [x] `logging`
-              - [x] `running_in_cloud_tpu_vm`
+              - [x] `annotations` (Attribute)
+              - [x] `logger` (Attribute)
+              - [x] `running_in_cloud_tpu_vm` (Attribute)
+              - [x] `Sequence` (Class)
             - [x] `ompi_cluster`
-              - [x] `OmpiCluster`
-              - [x] `annotations`
-              - [x] `clusters`
-              - [x] `os`
-              - [x] `re`
+              - [x] `annotations` (Attribute)
             - [x] `slurm_cluster`
-              - [x] `SlurmCluster`
-              - [x] `annotations`
-              - [x] `clusters`
-              - [x] `os`
-          - [x] `config`
-          - [x] `global_state`
-          - [x] `initialize`
-          - [x] `logger`
-          - [x] `logging`
-          - [x] `os`
-          - [x] `shutdown`
-          - [x] `xla_bridge`
-          - [x] `xla_extension`
-        - [x] `expand_platform_alias`
-        - [x] `get_backend`
-        - [x] `get_device_backend`
-        - [x] `get_tpu_library_path`
-        - [x] `hardware_utils`
-          - [x] `glob`
-          - [x] `num_available_tpu_chips_and_device_id`
-          - [x] `os`
-          - [x] `pathlib`
-          - [x] `tpu_enhanced_barrier_supported`
-        - [x] `host_count`
-        - [x] `host_id`
-        - [x] `host_ids`
-        - [x] `importlib`
-        - [x] `is_gpu`
-        - [x] `is_known_platform`
-        - [x] `jax_plugins`
-        - [x] `json`
-        - [x] `local_device_count`
-        - [x] `local_devices`
-        - [x] `logger`
-        - [x] `logging`
-        - [x] `lru_cache`
-        - [x] `make_cpu_client`
-        - [x] `make_gpu_client`
-        - [x] `make_pjrt_topology`
-        - [x] `make_pjrt_tpu_topology`
-        - [x] `os`
-        - [x] `partial`
-        - [x] `pkgutil`
-        - [x] `process_count`
-        - [x] `process_index`
-        - [x] `py_platform`
-        - [x] `register_backend_factory`
-        - [x] `register_pjrt_plugin_factories_from_env`
-        - [x] `register_plugin`
-        - [x] `register_plugin_callbacks`
-        - [x] `sys`
-        - [x] `threading`
-        - [x] `tpu_client_timer_callback`
-        - [x] `traceback`
-        - [x] `traceback_util`
-        - [x] `using_pjrt_c_api`
-        - [x] `util`
-        - [x] `warnings`
-        - [x] `xla_client`
-        - [x] `xla_extension`
-        - [x] `xla_extension_version`
-      - [x] `xc`
-      - [x] `xe`
-  - [x] `jax`
+              - [x] `annotations` (Attribute)
   - [x] `lax`
     - [x] `linalg`
-      - [x] `cholesky_p`
-      - [x] `eig`
-      - [x] `eig_p`
-      - [x] `eigh`
-      - [x] `eigh_p`
-      - [x] `hessenberg`
-      - [x] `hessenberg_p`
-      - [x] `householder_product`
-      - [x] `householder_product_p`
-      - [x] `lu`
-      - [x] `lu_p`
-      - [x] `lu_pivots_to_permutation`
-      - [x] `qdwh`
-      - [x] `qr`
-      - [x] `qr_p`
-      - [x] `schur`
-      - [x] `schur_p`
-      - [x] `svd_p`
-      - [x] `triangular_solve`
-      - [x] `triangular_solve_p`
-      - [x] `tridiagonal`
-      - [x] `tridiagonal_p`
-      - [x] `tridiagonal_solve`
-      - [x] `tridiagonal_solve_p`
-  - [x] `lib`
-    - [x] `xla_bridge`
-      - [x] `default_backend`
-      - [x] `get_backend`
-      - [x] `get_compile_options`
-      - [x] `xla_client`
-    - [x] `xla_client`
-    - [x] `xla_extension`
-  - [x] `monitoring`
-    - [x] `clear_event_listeners`
-    - [x] `record_event`
-    - [x] `record_event_duration_secs`
-    - [x] `register_event_duration_secs_listener`
-    - [x] `register_event_listener`
+      - [x] `cholesky_p` (Attribute)
+      - [x] `eig_p` (Attribute)
+      - [x] `eigh_p` (Attribute)
+      - [x] `hessenberg_p` (Attribute)
+      - [x] `householder_product_p` (Attribute)
+      - [x] `lu_p` (Attribute)
+      - [x] `qdwh` (Attribute)
+      - [x] `qr_p` (Attribute)
+      - [x] `schur_p` (Attribute)
+      - [x] `svd_p` (Attribute)
+      - [x] `triangular_solve_p` (Attribute)
+      - [x] `tridiagonal_p` (Attribute)
+      - [x] `tridiagonal_solve_p` (Attribute)
+      - [x] `eig` (Function/Routing)
+      - [x] `eigh` (Function/Routing)
+      - [x] `hessenberg` (Function/Routing)
+      - [x] `householder_product` (Function/Routing)
+      - [x] `lu` (Function/Routing)
+      - [x] `lu_pivots_to_permutation` (Function/Routing)
+      - [x] `qr` (Function/Routing)
+      - [x] `schur` (Function/Routing)
+      - [x] `triangular_solve` (Function/Routing)
+      - [x] `tridiagonal` (Function/Routing)
+      - [x] `tridiagonal_solve` (Function/Routing)
   - [x] `numpy`
+    - [x] `newaxis` (Attribute)
     - [x] `fft`
-      - [x] `fft2`
-      - [x] `fftfreq`
-      - [x] `fftn`
-      - [x] `fftshift`
-      - [x] `hfft`
-      - [x] `ifft`
-      - [x] `ifft2`
-      - [x] `ifftn`
-      - [x] `ifftshift`
-      - [x] `ihfft`
-      - [x] `irfft`
-      - [x] `irfft2`
-      - [x] `irfftn`
-      - [x] `rfft2`
-      - [x] `rfftfreq`
-      - [x] `rfftn`
+      - [x] `fft2` (Function/Routing)
+      - [x] `fftfreq` (Function/Routing)
+      - [x] `fftn` (Function/Routing)
+      - [x] `fftshift` (Function/Routing)
+      - [x] `hfft` (Function/Routing)
+      - [x] `ifft` (Function/Routing)
+      - [x] `ifft2` (Function/Routing)
+      - [x] `ifftn` (Function/Routing)
+      - [x] `ifftshift` (Function/Routing)
+      - [x] `ihfft` (Function/Routing)
+      - [x] `irfft` (Function/Routing)
+      - [x] `irfft2` (Function/Routing)
+      - [x] `irfftn` (Function/Routing)
+      - [x] `rfft2` (Function/Routing)
+      - [x] `rfftfreq` (Function/Routing)
+      - [x] `rfftn` (Function/Routing)
     - [x] `linalg`
-      - [x] `cond`
-      - [x] `cross`
-      - [x] `diagonal`
-      - [x] `eig`
-      - [x] `eigvals`
-      - [x] `lstsq`
-      - [x] `matmul`
-      - [x] `matrix_norm`
-      - [x] `matrix_rank`
-      - [x] `matrix_transpose`
-      - [x] `multi_dot`
-      - [x] `norm`
-      - [x] `outer`
-      - [x] `svdvals`
-      - [x] `tensordot`
-      - [x] `tensorinv`
-      - [x] `tensorsolve`
-      - [x] `trace`
-      - [x] `vecdot`
-      - [x] `vector_norm`
-  - [x] `ops`
-    - [x] `segment_max`
-    - [x] `segment_min`
-    - [x] `segment_prod`
-    - [x] `segment_sum`
+      - [x] `cond` (Attribute)
+      - [x] `eigvals` (Attribute)
+      - [x] `matrix_rank` (Attribute)
+      - [x] `norm` (Attribute)
+      - [x] `cross` (Function/Routing)
+      - [x] `diagonal` (Function/Routing)
+      - [x] `eig` (Function/Routing)
+      - [x] `lstsq` (Function/Routing)
+      - [x] `matmul` (Function/Routing)
+      - [x] `matrix_norm` (Function/Routing)
+      - [x] `matrix_transpose` (Function/Routing)
+      - [x] `multi_dot` (Function/Routing)
+      - [x] `outer` (Function/Routing)
+      - [x] `svdvals` (Function/Routing)
+      - [x] `tensordot` (Function/Routing)
+      - [x] `tensorinv` (Function/Routing)
+      - [x] `tensorsolve` (Function/Routing)
+      - [x] `trace` (Function/Routing)
+      - [x] `vecdot` (Function/Routing)
+      - [x] `vector_norm` (Function/Routing)
   - [x] `profiler`
-    - [x] `StepTraceAnnotation`
-    - [x] `TraceAnnotation`
-    - [x] `annotate_function`
-    - [x] `device_memory_profile`
-    - [x] `save_device_memory_profile`
-    - [x] `start_server`
-    - [x] `start_trace`
-    - [x] `stop_server`
-    - [x] `stop_trace`
-    - [x] `trace`
-  - [x] `random`
-    - [x] `random_gamma_p`
-  - [x] `scipy`
-    - [x] `cluster`
-      - [x] `vq`
-        - [x] `vq`
-    - [x] `fft`
-      - [x] `dct`
-      - [x] `dctn`
-      - [x] `idct`
-      - [x] `idctn`
-    - [x] `integrate`
-      - [x] `trapezoid`
-    - [x] `interpolate`
-      - [x] `RegularGridInterpolator`
-    - [x] `linalg`
-      - [x] `block_diag`
-      - [x] `cho_factor`
-      - [x] `cho_solve`
-      - [x] `cholesky`
-      - [x] `det`
-      - [x] `eigh`
-      - [x] `eigh_tridiagonal`
-      - [x] `expm`
-      - [x] `expm_frechet`
-      - [x] `funm`
-      - [x] `hessenberg`
-      - [x] `hilbert`
-      - [x] `inv`
-      - [x] `lu`
-      - [x] `lu_factor`
-      - [x] `lu_solve`
-      - [x] `polar`
-      - [x] `qr`
-      - [x] `rsf2csf`
-      - [x] `schur`
-      - [x] `solve`
-      - [x] `solve_triangular`
-      - [x] `sqrtm`
-      - [x] `svd`
-      - [x] `toeplitz`
-    - [x] `ndimage`
-      - [x] `map_coordinates`
-    - [x] `signal`
-      - [x] `convolve`
-      - [x] `convolve2d`
-      - [x] `correlate`
-      - [x] `correlate2d`
-      - [x] `csd`
-      - [x] `detrend`
-      - [x] `fftconvolve`
-      - [x] `istft`
-      - [x] `stft`
-      - [x] `welch`
-    - [x] `sparse`
-      - [x] `linalg`
-        - [x] `bicgstab`
-        - [x] `cg`
-        - [x] `gmres`
-    - [x] `special`
-      - [x] `bernoulli`
-      - [x] `bessel_jn`
-      - [x] `beta`
-      - [x] `betainc`
-      - [x] `betaln`
-      - [x] `digamma`
-      - [x] `entr`
-      - [x] `erf`
-      - [x] `erfc`
-      - [x] `erfinv`
-      - [x] `exp1`
-      - [x] `expi`
-      - [x] `expit`
-      - [x] `expn`
-      - [x] `factorial`
-      - [x] `gamma`
-      - [x] `gammainc`
-      - [x] `gammaincc`
-      - [x] `gammaln`
-      - [x] `gammasgn`
-      - [x] `hyp1f1`
-      - [x] `i0`
-      - [x] `i0e`
-      - [x] `i1`
-      - [x] `i1e`
-      - [x] `kl_div`
-      - [x] `log_ndtr`
-      - [x] `logit`
-      - [x] `logsumexp`
-      - [x] `lpmn`
-      - [x] `lpmn_values`
-      - [x] `multigammaln`
-      - [x] `ndtr`
-      - [x] `ndtri`
-      - [x] `poch`
-      - [x] `polygamma`
-      - [x] `rel_entr`
-      - [x] `spence`
-      - [x] `sph_harm`
-      - [x] `xlog1py`
-      - [x] `xlogy`
-      - [x] `zeta`
-    - [x] `stats`
-      - [x] `bernoulli`
-        - [x] `cdf`
-        - [x] `logpmf`
-        - [x] `pmf`
-        - [x] `ppf`
-      - [x] `beta`
-        - [x] `cdf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `sf`
-      - [x] `betabinom`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `binom`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `cauchy`
-        - [x] `cdf`
-        - [x] `isf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `ppf`
-        - [x] `sf`
-      - [x] `chi2`
-        - [x] `cdf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `sf`
-      - [x] `dirichlet`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `expon`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `gamma`
-        - [x] `cdf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `sf`
-      - [x] `gaussian_kde`
-      - [x] `gennorm`
-        - [x] `cdf`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `geom`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `laplace`
-        - [x] `cdf`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `logistic`
-        - [x] `cdf`
-        - [x] `isf`
-        - [x] `logpdf`
-        - [x] `pdf`
-        - [x] `ppf`
-        - [x] `sf`
-      - [x] `mode`
-      - [x] `multinomial`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `multivariate_normal`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `nbinom`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `norm`
-        - [x] `cdf`
-        - [x] `isf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `ppf`
-        - [x] `sf`
-      - [x] `pareto`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `poisson`
-        - [x] `cdf`
-        - [x] `logpmf`
-        - [x] `pmf`
-      - [x] `rankdata`
-      - [x] `sem`
-      - [x] `t`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `truncnorm`
-        - [x] `cdf`
-        - [x] `logcdf`
-        - [x] `logpdf`
-        - [x] `logsf`
-        - [x] `pdf`
-        - [x] `sf`
-      - [x] `uniform`
-        - [x] `cdf`
-        - [x] `logpdf`
-        - [x] `pdf`
-        - [x] `ppf`
-      - [x] `vonmises`
-        - [x] `logpdf`
-        - [x] `pdf`
-      - [x] `wrapcauchy`
-        - [x] `logpdf`
-        - [x] `pdf`
+    - [x] `TraceAnnotation` (Class)
   - [x] `sharding`
-    - [x] `GSPMDSharding`
-    - [x] `Mesh`
-    - [x] `NamedSharding`
-    - [x] `PartitionSpec`
-    - [x] `PmapSharding`
-    - [x] `PositionalSharding`
-    - [x] `Sharding`
-    - [x] `SingleDeviceSharding`
-  - [x] `stages`
-    - [x] `ArgInfo`
-    - [x] `Compiled`
-    - [x] `CompilerOptions`
-    - [x] `Lowered`
-    - [x] `OutInfo`
-    - [x] `Traced`
-    - [x] `Wrapped`
-  - [x] `tree`
-    - [x] `all`
-    - [x] `flatten`
-    - [x] `leaves`
-    - [x] `map`
-    - [x] `reduce`
-    - [x] `structure`
-    - [x] `transpose`
-    - [x] `unflatten`
-  - [x] `typing`
-    - [x] `ArrayLike`
-    - [x] `DTypeLike`
-  - [x] `util`
-    - [x] `HashableFunction`
-    - [x] `as_hashable_function`
-    - [x] `cache`
-    - [x] `safe_map`
-    - [x] `safe_zip`
-    - [x] `split_dict`
-    - [x] `split_list`
-    - [x] `split_list_checked`
-    - [x] `split_merge`
-    - [x] `subvals`
-    - [x] `toposort`
-    - [x] `unzip2`
-    - [x] `wrap_name`
-    - [x] `wraps`
+    - [x] `Sharding` (Class)
   - [x] `version`
-    - [x] `annotations`
-    - [x] `datetime`
-    - [x] `os`
-    - [x] `pathlib`
-    - [x] `subprocess`
+    - [x] `annotations` (Attribute)
