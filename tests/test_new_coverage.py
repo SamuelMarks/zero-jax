@@ -1,3 +1,4 @@
+from ml_switcheroo_compiler.core.tensor import TensorConfig
 import pytest
 import numpy as np
 import ml_switcheroo_compiler
@@ -17,9 +18,11 @@ def test_lax_numpy_bool_proxy():
 
     t = ml_switcheroo_compiler.Tensor(
         data=ProxyTensor(id="1", shape=(1,), dtype=DType.Float32),
-        shape=(1,),
-        dtype=DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=DType.Float32,
+            device="cpu",
+        ),
     )
     arr = jnp.ndarray(t)
     # Testing __bool__ for ProxyTensor
@@ -79,9 +82,11 @@ def test_lax_numpy_wrap_tracing():
 
     t = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
-        shape=(1,),
-        dtype=DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=DType.Float32,
+            device="cpu",
+        ),
     )
     # Testing _to_tensor with eager tensor under tracing
     ml_switcheroo_compiler.tracing._tracer.start_tracing("test_trace")
@@ -97,15 +102,19 @@ def test_lax_numpy_wrap_tuple_list():
 
     t1 = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
-        shape=(1,),
-        dtype=DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=DType.Float32,
+            device="cpu",
+        ),
     )
     t2 = ml_switcheroo_compiler.Tensor(
         data=np.array([2.0]),
-        shape=(1,),
-        dtype=DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=DType.Float32,
+            device="cpu",
+        ),
     )
     res_tuple = jnp._wrap((t1, t2))
     assert isinstance(res_tuple, tuple)

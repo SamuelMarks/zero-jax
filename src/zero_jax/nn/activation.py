@@ -167,19 +167,13 @@ def softmax(
         Any: Array of the same shape as `x` with softmax applied.
     """
     x_t = _to_tensor(x)
-    amax = ops.max(x_t, axis=axis, keepdims=True)
-    shifted = ops.subtract(x_t, amax)
     if where is not None:
-        shifted = ops.where(
-            _to_tensor(where), shifted, creation.full_like(shifted, -float("inf"))
-        )
-
-    exp_x = ops.exp(shifted)
+        x_t = ops.where(_to_tensor(where), x_t, creation.full_like(x_t, -float("inf")))
+    lse = ops.logsumexp(x_t, axis=axis, keepdims=True)
+    res = ops.exp(ops.subtract(x_t, lse))
     if where is not None:
-        exp_x = ops.where(_to_tensor(where), exp_x, creation.zeros_like(exp_x))
-
-    sum_exp = ops.sum(exp_x, axis=axis, keepdims=True)
-    return _wrap(ops.divide(exp_x, sum_exp))
+        res = ops.where(_to_tensor(where), res, creation.zeros_like(res))
+    return _wrap(res)
 
 
 def sigmoid(x: Any) -> Any:
@@ -378,3 +372,17 @@ def log_softmax(x: ArrayLike, axis: int = -1) -> Any:
         Any: Array of the same shape as `x` with log-softmax applied.
     """
     return _wrap(nn.log_softmax(_to_tensor(x), axis=axis))
+
+
+def tanh(x: Any) -> Any:
+    """Hyperbolic tangent activation function.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        The hyperbolic tangent of x.
+    """
+    from zero_jax.numpy.lax_numpy import tanh as _tanh
+
+    return _tanh(x)

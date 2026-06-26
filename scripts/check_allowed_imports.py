@@ -96,6 +96,7 @@ if __name__ == "__main__":
                             names.add(item.stem)
                         elif item.is_dir():
                             names.add(item.name)
+        names.update(["math", "uuid", "builtins", "contextlib", "functools", "typing"])
         sys.stdlib_module_names = frozenset(names)
 
     success = True

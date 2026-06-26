@@ -128,3 +128,11 @@ def test_erf():
     x = np.array([0.0, 1.0, -1.0])
     res = _erf(x)
     assert res.shape == x.shape
+
+
+def test_nn_tanh():
+    from zero_jax import nn
+    import numpy as np
+
+    x = np.array([0.0, 1.0])
+    np.testing.assert_allclose(nn.tanh(x), np.tanh(x))

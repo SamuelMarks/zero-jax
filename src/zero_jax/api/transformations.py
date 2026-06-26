@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from ml_switcheroo_compiler.core.tensor import TensorConfig
 from typing import Callable, Any
 import contextlib
 import functools
 
 
 def jit(fun: Callable) -> Callable:
-    """Compiles a function to execute faster, in our parity layer this currently acts as an eager wrapper.
+    """Compiles a function to execute faster.
 
     Args:
         fun: The function to be JIT-compiled.
@@ -16,20 +17,75 @@ def jit(fun: Callable) -> Callable:
     Returns:
         A wrapped version of the input function.
     """
+    cache = {}
 
-    # Actually we should trace and evaluate, but tests pass with eager
     @functools.wraps(fun)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Executes the wrapped function.
+        """JAX API implementation for wrapped.
 
         Args:
-            *args: Positional arguments to pass to the function.
-            **kwargs: Keyword arguments to pass to the function.
+            *args: Variable arguments.
+            **kwargs: Keyword arguments.
 
         Returns:
-            The return value of the wrapped function.
+            Any: The result.
         """
-        return fun(*args, **kwargs)
+        from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
+        from ml_switcheroo_ir import LogicalNode
+        from ml_switcheroo_compiler.interpreter import evaluate_graph
+        from zero_jax.numpy.lax_numpy import _to_tensor, ndarray, array
+        import uuid
+
+        # Simple cache key based on shapes and dtypes
+        t_args = [_to_tensor(a) for a in args]
+        key = tuple((t.shape, t.dtype.value) for t in t_args)
+
+        if key not in cache:
+            prev_graph = _tracer.active_graph
+            is_tracing = _tracer.is_tracing
+            graph = _tracer.start_tracing(name=f"jit_{fun.__name__}")
+
+            proxy_args = []
+            input_ids = []
+            for arg in t_args:
+                in_id = str(uuid.uuid4())
+                input_ids.append(in_id)
+                node = LogicalNode(
+                    id=in_id, op_type="Input", inputs=[], shape_metadata=arg.shape
+                )
+                graph.nodes[in_id] = node
+                proxy = ProxyTensor(id=in_id, shape=arg.shape, dtype=arg.dtype.value)
+                from ml_switcheroo_compiler import Tensor
+
+                proxy_tensor = Tensor(
+                    data=proxy,
+                    config=TensorConfig(
+                        shape=arg.shape, dtype=arg.dtype, device=arg.device
+                    ),
+                )
+                proxy_args.append(ndarray(proxy_tensor))
+
+            out = fun(*proxy_args, **kwargs)
+            out_tensor = _to_tensor(out)
+            if out_tensor.data.id not in graph.outputs:
+                graph.outputs.append(out_tensor.data.id)
+
+            _tracer.stop_tracing()
+            _tracer.active_graph = prev_graph
+            _tracer.is_tracing = is_tracing
+
+            cache[key] = (graph, input_ids, out_tensor.data.id)
+
+        graph, input_ids, out_id = cache[key]
+
+        from zero_jax.numpy import tensor_utils
+
+        inputs = {
+            in_id: tensor_utils.to_array(a.data) for in_id, a in zip(input_ids, t_args)
+        }
+        res = evaluate_graph(graph, inputs)
+
+        return array(res[out_id])
 
     return wrapped
 
@@ -93,7 +149,10 @@ def grad(fun: Callable, argnums: Any = 0) -> Callable:
             from ml_switcheroo_compiler import Tensor
 
             proxy_tensor = Tensor(
-                data=proxy, shape=arg.shape, dtype=arg.dtype, device=arg.device
+                data=proxy,
+                config=TensorConfig(
+                    shape=arg.shape, dtype=arg.dtype, device=arg.device
+                ),
             )
             from zero_jax.numpy.lax_numpy import ndarray
 

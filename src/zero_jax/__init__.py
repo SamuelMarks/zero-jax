@@ -2,19 +2,99 @@
 
 from __future__ import annotations
 
+import zero_jax._compiler_patches
+
 from typing import Any
 import ml_switcheroo_compiler
 
 from . import tree_util
 from . import lax
-from .api import jit, grad, value_and_grad, vmap, disable_jit, pmap, eval_shape
 from . import random
 from . import nn
 from . import experimental
 
+from .api import (
+    jit,
+    grad,
+    value_and_grad,
+    vmap,
+    disable_jit,
+    pmap,
+    eval_shape,
+    ShapeDtypeStruct,
+    Shard,
+    NamedSharding,
+    block_until_ready,
+    default_backend,
+    default_device,
+    device_count,
+    local_device_count,
+    process_count,
+    process_index,
+    host_count,
+    host_id,
+    host_ids,
+    device_put,
+    device_put_replicated,
+    device_put_sharded,
+    check_tracer_leaks,
+    checking_leaks,
+    clear_caches,
+    debug_infs,
+    debug_nans,
+    enable_checks,
+    print_environment_info,
+    effects_barrier,
+    live_arrays,
+    log_compiles,
+    numpy_dtype_promotion,
+    numpy_rank_promotion,
+    spmd_mode,
+    transfer_guard,
+    transfer_guard_device_to_device,
+    transfer_guard_device_to_host,
+    transfer_guard_host_to_device,
+    jacfwd,
+    jacrev,
+    jacobian,
+    hessian,
+    jvp,
+    vjp,
+    linearize,
+    custom_jvp,
+    custom_vjp,
+    custom_gradient,
+    linear_transpose,
+    closure_convert,
+    named_call,
+    named_scope,
+    remat,
+    checkpoint,
+    ensure_compile_time_eval,
+    make_jaxpr,
+    pure_callback,
+    make_array_from_callback,
+    make_array_from_process_local_data,
+    make_array_from_single_device_arrays,
+    softmax_custom_jvp,
+    enable_custom_vjp_by_custom_transpose,
+    float0,
+    threefry_partitionable,
+    checkpoint_policies,
+    legacy_prng_key,
+    enable_custom_prng,
+    default_prng_impl,
+    jax2tf_associative_scan_reductions,
+    default_matmul_precision,
+    debug_key_reuse,
+)
+
 __all__ = [
     "tree_util",
     "lax",
+    "random",
+    "nn",
+    "experimental",
     "jit",
     "grad",
     "value_and_grad",
@@ -22,73 +102,105 @@ __all__ = [
     "disable_jit",
     "pmap",
     "eval_shape",
-    "random",
-    "nn",
-    "experimental",
+    "ShapeDtypeStruct",
+    "Shard",
+    "NamedSharding",
+    "block_until_ready",
+    "default_backend",
+    "default_device",
+    "device_count",
+    "local_device_count",
+    "process_count",
+    "process_index",
+    "host_count",
+    "host_id",
+    "host_ids",
+    "device_put",
+    "device_put_replicated",
+    "device_put_sharded",
+    "check_tracer_leaks",
+    "checking_leaks",
+    "clear_caches",
+    "debug_infs",
+    "debug_nans",
+    "enable_checks",
+    "print_environment_info",
+    "effects_barrier",
+    "live_arrays",
+    "log_compiles",
+    "numpy_dtype_promotion",
+    "numpy_rank_promotion",
+    "spmd_mode",
+    "transfer_guard",
+    "transfer_guard_device_to_device",
+    "transfer_guard_device_to_host",
+    "transfer_guard_host_to_device",
+    "jacfwd",
+    "jacrev",
+    "jacobian",
+    "hessian",
+    "jvp",
+    "vjp",
+    "linearize",
+    "custom_jvp",
+    "custom_vjp",
+    "custom_gradient",
+    "linear_transpose",
+    "closure_convert",
+    "named_call",
+    "named_scope",
+    "remat",
+    "checkpoint",
+    "ensure_compile_time_eval",
+    "make_jaxpr",
+    "pure_callback",
+    "make_array_from_callback",
+    "make_array_from_process_local_data",
+    "make_array_from_single_device_arrays",
+    "softmax_custom_jvp",
+    "enable_custom_vjp_by_custom_transpose",
+    "float0",
+    "threefry_partitionable",
+    "checkpoint_policies",
+    "legacy_prng_key",
+    "enable_custom_prng",
+    "default_prng_impl",
+    "jax2tf_associative_scan_reductions",
+    "default_matmul_precision",
+    "debug_key_reuse",
 ]
 
 from zero_jax.numpy.lax_numpy import ndarray as Array
 
-__all__ += ["Array"]
+__all__.append("Array")
 
 
 class Device:
-    """Represents a computational device.
-
-    Attributes:
-        platform: The platform of the device (e.g., 'cpu', 'gpu').
-    """
+    """Represents a computational device."""
 
     def __init__(self, platform: Any = "cpu") -> None:
-        """Initializes a Device.
-
-        Args:
-            platform: The hardware platform.
-        """
         self.platform = platform
 
 
 def devices(backend: Any = None) -> Any:
-    """Gets the available devices.
-
-    Args:
-        backend: The backend to query for devices.
-
-    Returns:
-        A list of available Device objects.
-    """
     return [Device(platform="cpu")]
 
 
 def local_devices(backend: Any = None) -> Any:
-    """Gets the available local devices.
-
-    Args:
-        backend: The backend to query for local devices.
-
-    Returns:
-        A list of available local Device objects.
-    """
     return [Device(platform="cpu")]
 
 
-__all__ += ["Device", "devices", "local_devices"]
+__all__.extend(["Device", "devices", "local_devices"])
 
 
 def device_get(x: Any) -> Any:
-    """Retrieves data from a device to the host.
-
-    Args:
-        x: The array or tree of arrays to retrieve.
-
-    Returns:
-        The host-backed array(s).
-    """
     return x
 
 
 __all__.append("device_get")
 
 from ml_switcheroo_compiler import EagerMode
+from ml_switcheroo_compiler.core.config import config
 
+config.eager_mode = True
 __all__.append("EagerMode")

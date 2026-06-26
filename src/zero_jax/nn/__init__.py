@@ -1,46 +1,6 @@
-"""Neural network utilities including activations and initializers."""
+"""Frontend API routing for zero-jax.nn."""
+# ruff: noqa: F403
 
-from __future__ import annotations
-
-from typing import Any
-import ml_switcheroo_compiler
-
-from .activation import (
-    gelu,
-    softmax,
-    logsumexp,
-    one_hot,
-    sigmoid,
-    hard_sigmoid,
-    log_softmax,
-    selu,
-    celu,
-    elu,
-    silu,
-    swish,
-    hard_tanh,
-    relu6,
-    relu,
-    log_sigmoid,
-)
-from . import initializers
-
-__all__ = [
-    "gelu",
-    "softmax",
-    "logsumexp",
-    "one_hot",
-    "initializers",
-    "sigmoid",
-    "log_softmax",
-    "selu",
-    "celu",
-    "elu",
-    "silu",
-    "swish",
-    "hard_tanh",
-    "hard_sigmoid",
-    "relu6",
-    "relu",
-    "log_sigmoid",
-]
+from .activation import *
+from .initializers import *
+from .missing_funcs import *

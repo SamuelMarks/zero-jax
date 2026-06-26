@@ -1,5 +1,6 @@
 -r requirements.txt
 pytest
 pytest-cov
-jax
-jaxlib
+jax[cuda12]; sys_platform == 'linux'
+jax; sys_platform != 'linux'
+jaxlib; sys_platform != 'linux'

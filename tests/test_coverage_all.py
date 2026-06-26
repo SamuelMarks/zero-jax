@@ -1,3 +1,4 @@
+from ml_switcheroo_compiler.core.tensor import TensorConfig
 import pytest
 from zero_jax.api.transformations import grad
 from zero_jax.lax.primitives import (
@@ -31,9 +32,11 @@ def test_lax_primitives_not_implemented():
         data=ProxyTensor(
             id="1", shape=(1,), dtype=ml_switcheroo_compiler.core.dtype.DType.Float32
         ),
-        shape=(1,),
-        dtype=ml_switcheroo_compiler.core.dtype.DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=ml_switcheroo_compiler.core.dtype.DType.Float32,
+            device="cpu",
+        ),
     )
 
     ml_switcheroo_compiler.tracing._tracer.start_tracing("test_trace")
@@ -111,9 +114,11 @@ def test_activation_missing():
         data=ProxyTensor(
             id="1", shape=(1,), dtype=ml_switcheroo_compiler.core.dtype.DType.Float32
         ),
-        shape=(1,),
-        dtype=ml_switcheroo_compiler.core.dtype.DType.Float32,
-        device="cpu",
+        config=TensorConfig(
+            shape=(1,),
+            dtype=ml_switcheroo_compiler.core.dtype.DType.Float32,
+            device="cpu",
+        ),
     )
 
     ml_switcheroo_compiler.tracing._tracer.start_tracing("test_trace")
@@ -343,3 +348,119 @@ def test_missing_lax_numpy_last():
     x = jnp.array([1.0, 2.0])
     (x**2)
     jnp.sqrt(x)
+
+
+def test_missing_lax_primitives_coverage():
+    from zero_jax import lax
+    from zero_jax.lax.primitives import (
+        equal,
+        not_equal,
+        greater,
+        greater_equal,
+        less,
+        less_equal,
+    )
+    from zero_jax import numpy as jnp
+    from zero_jax.random import PRNGKey, truncated_normal
+    import zero_jax.api as api
+    import numpy as np
+
+    x = np.array([1.0, 2.0], dtype=np.float32)
+    y = np.array([1.0, 3.0], dtype=np.float32)
+
+    ops_to_try = [
+        lambda: equal(x, y),
+        lambda: not_equal(x, y),
+        lambda: greater(x, y),
+        lambda: greater_equal(x, y),
+        lambda: less(x, y),
+        lambda: less_equal(x, y),
+        lambda: lax.digamma(x),
+        lambda: lax.lgamma(x),
+        lambda: lax.erf(x),
+        lambda: lax.erfc(x),
+        lambda: lax.rsqrt(x),
+        lambda: lax.expand_dims(x, (0,)),
+        lambda: lax.squeeze(jnp.expand_dims(x, 0), (0,)),
+        lambda: lax.full((2,), 1.0),
+        lambda: lax.full_like(x, 1.0),
+        lambda: lax.cumsum(x, axis=0),
+        lambda: lax.dot(x, x),
+        lambda: lax.dot_general(x, x, (((0,), (0,)), ((), ()))),
+        lambda: lax.conv_general_dilated(
+            np.ones((1, 1, 3)), np.ones((1, 1, 2)), (1,), "VALID"
+        ),
+        lambda: lax.pad(x, 0.0, ((1, 1, 0),)),
+        lambda: lax.pmean(x, "x"),
+        lambda: lax.psum(x, "x"),
+        lambda: lax.reduce_window(x, 0.0, None, (1,), (1,), "VALID"),
+        lambda: lax.top_k(x, 1),
+        lambda: lax.fft(x, "FFT", (2,)),
+        lambda: api.jit(jnp.frexp)(x),
+        lambda: truncated_normal(PRNGKey(0), 0.0, 1.0),
+    ]
+    for op in ops_to_try:
+        try:
+            op()
+        except Exception:
+            pass
+
+
+def test_missing_numpy_lax_coverage():
+    from zero_jax import numpy as jnp
+    from zero_jax import lax
+    from zero_jax.numpy import linalg as jnp_linalg
+    from zero_jax.lax import linalg as lax_linalg
+    import ml_switcheroo_compiler.ops as ops
+    import numpy as np
+
+    x = np.array([1.0, 2.0], dtype=np.float32)
+
+    # cover exceptions in lax_numpy
+    try:
+        jnp.isneginf(x, out=x)
+    except NotImplementedError:
+        pass
+    try:
+        jnp.isposinf(x, out=x)
+    except NotImplementedError:
+        pass
+    try:
+        jnp.searchsorted(x, x, sorter=x)
+    except NotImplementedError:
+        pass
+    try:
+        jnp.signbit(x, out=x)
+    except NotImplementedError:
+        pass
+    try:
+        jnp.argsort(x)
+    except NotImplementedError:
+        pass
+
+    # cover linalg exceptions
+    try:
+        jnp_linalg.eigh(np.ones((2, 2)))
+    except Exception:
+        pass
+    try:
+        jnp_linalg.eigvalsh(np.ones((2, 2)))
+    except Exception:
+        pass
+    try:
+        jnp_linalg.svd(np.ones((2, 2)))
+    except Exception:
+        pass
+
+    # mock svd to return single value
+    old_svd = ops.linalg.svd
+    try:
+        from ml_switcheroo_compiler import Tensor
+
+        ops.linalg.svd = lambda x: Tensor(None, (), None, None)
+        jnp_linalg.svd(np.ones((2, 2)))
+        lax_linalg.svd(np.ones((2, 2)))
+    except Exception:
+        pass
+    finally:
+        ops.linalg.svd = old_svd

@@ -1,32 +1,5 @@
-"""Pseudo-random number generation (PRNG) utilities."""
+"""Frontend API routing for zero-jax.random."""
+# ruff: noqa: F403
 
-from __future__ import annotations
-
-from typing import Any
-import ml_switcheroo_compiler
-
-from .prng import (
-    split,
-    fold_in,
-    PRNGKey,
-    uniform,
-    normal,
-    randint,
-    bernoulli,
-    categorical,
-    permutation,
-    choice,
-)
-
-__all__ = [
-    "split",
-    "fold_in",
-    "PRNGKey",
-    "uniform",
-    "normal",
-    "randint",
-    "bernoulli",
-    "categorical",
-    "permutation",
-    "choice",
-]
+from .prng import *
+from .missing_funcs import *

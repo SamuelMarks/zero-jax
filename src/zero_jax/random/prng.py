@@ -36,26 +36,6 @@ def fold_in(key: Any, data: Any) -> Any:
     if key is None:
         return None
     key_t = _to_tensor(key)
-    from ml_switcheroo_compiler.tracing import _tracer
-
-    if _tracer.is_tracing:
-        from ml_switcheroo_ir import LogicalNode
-        from ml_switcheroo_compiler.tracing import ProxyTensor
-        import uuid
-
-        out_id = str(uuid.uuid4())
-        node = LogicalNode(
-            id=out_id,
-            op_type="RandomFoldIn",
-            inputs=[key_t.data.id],
-            attributes={"data": data},
-            shape_metadata=(2,),
-        )
-        _tracer.add_node(node)
-        pt = ProxyTensor(id=out_id, shape=(2,), dtype=key_t.dtype.value)
-        import ml_switcheroo_compiler
-
-        return _wrap(ml_switcheroo_compiler.Tensor(pt, (2,), key_t.dtype, key_t.device))
     return _wrap(random.fold_in(key_t, data))
 
 
@@ -230,5 +210,37 @@ def choice(
             replace=replace,
             p=_to_tensor(p) if p is not None else None,
             axis=axis,
+        )
+    )
+
+
+def truncated_normal(
+    key: Any, lower: Any, upper: Any, shape: Any = None, dtype: Any = None
+) -> Any:
+    """Samples truncated normal random values from a given key.
+
+    Args:
+        key: The PRNG key to use for sampling.
+        lower: The lower bound.
+        upper: The upper bound.
+        shape: The shape of the output array.
+        dtype: The dtype of the output array.
+
+    Returns:
+        An array of truncated normal random values.
+    """
+    from ml_switcheroo_compiler.core.config import config
+
+    if dtype is None:
+        dtype = config.default_float_dtype
+    if shape is None:
+        shape = ()
+    return _wrap(
+        random.truncated_normal(
+            _to_tensor(key),
+            _to_tensor(lower),
+            _to_tensor(upper),
+            shape=shape,
+            dtype=dtype,
         )
     )

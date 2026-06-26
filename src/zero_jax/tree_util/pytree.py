@@ -35,6 +35,15 @@ class PyTreeDef:
         return 1 + sum(c.num_nodes for c in self.children_defs)
 
     def __eq__(self, other):
+        """JAX API implementation for __eq__.
+
+        Args:
+            self: Argument self.
+            other: Argument other.
+
+        Returns:
+            Any: The result.
+        """
         if not isinstance(other, PyTreeDef):
             return False
         return (

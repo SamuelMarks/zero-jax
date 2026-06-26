@@ -1,9 +1,4 @@
-"""Core API module for JAX-like transformations (jit, grad, vmap, etc.)."""
-
-from __future__ import annotations
-
-from typing import Any
-import ml_switcheroo_compiler
+"""Frontend API routing for zero-jax."""
 
 from .transformations import (
     jit,
@@ -15,4 +10,80 @@ from .transformations import (
     eval_shape,
 )
 
-__all__ = ["jit", "grad", "value_and_grad", "vmap", "disable_jit", "pmap, eval_shape"]
+from .core import (
+    ShapeDtypeStruct,
+    Shard,
+    NamedSharding,
+    block_until_ready,
+    default_backend,
+    default_device,
+    device_count,
+    local_device_count,
+    process_count,
+    process_index,
+    host_count,
+    host_id,
+    host_ids,
+    device_put,
+    device_put_replicated,
+    device_put_sharded,
+)
+
+from .debug import (
+    check_tracer_leaks,
+    checking_leaks,
+    clear_caches,
+    debug_infs,
+    debug_nans,
+    enable_checks,
+    print_environment_info,
+    effects_barrier,
+    live_arrays,
+    log_compiles,
+    numpy_dtype_promotion,
+    numpy_rank_promotion,
+    spmd_mode,
+    transfer_guard,
+    transfer_guard_device_to_device,
+    transfer_guard_device_to_host,
+    transfer_guard_host_to_device,
+)
+
+from .ad import (
+    jacfwd,
+    jacrev,
+    jacobian,
+    hessian,
+    jvp,
+    vjp,
+    linearize,
+    custom_jvp,
+    custom_vjp,
+    custom_gradient,
+    linear_transpose,
+)
+
+from .misc import (
+    closure_convert,
+    named_call,
+    named_scope,
+    remat,
+    checkpoint,
+    ensure_compile_time_eval,
+    make_jaxpr,
+    pure_callback,
+    make_array_from_callback,
+    make_array_from_process_local_data,
+    make_array_from_single_device_arrays,
+    softmax_custom_jvp,
+    enable_custom_vjp_by_custom_transpose,
+    float0,
+    threefry_partitionable,
+    checkpoint_policies,
+    legacy_prng_key,
+    enable_custom_prng,
+    default_prng_impl,
+    jax2tf_associative_scan_reductions,
+    default_matmul_precision,
+    debug_key_reuse,
+)

@@ -1,28 +1,5 @@
-"""PyTree utilities for manipulating nested data structures."""
+"""Frontend API routing for zero-jax.tree_util."""
+# ruff: noqa: F403
 
-from __future__ import annotations
-
-from typing import Any
-import ml_switcheroo_compiler
-
-from .pytree import (
-    tree_flatten,
-    tree_unflatten,
-    PyTreeDef,
-    tree_map,
-    tree_leaves,
-    tree_structure,
-    tree_all,
-    tree_any,
-)
-
-__all__ = [
-    "tree_flatten",
-    "tree_unflatten",
-    "PyTreeDef",
-    "tree_map",
-    "tree_leaves",
-    "tree_structure",
-    "tree_all",
-    "tree_any",
-]
+from .pytree import *
+from .missing_funcs import *
