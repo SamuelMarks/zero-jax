@@ -2,5 +2,5 @@
 # ruff: noqa: F403
 
 from .activation import *
-from .initializers import *
+from . import initializers
 from .missing_funcs import *

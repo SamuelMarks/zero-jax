@@ -5539,3 +5539,10 @@ class vectorize:
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return array(self._vfunc(*args, **kwargs))
+
+
+__all__ = [
+    k
+    for k in dir()
+    if not k.startswith("_") and k not in ["DType", "TensorConfig", "to_array"]
+]

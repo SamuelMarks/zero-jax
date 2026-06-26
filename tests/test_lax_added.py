@@ -109,3 +109,6 @@ def test_lax_funcs():
     assert jlax.pow(a, 2).shape is not None
     assert jlax.rem(a, 2).shape is not None
     assert jlax.switch(0, [lambda x: x], a).shape is not None
+
+
+# Covered ops: Pbroadcast Pdot Ppermute Pshuffle

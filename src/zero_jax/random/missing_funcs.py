@@ -5,169 +5,174 @@ from typing import Any
 
 
 def ball(key: Any, d: int, p: float = 2.0, shape: Any = ()) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    # Using np random generator for mocking
-    shape_tup = shape if isinstance(shape, tuple) else (shape,)
-    return array(np.random.randn(*(shape_tup + (d,))))
+    return _wrap(ops.ball(_to_tensor(key), d, _to_tensor(p), shape))
 
 
 def beta(key: Any, a: Any, b: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(a, "shape", ())
-    return array(np.random.beta(a, b, size=shape))
+    return _wrap(ops.beta(_to_tensor(key), _to_tensor(a), _to_tensor(b), shape, dtype))
 
 
 def binomial(key: Any, n: Any, p: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(n, "shape", ())
-    return array(np.random.binomial(n, p, size=shape))
+    return _wrap(
+        ops.binomial(_to_tensor(key), _to_tensor(n), _to_tensor(p), shape, dtype)
+    )
 
 
 def bits(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.randint(0, 255, size=shape))
+    return _wrap(ops.bits(_to_tensor(key), shape, dtype))
 
 
 def cauchy(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.standard_cauchy(size=shape))
+    return _wrap(ops.cauchy(_to_tensor(key), shape, dtype))
 
 
 def chisquare(key: Any, df: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(df, "shape", ())
-    return array(np.random.chisquare(df, size=shape))
+    return _wrap(ops.chisquare(_to_tensor(key), _to_tensor(df), shape, dtype))
 
 
 def clone(key: Any) -> Any:
-    return key
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
+
+    return _wrap(ops.clone(_to_tensor(key)))
 
 
 def dirichlet(key: Any, alpha: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape_val = shape if shape is not None else ()
-    if isinstance(shape_val, int):
-        shape_val = (shape_val,)  # pragma: no cover
-    return array(np.random.dirichlet(alpha, size=shape_val))
+    return _wrap(ops.dirichlet(_to_tensor(key), _to_tensor(alpha), shape, dtype))
 
 
 def double_sided_maxwell(
     key: Any, loc: Any, scale: Any, shape: Any = None, dtype: Any = None
 ) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape_val = shape if shape is not None else ()
-    return array(np.random.randn(*shape_val))
+    return _wrap(
+        ops.double_sided_maxwell(
+            _to_tensor(key), _to_tensor(loc), _to_tensor(scale), shape, dtype
+        )
+    )
 
 
 def exponential(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.exponential(size=shape))
+    return _wrap(ops.exponential(_to_tensor(key), shape, dtype))
 
 
 def f(key: Any, dfnum: Any, dfden: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(dfnum, "shape", ())
-    return array(np.random.f(dfnum, dfden, size=shape))
+    return _wrap(
+        ops.f(_to_tensor(key), _to_tensor(dfnum), _to_tensor(dfden), shape, dtype)
+    )
 
 
 def gamma(key: Any, a: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(a, "shape", ())
-    return array(np.random.gamma(a, size=shape))
+    return _wrap(ops.gamma(_to_tensor(key), _to_tensor(a), shape, dtype))
 
 
 def generalized_normal(key: Any, p: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.randn(*shape))
+    return _wrap(ops.generalized_normal(_to_tensor(key), _to_tensor(p), shape, dtype))
 
 
 def geometric(key: Any, p: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(p, "shape", ())
-    return array(np.random.geometric(p, size=shape))
+    return _wrap(ops.geometric(_to_tensor(key), _to_tensor(p), shape, dtype))
 
 
 def gumbel(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.gumbel(size=shape))
+    return _wrap(ops.gumbel(_to_tensor(key), shape, dtype))
 
 
 def key(seed: int) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    return array([0, seed], dtype="uint32")
+    return _wrap(ops.key(seed))
 
 
 def key_data(k: Any) -> Any:
-    return k
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
+
+    return _wrap(ops.key_data(k))
 
 
 def key_impl(k: Any) -> Any:
-    return k
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
+
+    return _wrap(ops.key_impl(k))
 
 
 def laplace(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.laplace(size=shape))
+    return _wrap(ops.laplace(_to_tensor(key), shape, dtype))
 
 
 def loggamma(key: Any, a: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(a, "shape", ())
-    return array(np.log(np.random.gamma(a, size=shape)))
+    return _wrap(ops.loggamma(_to_tensor(key), _to_tensor(a), shape, dtype))
 
 
 def logistic(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.logistic(size=shape))
+    return _wrap(ops.logistic(_to_tensor(key), shape, dtype))
 
 
 def lognormal(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.lognormal(size=shape))
+    return _wrap(ops.lognormal(_to_tensor(key), shape, dtype))
 
 
 def maxwell(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.randn(*shape))  # mock
+    return _wrap(ops.maxwell(_to_tensor(key), shape, dtype))
 
 
 def multivariate_normal(
@@ -178,94 +183,142 @@ def multivariate_normal(
     dtype: Any = None,
     method: str = "svd",
 ) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    from zero_jax.numpy.tensor_utils import to_array
-
-    _mean = to_array(mean.data if hasattr(mean, "data") else mean)
-    _cov = to_array(cov.data if hasattr(cov, "data") else cov)
-    return array(np.random.multivariate_normal(_mean, _cov, size=shape))
+    return _wrap(
+        ops.multivariate_normal(
+            _to_tensor(key), _to_tensor(mean), _to_tensor(cov), shape, dtype, method
+        )
+    )
 
 
 def orthogonal(key: Any, n: int, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape_tup = shape if isinstance(shape, tuple) else (shape,)
-    return array(np.random.randn(*(shape_tup + (n, n))))
+    return _wrap(ops.orthogonal(_to_tensor(key), n, shape, dtype))
 
 
 def pareto(key: Any, b: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(b, "shape", ())
-    return array(np.random.pareto(b, size=shape))
+    return _wrap(ops.pareto(_to_tensor(key), _to_tensor(b), shape, dtype))
 
 
 def poisson(key: Any, lam: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(lam, "shape", ())
-    return array(np.random.poisson(lam, size=shape))
+    return _wrap(ops.poisson(_to_tensor(key), _to_tensor(lam), shape, dtype))
 
 
 def rademacher(key: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    return array(np.random.randint(0, 2, size=shape) * 2 - 1)
+    return _wrap(ops.rademacher(_to_tensor(key), shape, dtype))
 
 
 def random_gamma_p() -> Any:
-    pass  # pragma: no cover
+    pass
 
 
 def rayleigh(key: Any, scale: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(scale, "shape", ())
-    return array(np.random.rayleigh(scale, size=shape))
+    return _wrap(ops.rayleigh(_to_tensor(key), _to_tensor(scale), shape, dtype))
 
 
 def t(key: Any, df: Any, shape: Any = (), dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(df, "shape", ())
-    return array(np.random.standard_t(df, size=shape))
+    return _wrap(ops.t(_to_tensor(key), _to_tensor(df), shape, dtype))
 
 
 def triangular(
     key: Any, left: Any, mode: Any, right: Any, shape: Any = None, dtype: Any = None
 ) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(left, "shape", ())
-    return array(np.random.triangular(left, mode, right, size=shape))
+    return _wrap(
+        ops.triangular(
+            _to_tensor(key),
+            _to_tensor(left),
+            _to_tensor(mode),
+            _to_tensor(right),
+            shape,
+            dtype,
+        )
+    )
 
 
 def wald(key: Any, mean: Any, scale: Any, shape: Any = None, dtype: Any = None) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(mean, "shape", ())
-    return array(np.random.wald(mean, scale, size=shape))
+    return _wrap(
+        ops.wald(_to_tensor(key), _to_tensor(mean), _to_tensor(scale), shape, dtype)
+    )
 
 
 def weibull_min(
     key: Any, scale: Any, concentration: Any, shape: Any = None, dtype: Any = None
 ) -> Any:
-    from zero_jax.numpy import array
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
 
-    np = __import__("numpy")
-    shape = shape or getattr(scale, "shape", ())
-    return array(np.random.weibull(concentration, size=shape) * scale)
+    return _wrap(
+        ops.weibull_min(
+            _to_tensor(key), _to_tensor(scale), _to_tensor(concentration), shape, dtype
+        )
+    )
 
 
 def wrap_key_data(key_data: Any) -> Any:
-    return key_data
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    import ml_switcheroo_compiler.ops as ops
+
+    return _wrap(ops.wrap_key_data(_to_tensor(key_data)))
+
+
+__all__ = [
+    "ball",
+    "beta",
+    "binomial",
+    "bits",
+    "cauchy",
+    "chisquare",
+    "clone",
+    "dirichlet",
+    "double_sided_maxwell",
+    "exponential",
+    "f",
+    "gamma",
+    "generalized_normal",
+    "geometric",
+    "gumbel",
+    "key",
+    "key_data",
+    "key_impl",
+    "laplace",
+    "loggamma",
+    "logistic",
+    "lognormal",
+    "maxwell",
+    "multivariate_normal",
+    "orthogonal",
+    "pareto",
+    "poisson",
+    "rademacher",
+    "rayleigh",
+    "t",
+    "triangular",
+    "wald",
+    "weibull_min",
+    "wrap_key_data",
+]

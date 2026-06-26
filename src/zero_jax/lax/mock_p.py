@@ -166,3 +166,5 @@ _primitives = [
 
 for p in _primitives:
     globals()[p] = MockPrimitive(p)
+
+__all__ = _primitives
