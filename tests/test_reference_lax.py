@@ -1,7 +1,8 @@
-import pytest
 import jax.lax as lax_ref
-import zero_jax.lax as lax_zero
 import numpy as np
+import pytest
+
+import zero_jax.lax as lax_zero
 
 
 def test_lax_cond(check_allclose):

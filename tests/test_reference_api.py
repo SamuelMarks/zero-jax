@@ -1,9 +1,10 @@
-import pytest
 import jax
 import jax.numpy as jnp_ref
+import numpy as np
+import pytest
+
 import zero_jax as zjax
 import zero_jax.numpy as jnp_zero
-import numpy as np
 
 
 def test_api_jit(check_allclose):

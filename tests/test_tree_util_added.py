@@ -1,6 +1,7 @@
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -62,6 +63,7 @@ def test_tree_util_added():
     _, inner_treedef = jtu.tree_flatten({"x": 0})
     assert jtu.tree_transpose(outer_treedef, inner_treedef, tree2) is not None
 
-    assert jtu.treedef_children(treedef) == []
+    leaf_treedef = jtu.tree_flatten(1)[1]
+    assert jtu.treedef_children(leaf_treedef) == []
     assert not jtu.treedef_is_leaf(treedef)
-    assert jtu.treedef_tuple([treedef]) == treedef
+    assert jtu.treedef_tuple([treedef]) == jtu.tree_flatten((tree,))[1]

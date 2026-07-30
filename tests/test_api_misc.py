@@ -1,7 +1,7 @@
-import pytest
-
-import sys
 import os
+import sys
+
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -143,3 +143,15 @@ def test_even_more_misc():
     assert zero_jax.make_array_from_callback((2,), None, lambda: None).shape == (2,)
     assert zero_jax.device_put_sharded([array(1.0)], ["cpu"]).shape == (1,)
     assert zero_jax.block_until_ready(5) == 5
+
+
+def test_phase5_stubs():
+    import zero_jax.experimental.x64_context.config.profiler as c2
+    import zero_jax.interpreters.partial_eval as pe
+    import zero_jax.interpreters.partial_eval.config as pec
+    import zero_jax.interpreters.traceback_util.config as tuc
+    import zero_jax.interpreters.traceback_util.util.jaxlib_utils as tuju
+
+    assert hasattr(pe, "JaxprTrace")
+    assert hasattr(pec, "jax_jit")
+    assert hasattr(tuc, "xla_client")

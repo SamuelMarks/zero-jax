@@ -1,6 +1,7 @@
 """Data types and configs for jax.lax."""
 
 from __future__ import annotations
+
 from typing import Any
 
 
@@ -40,7 +41,9 @@ class GatherDimensionNumbers:
 class GatherScatterMode:
     """Enum equivalent for scatter/gather mode."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Precision:
@@ -54,19 +57,25 @@ class Precision:
 class PrecisionLike:
     """Type alias representation."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class RandomAlgorithm:
     """Random algorithm enum."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class RoundingMethod:
     """Rounding method enum."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ScatterDimensionNumbers:

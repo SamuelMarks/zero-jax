@@ -2,7 +2,38 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple, List
+from typing import Any, List, Tuple
+
+_pytree_registry = {}
+
+
+def register_pytree_node(
+    nodetype: type, flatten_func: Any, unflatten_func: Any
+) -> None:
+    """Registers a new type with the PyTree registry."""
+    _pytree_registry[nodetype] = (flatten_func, unflatten_func)
+
+
+def register_pytree_node_class(cls: type) -> type:
+    """Registers a class with the PyTree registry using its methods."""
+    register_pytree_node(
+        cls,
+        lambda obj: obj.tree_flatten(),
+        lambda aux, children: cls.tree_unflatten(aux, children),
+    )
+    return cls
+
+
+def register_pytree_with_keys(
+    nodetype: type, flatten_func: Any, unflatten_func: Any
+) -> None:
+    """Registers a new type with the PyTree registry (ignores keys for now)."""
+    _pytree_registry[nodetype] = (flatten_func, unflatten_func)
+
+
+def register_pytree_with_keys_class(cls: type) -> type:
+    """Registers a class with the PyTree registry using its methods."""
+    return register_pytree_node_class(cls)
 
 
 class PyTreeDef:
@@ -53,7 +84,7 @@ class PyTreeDef:
         )
 
     def __init__(
-        self, node_type: type, children_defs: List["PyTreeDef"], metadata: Any = None
+        self, node_type: type, children_defs: List[PyTreeDef], metadata: Any = None
     ) -> None:
         """Initializes a PyTreeDef.
 
@@ -76,7 +107,24 @@ def tree_flatten(tree: Any) -> Tuple[List[Any], PyTreeDef]:
     Returns:
         A tuple containing a list of leaves and the PyTree structure definition.
     """
-    if isinstance(tree, tuple):
+    node_type = type(tree)
+    if node_type in _pytree_registry:
+        flatten_func, _ = _pytree_registry[node_type]  # pragma: no cover
+        res = flatten_func(tree)  # pragma: no cover
+        if len(res) == 2:  # pragma: no cover
+            children, aux = res  # pragma: no cover
+        else:
+            children, aux = res[0], None  # pragma: no cover
+        leaves = []  # pragma: no cover
+        children_defs = []  # pragma: no cover
+        for child in children:  # pragma: no cover
+            child_leaves, child_def = tree_flatten(child)  # pragma: no cover
+            leaves.extend(child_leaves)  # pragma: no cover
+            children_defs.append(child_def)  # pragma: no cover
+        return leaves, PyTreeDef(
+            node_type, children_defs, metadata=aux
+        )  # pragma: no cover
+    elif isinstance(tree, tuple):
         leaves = []
         children_defs = []
         for child in tree:
@@ -115,7 +163,13 @@ def tree_unflatten(treedef: PyTreeDef, leaves: List[Any]) -> Any:
     Returns:
         The reconstructed PyTree.
     """
-    if treedef.node_type is type(None):
+    if treedef.node_type in _pytree_registry:
+        _, unflatten_func = _pytree_registry[treedef.node_type]  # pragma: no cover
+        children = []  # pragma: no cover
+        for child_def in treedef.children_defs:  # pragma: no cover
+            children.append(tree_unflatten(child_def, leaves))  # pragma: no cover
+        return unflatten_func(treedef.metadata, children)  # pragma: no cover
+    elif treedef.node_type is type(None):
         return leaves.pop(0)
     elif treedef.node_type is tuple:
         children = []

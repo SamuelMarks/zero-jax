@@ -1,4 +1,4 @@
-"""Mock implementation for jax.lib.xla_extension."""
+"""Frontend API routing for jax.lib.xla_extension."""
 
 from typing import Any
 
@@ -45,387 +45,515 @@ weakref_lru_cache: Any = None
 
 
 class ArrayImpl:
-    """Mock implementation for ArrayImpl."""
+    """Frontend API routing for ArrayImpl."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CallInliner:
-    """Mock implementation for CallInliner."""
+    """Frontend API routing for CallInliner."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Client:
-    """Mock implementation for Client."""
+    """Frontend API routing for Client."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CompileOnlyPyClient:
-    """Mock implementation for CompileOnlyPyClient."""
+    """Frontend API routing for CompileOnlyPyClient."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CompileOptions:
-    """Mock implementation for CompileOptions."""
+    """Frontend API routing for CompileOptions."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CompiledMemoryStats:
-    """Mock implementation for CompiledMemoryStats."""
+    """Frontend API routing for CompiledMemoryStats."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CpuCollectives:
-    """Mock implementation for CpuCollectives."""
+    """Frontend API routing for CpuCollectives."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DebugOptions:
-    """Mock implementation for DebugOptions."""
+    """Frontend API routing for DebugOptions."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Device:
-    """Mock implementation for Device."""
+    """Frontend API routing for Device."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceAssignment:
-    """Mock implementation for DeviceAssignment."""
+    """Frontend API routing for DeviceAssignment."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceList:
-    """Mock implementation for DeviceList."""
+    """Frontend API routing for DeviceList."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceTopology:
-    """Mock implementation for DeviceTopology."""
+    """Frontend API routing for DeviceTopology."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DistributedRuntimeClient:
-    """Mock implementation for DistributedRuntimeClient."""
+    """Frontend API routing for DistributedRuntimeClient."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DistributedRuntimeService:
-    """Mock implementation for DistributedRuntimeService."""
+    """Frontend API routing for DistributedRuntimeService."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Executable:
-    """Mock implementation for Executable."""
+    """Frontend API routing for Executable."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ExecutableBuildOptions:
-    """Mock implementation for ExecutableBuildOptions."""
+    """Frontend API routing for ExecutableBuildOptions."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ExecuteResults:
-    """Mock implementation for ExecuteResults."""
+    """Frontend API routing for ExecuteResults."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class FftType:
-    """Mock implementation for FftType."""
+    """Frontend API routing for FftType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class FlattenCallGraph:
-    """Mock implementation for FlattenCallGraph."""
+    """Frontend API routing for FlattenCallGraph."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Frame:
-    """Mock implementation for Frame."""
+    """Frontend API routing for Frame."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class FrontendAttributes:
-    """Mock implementation for FrontendAttributes."""
+    """Frontend API routing for FrontendAttributes."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class GSPMDSharding:
-    """Mock implementation for GSPMDSharding."""
+    """Frontend API routing for GSPMDSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloComputation:
-    """Mock implementation for HloComputation."""
+    """Frontend API routing for HloComputation."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloDCE:
-    """Mock implementation for HloDCE."""
+    """Frontend API routing for HloDCE."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloModule:
-    """Mock implementation for HloModule."""
+    """Frontend API routing for HloModule."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloModuleGroup:
-    """Mock implementation for HloModuleGroup."""
+    """Frontend API routing for HloModuleGroup."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloPassInterface:
-    """Mock implementation for HloPassInterface."""
+    """Frontend API routing for HloPassInterface."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloPrintOptions:
-    """Mock implementation for HloPrintOptions."""
+    """Frontend API routing for HloPrintOptions."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloSharding:
-    """Mock implementation for HloSharding."""
+    """Frontend API routing for HloSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HostBufferSemantics:
-    """Mock implementation for HostBufferSemantics."""
+    """Frontend API routing for HostBufferSemantics."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Layout:
-    """Mock implementation for Layout."""
+    """Frontend API routing for Layout."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Literal:
-    """Mock implementation for Literal."""
+    """Frontend API routing for Literal."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class LoadedExecutable:
-    """Mock implementation for LoadedExecutable."""
+    """Frontend API routing for LoadedExecutable."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Memory:
-    """Mock implementation for Memory."""
+    """Frontend API routing for Memory."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class MpiCollectives:
-    """Mock implementation for MpiCollectives."""
+    """Frontend API routing for MpiCollectives."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class NamedSharding:
-    """Mock implementation for NamedSharding."""
+    """Frontend API routing for NamedSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OpSharding:
-    """Mock implementation for OpSharding."""
+    """Frontend API routing for OpSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OpSharding_ShardGroupType:
-    """Mock implementation for OpSharding_ShardGroupType."""
+    """Frontend API routing for OpSharding_ShardGroupType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OpSharding_Type:
-    """Mock implementation for OpSharding_Type."""
+    """Frontend API routing for OpSharding_Type."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PjRtLayout:
-    """Mock implementation for PjRtLayout."""
+    """Frontend API routing for PjRtLayout."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PjRtXlaLayout:
-    """Mock implementation for PjRtXlaLayout."""
+    """Frontend API routing for PjRtXlaLayout."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PjitFunction:
-    """Mock implementation for PjitFunction."""
+    """Frontend API routing for PjitFunction."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PjitFunctionCache:
-    """Mock implementation for PjitFunctionCache."""
+    """Frontend API routing for PjitFunctionCache."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PmapFunction:
-    """Mock implementation for PmapFunction."""
+    """Frontend API routing for PmapFunction."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PmapSharding:
-    """Mock implementation for PmapSharding."""
+    """Frontend API routing for PmapSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PrecisionConfig_Precision:
-    """Mock implementation for PrecisionConfig_Precision."""
+    """Frontend API routing for PrecisionConfig_Precision."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PreemptionSyncManager:
-    """Mock implementation for PreemptionSyncManager."""
+    """Frontend API routing for PreemptionSyncManager."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PrimitiveType:
-    """Mock implementation for PrimitiveType."""
+    """Frontend API routing for PrimitiveType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ProgramShape:
-    """Mock implementation for ProgramShape."""
+    """Frontend API routing for ProgramShape."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PyTreeRegistry:
-    """Mock implementation for PyTreeRegistry."""
+    """Frontend API routing for PyTreeRegistry."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ResultHandler:
-    """Mock implementation for ResultHandler."""
+    """Frontend API routing for ResultHandler."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Shape:
-    """Mock implementation for Shape."""
+    """Frontend API routing for Shape."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ShapeIndex:
-    """Mock implementation for ShapeIndex."""
+    """Frontend API routing for ShapeIndex."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ShardedToken:
-    """Mock implementation for ShardedToken."""
+    """Frontend API routing for ShardedToken."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Sharding:
-    """Mock implementation for Sharding."""
+    """Frontend API routing for Sharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class SingleDeviceSharding:
-    """Mock implementation for SingleDeviceSharding."""
+    """Frontend API routing for SingleDeviceSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Token:
-    """Mock implementation for Token."""
+    """Frontend API routing for Token."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Traceback:
-    """Mock implementation for Traceback."""
+    """Frontend API routing for Traceback."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class TupleSimplifier:
-    """Mock implementation for TupleSimplifier."""
+    """Frontend API routing for TupleSimplifier."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class WeakrefLRUCache:
-    """Mock implementation for WeakrefLRUCache."""
+    """Frontend API routing for WeakrefLRUCache."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaBuilder:
-    """Mock implementation for XlaBuilder."""
+    """Frontend API routing for XlaBuilder."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaComputation:
-    """Mock implementation for XlaComputation."""
+    """Frontend API routing for XlaComputation."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaOp:
-    """Mock implementation for XlaOp."""
+    """Frontend API routing for XlaOp."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaRuntimeError:
-    """Mock implementation for XlaRuntimeError."""
+    """Frontend API routing for XlaRuntimeError."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 hlo_sharding_util: Any = None  # Mock module

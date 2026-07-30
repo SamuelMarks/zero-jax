@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-import ml_switcheroo_compiler.random as random
+from ml_switcheroo_compiler import random
+
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
@@ -147,7 +148,7 @@ def categorical(key: Any, logits: Any, axis: int = -1, shape: Any = None) -> Any
     Returns:
         An array of categorical random samples.
     """
-    import ml_switcheroo_compiler.random as random
+    from ml_switcheroo_compiler import random
 
     return _wrap(
         random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape)
@@ -166,7 +167,7 @@ def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> A
     Returns:
         A randomly permuted sequence or array.
     """
-    import ml_switcheroo_compiler.random as random
+    from ml_switcheroo_compiler import random
 
     return _wrap(
         random.permutation(
@@ -199,8 +200,9 @@ def choice(
     Returns:
         An array containing the random samples.
     """
-    import ml_switcheroo_compiler.random as random
-    from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
+    from ml_switcheroo_compiler import random
+
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
     return _wrap(
         random.choice(

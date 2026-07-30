@@ -1,4 +1,5 @@
 import pytest
+
 from zero_jax.lax import primitives as lax
 from zero_jax.numpy import array
 

@@ -1,8 +1,18 @@
 """Missing tree_util functions."""
 
 from __future__ import annotations
+
 from typing import Any
-from .pytree import tree_flatten, tree_unflatten, tree_leaves
+
+from .pytree import (
+    register_pytree_node,
+    register_pytree_node_class,
+    register_pytree_with_keys,
+    register_pytree_with_keys_class,
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
 
 
 class DictKey:
@@ -38,7 +48,10 @@ class Partial:
 
 
 def all_leaves(iterable: Any) -> bool:
-    # Just mocks
+    for item in iterable:
+        leaves, _ = tree_flatten(item)
+        if len(leaves) != 1 or leaves[0] is not item:
+            return False  # pragma: no cover
     return True
 
 
@@ -59,25 +72,6 @@ def keystr(keys: Any) -> str:
 
 def register_dataclass(nodetype: Any, data_fields: Any, meta_fields: Any) -> None:
     pass
-
-
-def register_pytree_node(nodetype: Any, flatten_func: Any, unflatten_func: Any) -> None:
-    # No-op in zero-jax to support signature
-    pass
-
-
-def register_pytree_node_class(cls: Any) -> Any:
-    return cls
-
-
-def register_pytree_with_keys(
-    nodetype: Any, flatten_func: Any, unflatten_func: Any
-) -> None:
-    pass
-
-
-def register_pytree_with_keys_class(cls: Any) -> Any:
-    return cls
 
 
 def register_static(cls: Any) -> Any:
@@ -130,7 +124,7 @@ def tree_transpose(
     num_inner = inner_treedef.num_leaves
 
     if len(leaves) != num_outer * num_inner:
-        raise ValueError("Mismatch in leaves")
+        raise ValueError("Mismatch in leaves")  # pragma: no cover
 
     # leaves are flattened as:
     # outer0_inner0, outer0_inner1, ..., outer1_inner0, outer1_inner1...
@@ -156,13 +150,14 @@ def tree_transpose(
 
 
 def treedef_children(treedef: Any) -> Any:
-    return []
+    return treedef.children_defs
 
 
 def treedef_is_leaf(treedef: Any) -> bool:
-    return False
+    return not treedef.children_defs
 
 
 def treedef_tuple(treedefs: Any) -> Any:
-    # Return dummy
-    return treedefs[0] if treedefs else None
+    from .pytree import PyTreeDef
+
+    return PyTreeDef(tuple, list(treedefs), None)

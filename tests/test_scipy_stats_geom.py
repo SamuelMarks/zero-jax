@@ -1,19 +1,21 @@
 """Tests for zero_jax module."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 import zero_jax.scipy.stats.geom as mod
 
 
 def test_logpmf() -> None:
     """Test logpmf."""
-    with patch("ml_switcheroo_compiler.ops.logpmf") as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.logpmf", create=True) as mock_op:
         mod.logpmf()
         mock_op.assert_called_once_with()
 
 
 def test_pmf() -> None:
     """Test pmf."""
-    with patch("ml_switcheroo_compiler.ops.pmf") as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.pmf", create=True) as mock_op:
         mod.pmf()
         mock_op.assert_called_once_with()

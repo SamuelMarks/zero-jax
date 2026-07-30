@@ -24,30 +24,33 @@ repos:
 
       - id: update-badges
         name: Update Coverage Shields
-        entry: python3 scripts/update_badges.py
+        entry: python3 scripts/run_checks.py update_badges
         language: system
         types: [python]
         pass_filenames: false
 
       - id: check-allowed-imports
-        name: Check Allowed Imports (src only)
-        entry: python3 scripts/check_allowed_imports.py
+        name: Check Allowed Imports
+        entry: python3 scripts/run_checks.py check_allowed_imports
         language: system
-        files: ^src/.*\.py$
         types: [python]
 
-
+      - id: enforce-all-list
+        name: Enforce __all__ List (No append/extend)
+        entry: python3 scripts/run_checks.py enforce_all_list
+        language: system
+        types: [python]
 
       - id: check-api-parity
         name: Check API Parity against Snapshot
-        entry: python3 scripts/check_api_parity.py
+        entry: python3 scripts/run_checks.py check_api_parity
         language: system
         types: [python]
         pass_filenames: false
 
       - id: check-ops-coverage
         name: Check 100% Ops Coverage
-        entry: python3 scripts/check_ops_coverage.py
+        entry: python3 scripts/run_checks.py check_ops_coverage
         language: system
         types: [python]
         pass_filenames: false

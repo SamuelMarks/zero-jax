@@ -3,8 +3,10 @@ from ml_switcheroo_compiler.core.tensor import TensorConfig
 """Tests for zero_jax.random."""
 
 import numpy as np
-from zero_jax.random import split, fold_in
-from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
+from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+
+from zero_jax.random import fold_in, split
 
 
 def test_random_split_eager():
@@ -39,8 +41,9 @@ def test_random_fallback():
 
 
 def test_truncated_normal():
-    from zero_jax import random
     import numpy as np
+
+    from zero_jax import random
 
     key = random.PRNGKey(0)
     x = random.truncated_normal(key, -1.0, 1.0, shape=(2, 2))

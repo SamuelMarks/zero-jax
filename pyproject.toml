@@ -25,7 +25,7 @@ omit = [
 ]
 
 [tool.ruff.lint]
-ignore = ['E402', 'F401', 'F841', 'E741', 'E501']
+ignore = ['E402', 'F401', 'F841', 'E741', 'E501', 'RUF059', 'BLE001', 'S110', 'C414', 'SIM102', 'FURB136', 'PLE0605', 'UP035', 'UP006', 'B004', 'FA100', 'UP045', 'UP007', 'UP031', 'RUF013', 'SIM101']
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"

@@ -3,8 +3,10 @@ from ml_switcheroo_compiler.core.tensor import TensorConfig
 """Tests for zero_jax.lax primitives."""
 
 import pytest
+from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+
 from zero_jax.lax import cond, scan
-from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
 
 def test_cond_eager():
@@ -61,8 +63,9 @@ def test_stop_gradient():
 
 
 def test_lax_trig():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     x = np.array([0.0, 0.5, 1.0])
     np.testing.assert_allclose(lax.acos(x), np.arccos(x))
@@ -84,8 +87,9 @@ def test_lax_trig():
 
 
 def test_lax_bitwise_compare():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     i1, i2 = np.array([1, 2, 3]), np.array([1, 4, 3])
     np.testing.assert_allclose(lax.bitwise_and(i1, i2), np.bitwise_and(i1, i2))
@@ -102,8 +106,9 @@ def test_lax_bitwise_compare():
 
 
 def test_lax_math_numeric():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     x = np.array([1.5, 2.5], dtype=np.float32)
     y = np.array([2.0, 3.0], dtype=np.float32)
@@ -130,8 +135,9 @@ def test_lax_math_numeric():
 
 
 def test_lax_more_functions():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     x = np.array([1.5, 2.5], dtype=np.float32)
     y = np.array([2.0, 3.0], dtype=np.float32)
@@ -186,8 +192,9 @@ def test_lax_more_functions():
 
 
 def test_lax_fft_linalg():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     m = np.array([[2.0, 1.0], [1.0, 2.0]], dtype=np.float32)
@@ -198,8 +205,9 @@ def test_lax_fft_linalg():
 
 
 def test_lax_neg():
-    from zero_jax import lax
     import numpy as np
+
+    from zero_jax import lax
 
     x = np.array([1.5, -2.5], dtype=np.float32)
     np.testing.assert_allclose(lax.neg(x), -x)

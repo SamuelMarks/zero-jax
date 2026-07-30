@@ -3,6 +3,7 @@ import pytest
 """Tests for zero_jax.nn.activation."""
 
 import numpy as np
+
 from zero_jax.nn.activation import gelu, logsumexp, one_hot, softmax
 
 
@@ -58,16 +59,18 @@ def test_softmax():
 
 
 def test_sigmoid():
-    from zero_jax.nn.activation import sigmoid
     import numpy as np
+
+    from zero_jax.nn.activation import sigmoid
 
     x = np.array([0.0])
     assert sigmoid(x) == 0.5
 
 
 def test_log_sigmoid():
-    from zero_jax.nn.activation import log_sigmoid
     import numpy as np
+
+    from zero_jax.nn.activation import log_sigmoid
 
     x = np.array([0.0])
     res = log_sigmoid(x)
@@ -75,8 +78,9 @@ def test_log_sigmoid():
 
 
 def test_gelu_eager_non_approx():
-    from zero_jax.nn.activation import gelu
     import numpy as np
+
+    from zero_jax.nn.activation import gelu
 
     x = np.array([0.0, 1.0, -1.0])
     res2 = gelu(x, approximate=False)
@@ -84,8 +88,9 @@ def test_gelu_eager_non_approx():
 
 
 def test_logsumexp_eager_extra():
-    from zero_jax.nn.activation import logsumexp
     import numpy as np
+
+    from zero_jax.nn.activation import logsumexp
 
     x = np.array([0.0, 1.0, 2.0])
     res, sign = logsumexp(
@@ -95,8 +100,9 @@ def test_logsumexp_eager_extra():
 
 
 def test_softmax_eager_extra():
-    from zero_jax.nn.activation import softmax
     import numpy as np
+
+    from zero_jax.nn.activation import softmax
 
     x = np.array([0.0, 1.0, 2.0])
     res2 = softmax(x, where=np.array([True, True, False]))
@@ -104,8 +110,9 @@ def test_softmax_eager_extra():
 
 
 def test_selu():
-    from zero_jax.nn.activation import selu
     import numpy as np
+
+    from zero_jax.nn.activation import selu
 
     x = np.array([0.0, 1.0, -1.0])
     res = selu(x)
@@ -113,8 +120,9 @@ def test_selu():
 
 
 def test_log_softmax():
-    from zero_jax.nn.activation import log_softmax
     import numpy as np
+
+    from zero_jax.nn.activation import log_softmax
 
     x = np.array([[1.0, 2.0], [3.0, 4.0]])
     res = log_softmax(x, axis=-1)
@@ -122,8 +130,9 @@ def test_log_softmax():
 
 
 def test_erf():
-    from zero_jax.nn.activation import _erf
     import numpy as np
+
+    from zero_jax.nn.activation import _erf
 
     x = np.array([0.0, 1.0, -1.0])
     res = _erf(x)
@@ -131,8 +140,9 @@ def test_erf():
 
 
 def test_nn_tanh():
-    from zero_jax import nn
     import numpy as np
+
+    from zero_jax import nn
 
     x = np.array([0.0, 1.0])
     np.testing.assert_allclose(nn.tanh(x), np.tanh(x))

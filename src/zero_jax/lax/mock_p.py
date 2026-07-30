@@ -6,6 +6,7 @@ tracing entirely differently.
 """
 
 from __future__ import annotations
+
 from typing import Any
 
 
@@ -14,7 +15,7 @@ class MockPrimitive:
         self.name = name
 
 
-# The TODO_PLAN lists a ton of `*_p` primitives
+# These mock primitives satisfy JAX module expectations
 _primitives = [
     "abs_p",
     "acos_p",

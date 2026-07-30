@@ -29,10 +29,8 @@ def get_signature(node):
     try:
         source = ast.unparse(node)
         sig_line = source.split("\n")[0]
-        if sig_line.startswith("def "):
-            sig_line = sig_line[4:]
-        if sig_line.endswith(":"):
-            sig_line = sig_line[:-1]
+        sig_line = sig_line.removeprefix("def ")
+        sig_line = sig_line.removesuffix(":")
         return sig_line
     except Exception:
         return f"{node.name}(...)"

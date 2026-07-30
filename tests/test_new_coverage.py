@@ -1,9 +1,9 @@
-from ml_switcheroo_compiler.core.tensor import TensorConfig
-import pytest
-import numpy as np
 import ml_switcheroo_compiler
-from ml_switcheroo_compiler.tracing import ProxyTensor
+import numpy as np
+import pytest
 from ml_switcheroo_compiler.core.dtype import DType
+from ml_switcheroo_compiler.core.tensor import TensorConfig
+from ml_switcheroo_compiler.tracing import ProxyTensor
 
 
 def test_initializers_compute_fans():
@@ -50,6 +50,7 @@ def test_lax_numpy_truediv_floordiv():
 
 def test_lax_numpy_setitem_eager():
     from ml_switcheroo_compiler.core.config import config
+
     import zero_jax.numpy as jnp
 
     config.eager_mode = True
@@ -77,8 +78,9 @@ def test_lax_numpy_getitem_tensor():
 
 
 def test_lax_numpy_wrap_tracing():
-    import zero_jax.numpy as jnp
     import ml_switcheroo_compiler
+
+    import zero_jax.numpy as jnp
 
     t = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
@@ -89,16 +91,19 @@ def test_lax_numpy_wrap_tracing():
         ),
     )
     # Testing _to_tensor with eager tensor under tracing
-    ml_switcheroo_compiler.tracing._tracer.start_tracing("test_trace")
+    ml_switcheroo_compiler.tracing.state.global_tracing_state.start_tracing(
+        "test_trace"
+    )
     try:
         jnp._to_tensor(t)
     finally:
-        ml_switcheroo_compiler.tracing._tracer.stop_tracing()
+        ml_switcheroo_compiler.tracing.state.global_tracing_state.stop_tracing()
 
 
 def test_lax_numpy_wrap_tuple_list():
-    import zero_jax.numpy as jnp
     import ml_switcheroo_compiler
+
+    import zero_jax.numpy as jnp
 
     t1 = ml_switcheroo_compiler.Tensor(
         data=np.array([1.0]),
@@ -145,7 +150,6 @@ def test_lax_numpy_linspace_exceptions():
     jnp.linspace(0, 1, 10, retstep=True)
 
 
-@pytest.mark.skip(reason="Not implemented in backend")
 def test_lax_numpy_math_missing():
     import zero_jax.numpy as jnp
 
@@ -202,8 +206,9 @@ def test_lax_numpy_truediv():
 
 
 def test_linspace_negative_num():
-    import zero_jax.numpy as jnp
     import pytest
+
+    import zero_jax.numpy as jnp
 
     with pytest.raises(ValueError, match="must be non-negative"):
         jnp.linspace(0, 1, -1)
@@ -224,8 +229,9 @@ def test_linspace_axis():
 
 
 def test_ravel_invalid_order():
-    import zero_jax.numpy as jnp
     import pytest
+
+    import zero_jax.numpy as jnp
 
     with pytest.raises(ValueError, match="order must be one of"):
         jnp.ravel(jnp.array([1, 2]), order="Z")

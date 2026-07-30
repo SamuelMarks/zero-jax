@@ -1,7 +1,14 @@
 """Tests for zero_jax module."""
 
 import pytest
+
 import zero_jax.sharding as mod
+
+
+def test_Sharding() -> None:
+    """Test Sharding."""
+    obj = mod.Sharding()
+    assert obj is not None
 
 
 def test_GSPMDSharding() -> None:

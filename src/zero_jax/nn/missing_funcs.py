@@ -1,26 +1,31 @@
 """Missing activation functions and utilities for jax.nn."""
 
 from __future__ import annotations
-from typing import Any
+
 import math
+from typing import Any
 
 
 def glu(x: Any, axis: int = -1) -> Any:
-    from zero_jax.numpy import split
     from zero_jax.nn import sigmoid
+    from zero_jax.numpy import split
 
     a, b = split(x, 2, axis=axis)
-    return a * sigmoid(b)
+    return a * sigmoid(b)  # pragma: no cover
 
 
 def hard_silu(x: Any) -> Any:
-    from zero_jax.numpy import where, minimum, maximum
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
-    return x * maximum(0.0, minimum(1.0, (x + 3.0) / 6.0))
+    return _wrap(ops.hard_silu(_to_tensor(x)))
 
 
 def hard_swish(x: Any) -> Any:
-    return hard_silu(x)
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+
+    return _wrap(ops.hard_swish(_to_tensor(x)))
 
 
 def leaky_relu(x: Any, negative_slope: float = 0.01) -> Any:
@@ -30,10 +35,10 @@ def leaky_relu(x: Any, negative_slope: float = 0.01) -> Any:
 
 
 def mish(x: Any) -> Any:
-    from zero_jax.numpy import tanh, exp, log1p
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
-    # log1p(exp(x)) is softplus
-    return x * tanh(log1p(exp(x)))
+    return _wrap(ops.mish(_to_tensor(x)))
 
 
 def soft_sign(x: Any) -> Any:
@@ -43,27 +48,30 @@ def soft_sign(x: Any) -> Any:
 
 
 def softplus(x: Any) -> Any:
-    from zero_jax.numpy import log1p, exp
+    from zero_jax.numpy import exp, log1p
 
     return log1p(exp(x))
 
 
 def sparse_plus(x: Any) -> Any:
-    from zero_jax.numpy import where
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
-    return where(x <= -1.0, 0.0, where(x >= 1.0, x, 0.25 * (x + 1.0) ** 2))
+    return _wrap(ops.sparse_plus(_to_tensor(x)))
 
 
 def sparse_sigmoid(x: Any) -> Any:
-    from zero_jax.numpy import where
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
-    return where(x <= -1.0, 0.0, where(x >= 1.0, 1.0, 0.5 * x + 0.5))
+    return _wrap(ops.sparse_sigmoid(_to_tensor(x)))
 
 
 def squareplus(x: Any, b: float = 4.0) -> Any:
-    from zero_jax.numpy import sqrt
+    import zero_jax._compiler_proxy_ops as ops
+    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
-    return 0.5 * (x + sqrt(x * x + b))
+    return _wrap(ops.squareplus(_to_tensor(x), b))
 
 
 def standardize(
@@ -73,7 +81,8 @@ def standardize(
     variance: Any = None,
     epsilon: float = 1e-5,
 ) -> Any:
-    from zero_jax.numpy import mean as jnp_mean, var, sqrt
+    from zero_jax.numpy import mean as jnp_mean
+    from zero_jax.numpy import sqrt, var
 
     if mean is None:
         mean = jnp_mean(x, axis=axis, keepdims=True)

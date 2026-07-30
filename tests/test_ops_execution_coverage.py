@@ -1,7 +1,9 @@
-import pytest
-import sys
 import os
-import ml_switcheroo_compiler.ops as ops
+import sys
+
+import pytest
+
+import zero_jax._compiler_proxy_ops as ops
 
 
 def test_all_ops_executed(request):

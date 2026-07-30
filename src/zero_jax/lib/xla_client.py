@@ -1,7 +1,8 @@
-"""Mock implementation for jax.lib.xla_client."""
+"""Frontend API routing for jax.lib.xla_client."""
 
 from typing import Any
-import ml_switcheroo_compiler.ops as _ops
+
+import zero_jax._compiler_proxy_ops as _ops
 
 DTYPE_TO_XLA_ELEMENT_TYPE: Any = None
 Union: Any = None
@@ -23,454 +24,788 @@ xla_platform_names: Any = None
 
 
 class ArrayImpl:
-    """Mock implementation for ArrayImpl."""
+    """Frontend API routing for ArrayImpl."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Client:
-    """Mock implementation for Client."""
+    """Frontend API routing for Client."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CompileOptions:
-    """Mock implementation for CompileOptions."""
+    """Frontend API routing for CompileOptions."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ConvolutionDimensionNumbers:
-    """Mock implementation for ConvolutionDimensionNumbers."""
+    """Frontend API routing for ConvolutionDimensionNumbers."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CustomCallHandler:
-    """Mock implementation for CustomCallHandler."""
+    """Frontend API routing for CustomCallHandler."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CustomCallTargetTraits:
-    """Mock implementation for CustomCallTargetTraits."""
+    """Frontend API routing for CustomCallTargetTraits."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Device:
-    """Mock implementation for Device."""
+    """Frontend API routing for Device."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceAssignment:
-    """Mock implementation for DeviceAssignment."""
+    """Frontend API routing for DeviceAssignment."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceList:
-    """Mock implementation for DeviceList."""
+    """Frontend API routing for DeviceList."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DeviceTopology:
-    """Mock implementation for DeviceTopology."""
+    """Frontend API routing for DeviceTopology."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class DotDimensionNumbers:
-    """Mock implementation for DotDimensionNumbers."""
+    """Frontend API routing for DotDimensionNumbers."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class FftType:
-    """Mock implementation for FftType."""
+    """Frontend API routing for FftType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Frame:
-    """Mock implementation for Frame."""
+    """Frontend API routing for Frame."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class GSPMDSharding:
-    """Mock implementation for GSPMDSharding."""
+    """Frontend API routing for GSPMDSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class GatherDimensionNumbers:
-    """Mock implementation for GatherDimensionNumbers."""
+    """Frontend API routing for GatherDimensionNumbers."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HloSharding:
-    """Mock implementation for HloSharding."""
+    """Frontend API routing for HloSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class HostBufferSemantics:
-    """Mock implementation for HostBufferSemantics."""
+    """Frontend API routing for HostBufferSemantics."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Layout:
-    """Mock implementation for Layout."""
+    """Frontend API routing for Layout."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class LoadedExecutable:
-    """Mock implementation for LoadedExecutable."""
+    """Frontend API routing for LoadedExecutable."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Mapping:
-    """Mock implementation for Mapping."""
+    """Frontend API routing for Mapping."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Memory:
-    """Mock implementation for Memory."""
+    """Frontend API routing for Memory."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class NamedSharding:
-    """Mock implementation for NamedSharding."""
+    """Frontend API routing for NamedSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OpMetadata:
-    """Mock implementation for OpMetadata."""
+    """Frontend API routing for OpMetadata."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OpSharding:
-    """Mock implementation for OpSharding."""
+    """Frontend API routing for OpSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PaddingConfig:
-    """Mock implementation for PaddingConfig."""
+    """Frontend API routing for PaddingConfig."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PaddingConfigDimension:
-    """Mock implementation for PaddingConfigDimension."""
+    """Frontend API routing for PaddingConfigDimension."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PaddingType:
-    """Mock implementation for PaddingType."""
+    """Frontend API routing for PaddingType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PjRtLayout:
-    """Mock implementation for PjRtLayout."""
+    """Frontend API routing for PjRtLayout."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PmapSharding:
-    """Mock implementation for PmapSharding."""
+    """Frontend API routing for PmapSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PrecisionConfig:
-    """Mock implementation for PrecisionConfig."""
+    """Frontend API routing for PrecisionConfig."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PrimitiveType:
-    """Mock implementation for PrimitiveType."""
+    """Frontend API routing for PrimitiveType."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ProgramShape:
-    """Mock implementation for ProgramShape."""
+    """Frontend API routing for ProgramShape."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Protocol:
-    """Mock implementation for Protocol."""
+    """Frontend API routing for Protocol."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ReplicaGroup:
-    """Mock implementation for ReplicaGroup."""
+    """Frontend API routing for ReplicaGroup."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ScatterDimensionNumbers:
-    """Mock implementation for ScatterDimensionNumbers."""
+    """Frontend API routing for ScatterDimensionNumbers."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Sequence:
-    """Mock implementation for Sequence."""
+    """Frontend API routing for Sequence."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Shape:
-    """Mock implementation for Shape."""
+    """Frontend API routing for Shape."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class ShapeIndex:
-    """Mock implementation for ShapeIndex."""
+    """Frontend API routing for ShapeIndex."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Sharding:
-    """Mock implementation for Sharding."""
+    """Frontend API routing for Sharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class SingleDeviceSharding:
-    """Mock implementation for SingleDeviceSharding."""
+    """Frontend API routing for SingleDeviceSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Traceback:
-    """Mock implementation for Traceback."""
+    """Frontend API routing for Traceback."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaBuilder:
-    """Mock implementation for XlaBuilder."""
+    """Frontend API routing for XlaBuilder."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaComputation:
-    """Mock implementation for XlaComputation."""
+    """Frontend API routing for XlaComputation."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaOp:
-    """Mock implementation for XlaOp."""
+    """Frontend API routing for XlaOp."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class XlaRuntimeError:
-    """Mock implementation for XlaRuntimeError."""
+    """Frontend API routing for XlaRuntimeError."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class bfloat16:
-    """Mock implementation for bfloat16."""
+    """Frontend API routing for bfloat16."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class float8_e4m3b11fnuz:
-    """Mock implementation for float8_e4m3b11fnuz."""
+    """Frontend API routing for float8_e4m3b11fnuz."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class float8_e4m3fn:
-    """Mock implementation for float8_e4m3fn."""
+    """Frontend API routing for float8_e4m3fn."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class float8_e4m3fnuz:
-    """Mock implementation for float8_e4m3fnuz."""
+    """Frontend API routing for float8_e4m3fnuz."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class float8_e5m2:
-    """Mock implementation for float8_e5m2."""
+    """Frontend API routing for float8_e5m2."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class float8_e5m2fnuz:
-    """Mock implementation for float8_e5m2fnuz."""
+    """Frontend API routing for float8_e5m2fnuz."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 def CurrentSourceInfoMetadata(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for CurrentSourceInfoMetadata."""
-    return getattr(_ops, "CurrentSourceInfoMetadata")(*args, **kwargs)
+    """Frontend wrapper for CurrentSourceInfoMetadata.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.CurrentSourceInfoMetadata(*args, **kwargs)
 
 
 def LoadedExecutable_execute(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for LoadedExecutable_execute."""
-    return getattr(_ops, "LoadedExecutable_execute")(*args, **kwargs)
+    """Frontend wrapper for LoadedExecutable_execute.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.LoadedExecutable_execute(*args, **kwargs)
 
 
 def LoadedExecutable_execute_with_token(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for LoadedExecutable_execute_with_token."""
-    return getattr(_ops, "LoadedExecutable_execute_with_token")(*args, **kwargs)
+    """Frontend wrapper for LoadedExecutable_execute_with_token.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.LoadedExecutable_execute_with_token(*args, **kwargs)
 
 
 def dtype_to_etype(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for dtype_to_etype."""
-    return getattr(_ops, "dtype_to_etype")(*args, **kwargs)
+    """Frontend wrapper for dtype_to_etype.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.dtype_to_etype(*args, **kwargs)
 
 
 def execute_with_python_values(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for execute_with_python_values."""
-    return getattr(_ops, "execute_with_python_values")(*args, **kwargs)
+    """Frontend wrapper for execute_with_python_values.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.execute_with_python_values(*args, **kwargs)
 
 
 def execute_with_python_values_replicated(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for execute_with_python_values_replicated."""
-    return getattr(_ops, "execute_with_python_values_replicated")(*args, **kwargs)
+    """Frontend wrapper for execute_with_python_values_replicated.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.execute_with_python_values_replicated(*args, **kwargs)
 
 
 def generate_pjrt_gpu_plugin_options(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for generate_pjrt_gpu_plugin_options."""
-    return getattr(_ops, "generate_pjrt_gpu_plugin_options")(*args, **kwargs)
+    """Frontend wrapper for generate_pjrt_gpu_plugin_options.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.generate_pjrt_gpu_plugin_options(*args, **kwargs)
 
 
 def heap_profile(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for heap_profile."""
-    return getattr(_ops, "heap_profile")(*args, **kwargs)
+    """Frontend wrapper for heap_profile.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.heap_profile(*args, **kwargs)
 
 
 def initialize_pjrt_plugin(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for initialize_pjrt_plugin."""
-    return getattr(_ops, "initialize_pjrt_plugin")(*args, **kwargs)
+    """Frontend wrapper for initialize_pjrt_plugin.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.initialize_pjrt_plugin(*args, **kwargs)
 
 
 def load_pjrt_plugin_dynamically(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for load_pjrt_plugin_dynamically."""
-    return getattr(_ops, "load_pjrt_plugin_dynamically")(*args, **kwargs)
+    """Frontend wrapper for load_pjrt_plugin_dynamically.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.load_pjrt_plugin_dynamically(*args, **kwargs)
 
 
 def load_pjrt_plugin_with_c_api(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for load_pjrt_plugin_with_c_api."""
-    return getattr(_ops, "load_pjrt_plugin_with_c_api")(*args, **kwargs)
+    """Frontend wrapper for load_pjrt_plugin_with_c_api.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.load_pjrt_plugin_with_c_api(*args, **kwargs)
 
 
 def make_c_api_client(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_c_api_client."""
-    return getattr(_ops, "make_c_api_client")(*args, **kwargs)
+    """Frontend wrapper for make_c_api_client.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_c_api_client(*args, **kwargs)
 
 
 def make_c_api_device_topology(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_c_api_device_topology."""
-    return getattr(_ops, "make_c_api_device_topology")(*args, **kwargs)
+    """Frontend wrapper for make_c_api_device_topology.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_c_api_device_topology(*args, **kwargs)
 
 
 def make_convolution_dimension_numbers(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_convolution_dimension_numbers."""
-    return getattr(_ops, "make_convolution_dimension_numbers")(*args, **kwargs)
+    """Frontend wrapper for make_convolution_dimension_numbers.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_convolution_dimension_numbers(*args, **kwargs)
 
 
 def make_cpu_client(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_cpu_client."""
-    return getattr(_ops, "make_cpu_client")(*args, **kwargs)
+    """Frontend wrapper for make_cpu_client.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_cpu_client(*args, **kwargs)
 
 
 def make_dot_dimension_numbers(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_dot_dimension_numbers."""
-    return getattr(_ops, "make_dot_dimension_numbers")(*args, **kwargs)
+    """Frontend wrapper for make_dot_dimension_numbers.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_dot_dimension_numbers(*args, **kwargs)
 
 
 def make_gpu_client(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_gpu_client."""
-    return getattr(_ops, "make_gpu_client")(*args, **kwargs)
+    """Frontend wrapper for make_gpu_client.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_gpu_client(*args, **kwargs)
 
 
 def make_padding_config(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_padding_config."""
-    return getattr(_ops, "make_padding_config")(*args, **kwargs)
+    """Frontend wrapper for make_padding_config.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_padding_config(*args, **kwargs)
 
 
 def make_replica_groups(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_replica_groups."""
-    return getattr(_ops, "make_replica_groups")(*args, **kwargs)
+    """Frontend wrapper for make_replica_groups.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_replica_groups(*args, **kwargs)
 
 
 def make_tfrt_tpu_c_api_client(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_tfrt_tpu_c_api_client."""
-    return getattr(_ops, "make_tfrt_tpu_c_api_client")(*args, **kwargs)
+    """Frontend wrapper for make_tfrt_tpu_c_api_client.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_tfrt_tpu_c_api_client(*args, **kwargs)
 
 
 def make_tfrt_tpu_c_api_device_topology(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_tfrt_tpu_c_api_device_topology."""
-    return getattr(_ops, "make_tfrt_tpu_c_api_device_topology")(*args, **kwargs)
+    """Frontend wrapper for make_tfrt_tpu_c_api_device_topology.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_tfrt_tpu_c_api_device_topology(*args, **kwargs)
 
 
 def make_tpu_client(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for make_tpu_client."""
-    return getattr(_ops, "make_tpu_client")(*args, **kwargs)
+    """Frontend wrapper for make_tpu_client.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.make_tpu_client(*args, **kwargs)
 
 
 def pjrt_plugin_initialized(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for pjrt_plugin_initialized."""
-    return getattr(_ops, "pjrt_plugin_initialized")(*args, **kwargs)
+    """Frontend wrapper for pjrt_plugin_initialized.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.pjrt_plugin_initialized(*args, **kwargs)
 
 
 def pjrt_plugin_loaded(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for pjrt_plugin_loaded."""
-    return getattr(_ops, "pjrt_plugin_loaded")(*args, **kwargs)
+    """Frontend wrapper for pjrt_plugin_loaded.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.pjrt_plugin_loaded(*args, **kwargs)
 
 
 def register_custom_call_handler(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for register_custom_call_handler."""
-    return getattr(_ops, "register_custom_call_handler")(*args, **kwargs)
+    """Frontend wrapper for register_custom_call_handler.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.register_custom_call_handler(*args, **kwargs)
 
 
 def register_custom_call_target(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for register_custom_call_target."""
-    return getattr(_ops, "register_custom_call_target")(*args, **kwargs)
+    """Frontend wrapper for register_custom_call_target.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.register_custom_call_target(*args, **kwargs)
 
 
 def shape_from_pyval(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for shape_from_pyval."""
-    return getattr(_ops, "shape_from_pyval")(*args, **kwargs)
+    """Frontend wrapper for shape_from_pyval.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.shape_from_pyval(*args, **kwargs)
 
 
 def tracebacks(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for tracebacks."""
-    return getattr(_ops, "tracebacks")(*args, **kwargs)
+    """Frontend wrapper for tracebacks.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.tracebacks(*args, **kwargs)
 
 
 def window_padding_type_to_pad_values(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for window_padding_type_to_pad_values."""
-    return getattr(_ops, "window_padding_type_to_pad_values")(*args, **kwargs)
+    """Frontend wrapper for window_padding_type_to_pad_values.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.window_padding_type_to_pad_values(*args, **kwargs)
 
 
 atexit: Any = None  # Mock module

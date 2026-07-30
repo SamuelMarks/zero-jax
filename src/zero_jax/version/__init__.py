@@ -2,8 +2,10 @@
 
 from typing import Any
 
-annotations: Any = None
-from . import datetime
-from . import os
-from . import pathlib
-from . import subprocess
+
+def annotations(*args: Any, **kwargs: Any) -> Any:
+    """Stub for annotations."""
+    return None
+
+
+from . import datetime, os, pathlib, subprocess

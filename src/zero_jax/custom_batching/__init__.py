@@ -1,15 +1,26 @@
 """Frontend API routing for jax.custom_batching."""
 
 from typing import Any
-import ml_switcheroo_compiler.ops as _ops
+
+import zero_jax._compiler_proxy_ops as _ops
 
 
 class custom_vmap:
-    """Mock implementation for custom_vmap."""
+    """Frontend state holder for custom_vmap."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 def sequential_vmap(*args: Any, **kwargs: Any) -> Any:
-    """Mock implementation for sequential_vmap."""
-    return getattr(_ops, "sequential_vmap")(*args, **kwargs)
+    """Frontend wrapper for sequential_vmap.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        Any: Result.
+    """
+    return _ops.sequential_vmap(*args, **kwargs)

@@ -1,4 +1,4 @@
-from zero_jax import jit, grad, value_and_grad, vmap, disable_jit, pmap
+from zero_jax import disable_jit, grad, jit, pmap, value_and_grad, vmap
 
 
 def test_jit():

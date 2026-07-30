@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
 import contextlib
+from typing import Any, Callable
 
 
 @contextlib.contextmanager
@@ -30,7 +30,6 @@ def checking_leaks() -> bool:
 
 def clear_caches() -> None:
     """Clears all JAX compilation and staging caches."""
-    pass
 
 
 @contextlib.contextmanager
@@ -65,7 +64,6 @@ def enable_checks(enable: bool = True) -> None:
     Args:
         enable: Boolean indicating whether to enable checks.
     """
-    pass
 
 
 def print_environment_info() -> None:
@@ -75,7 +73,6 @@ def print_environment_info() -> None:
 
 def effects_barrier() -> None:
     """Blocks until all effects have been executed."""
-    pass
 
 
 def live_arrays() -> list[Any]:

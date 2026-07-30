@@ -1,9 +1,9 @@
 from zero_jax.experimental.checkify import (
-    checkify,
-    user_checks,
-    nan_checks,
-    div_checks,
     ErrorCategory,
+    checkify,
+    div_checks,
+    nan_checks,
+    user_checks,
 )
 
 

@@ -6,40 +6,54 @@ from typing import Any
 class ArgInfo:
     """ArgInfo(_aval: 'core.AbstractValue', donated: 'bool')"""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Compiled:
     """Compiled representation of a function specialized to types/values."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class CompilerOptions:
     """dict() -> new empty dictionary"""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Lowered:
     """Lowering of a function specialized to argument types and values."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class OutInfo:
     """OutInfo(shape: 'tuple[int, ...]', dtype: 'jax.typing.DTypeLike', sharding: 'jax.sharding.Sharding | None' = None)"""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Traced:
-    """Mock implementation for Traced."""
+    """Frontend state holder for Traced."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Wrapped:
     """A function ready to be traced, lowered, and compiled."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover

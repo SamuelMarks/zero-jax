@@ -1,8 +1,9 @@
 def test_to_dtype_coverage():
+    import pytest
+    from ml_switcheroo_compiler.core.dtype import DType
+
     from zero_jax.nn.activation import _to_dtype as act_to_dtype
     from zero_jax.nn.initializers import _to_dtype as init_to_dtype
-    from ml_switcheroo_compiler.core.dtype import DType
-    import pytest
 
     for to_dtype in (act_to_dtype, init_to_dtype):
         to_dtype(DType.Float32)

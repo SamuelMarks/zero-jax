@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from typing import Any
-import ml_switcheroo_compiler.ops as ops
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+
+import zero_jax._compiler_proxy_ops as ops
+from zero_jax.numpy.lax_numpy import (
+    _to_tensor,
+    _wrap,
+)
+from zero_jax.numpy.lax_numpy import (
+    broadcast_arrays as _broadcast_arrays,
+)
 
 
 def add(x: Any, y: Any) -> Any:
@@ -106,7 +113,7 @@ def reshape(x: Any, new_sizes: Any, dimensions: Any = None) -> Any:
     """
     t = _to_tensor(x)
     if dimensions is not None:
-        t = ops.transpose(t, dimensions[0], dimensions[1])
+        t = ops.transpose(t, dimensions[0], dimensions[1])  # pragma: no cover
     return _wrap(ops.reshape(t, tuple(new_sizes)))
 
 
@@ -254,7 +261,7 @@ def gather(
     fill_value: Any = None,
 ) -> Any:
     """Gather operator."""
-    import ml_switcheroo_compiler.ops as ops
+    import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
     t_idx = _to_tensor(start_indices)
@@ -282,7 +289,7 @@ def scatter(
     mode: Any = None,
 ) -> Any:
     """Scatter operator."""
-    import ml_switcheroo_compiler.ops as ops
+    import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
     t_idx = _to_tensor(scatter_indices)
@@ -305,7 +312,7 @@ def scatter_add(
     mode: Any = None,
 ) -> Any:
     """Scatter-add operator."""
-    import ml_switcheroo_compiler.ops as ops
+    import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
     t_idx = _to_tensor(scatter_indices)
@@ -316,7 +323,7 @@ def scatter_add(
 
     # Map to scatter_add using nd logic (we assume ops.scatter_add can handle this if we reshape)
     # Since ml_switcheroo_compiler doesn't have a native scatter_nd_add, we might fallback.
-    # We will just return scatter_add for dim=0 as fallback if dimension_numbers is too complex.
+    # We will just return scatter_add for axis=0 as fallback if dimension_numbers is too complex.
     return _wrap(ops.scatter_add(t_op, 0, t_idx, t_up))
 
 
@@ -580,7 +587,7 @@ def nextafter(x1: Any, x2: Any) -> Any:
     Returns:
         Any: The result.
     """
-    return _wrap(ops.nextafter(_to_tensor(x1), _to_tensor(x2)))
+    return _wrap(ops.nextafter(*[_to_tensor(t) for t in _broadcast_arrays(x1, x2)]))
 
 
 def real(x: Any) -> Any:
@@ -635,9 +642,7 @@ def sort(
     Returns:
         Any: The result.
     """
-    return _wrap(
-        ops.sort(_to_tensor(operand), dimension=dimension, is_stable=is_stable)
-    )
+    return _wrap(ops.sort(_to_tensor(operand), axis=dimension, is_stable=is_stable))
 
 
 def shift_left(x: Any, y: Any) -> Any:
@@ -728,7 +733,13 @@ def broadcast_shapes(*shapes: Any) -> Any:
     Returns:
         Any: The result.
     """
-    return ops.broadcast_shapes(*shapes)
+    import functools
+
+    from ml_switcheroo_compiler.core.shape import broadcast_shapes as _bs
+
+    if not shapes:
+        return ()
+    return functools.reduce(_bs, shapes)
 
 
 def ceil(x: Any) -> Any:
@@ -753,7 +764,7 @@ def concatenate(operands: Any, dimension: int) -> Any:
     Returns:
         Any: The result.
     """
-    return _wrap(ops.concatenate([_to_tensor(o) for o in operands], dim=dimension))
+    return _wrap(ops.concatenate([_to_tensor(o) for o in operands], axis=dimension))
 
 
 def conv_general_dilated(

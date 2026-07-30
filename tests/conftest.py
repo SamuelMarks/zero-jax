@@ -1,6 +1,7 @@
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 sys.path.insert(
     0,
@@ -13,7 +14,7 @@ import ml_switcheroo_compiler
 
 @pytest.fixture(autouse=True)
 def reset_tracing_state():
-    from ml_switcheroo_compiler.tracing import _tracer
+    from ml_switcheroo_compiler.tracing.tracer import _tracer
 
     _tracer.is_tracing = False
     _tracer.active_graph = None
@@ -25,7 +26,7 @@ def reset_tracing_state():
 @pytest.fixture(autouse=True)
 def switcheroo_config():
     # Unified pytest configuration that imports switcheroo config contexts
-    with ml_switcheroo_compiler.EagerMode():
+    with ml_switcheroo_compiler.core.EagerMode():
         yield
 
 
@@ -37,8 +38,9 @@ try:
 except ImportError:
     HAS_JAX = False
 
-import zero_jax.numpy as jnp_zero
 import numpy as np
+
+import zero_jax.numpy as jnp_zero
 
 
 @pytest.fixture
@@ -49,11 +51,7 @@ def check_allclose():
     def _check(zero_val, ref_val, rtol=1e-5, atol=1e-5):
         if isinstance(ref_val, (jax.Array, np.ndarray, float, int, bool)):
             np.testing.assert_allclose(zero_val, ref_val, rtol=rtol, atol=atol)
-        elif isinstance(ref_val, tuple):
-            assert len(zero_val) == len(ref_val)
-            for z, r in zip(zero_val, ref_val):
-                _check(z, r, rtol, atol)
-        elif isinstance(ref_val, list):
+        elif isinstance(ref_val, tuple) or isinstance(ref_val, list):
             assert len(zero_val) == len(ref_val)
             for z, r in zip(zero_val, ref_val):
                 _check(z, r, rtol, atol)

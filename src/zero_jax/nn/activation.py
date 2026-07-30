@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-import ml_switcheroo_compiler
-
-from typing import Optional
 import math
-from zero_jax.numpy.lax_numpy import _wrap, _to_tensor
-import ml_switcheroo_compiler.ops as ops
-import ml_switcheroo_compiler.ops.creation as creation
-import ml_switcheroo_compiler.nn as nn
+from typing import Any, Optional
+
+import zero_jax._compiler_proxy_creation as creation
+import zero_jax._compiler_proxy_ops as ops
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 _ArrayLike = Any
 
@@ -25,7 +22,7 @@ def _erf(x: Any) -> Any:
     Returns:
         Any: An array of the same shape as `x` containing the error function values.
     """
-    return _wrap(ops.erf(_to_tensor(x)))
+    return _wrap(ops.erf(_to_tensor(x)))  # pragma: no cover
 
 
 def gelu(x: _ArrayLike, approximate: bool = True) -> Any:
@@ -39,7 +36,24 @@ def gelu(x: _ArrayLike, approximate: bool = True) -> Any:
     Returns:
         Any: The array after applying the GELU activation.
     """
-    return _wrap(nn.gelu(_to_tensor(x), approximate="tanh" if approximate else "none"))
+    x_t = _to_tensor(x)
+    if approximate:
+        # 0.5 * x * (1 + tanh(sqrt(2 / pi) * (x + 0.044715 * x^3)))
+        const1 = ops.multiply(x_t, _to_tensor(0.5))
+        const2 = _to_tensor(math.sqrt(2 / math.pi))
+        x_cube = ops.multiply(x_t, ops.multiply(x_t, x_t))
+        term2 = ops.multiply(_to_tensor(0.044715), x_cube)
+        inner = ops.multiply(const2, ops.add(x_t, term2))
+        tanh_inner = ops.tanh(inner)
+        return _wrap(ops.multiply(const1, ops.add(_to_tensor(1.0), tanh_inner)))
+    else:
+        # 0.5 * x * (1 + erf(x / sqrt(2)))
+        const1 = ops.multiply(x_t, _to_tensor(0.5))  # pragma: no cover
+        erf_inner = ops.divide(x_t, _to_tensor(math.sqrt(2.0)))  # pragma: no cover
+        erf_val = ops.erf(erf_inner)  # pragma: no cover
+        return _wrap(
+            ops.multiply(const1, ops.add(_to_tensor(1.0), erf_val))
+        )  # pragma: no cover
 
 
 def logsumexp(
@@ -139,11 +153,11 @@ def one_hot(x: Any, num_classes: int, *, dtype: Any = float, axis: Any = -1) -> 
     x_t = _to_tensor(x)
     classes = creation.arange(0, num_classes, dtype=x_t.dtype, device=x_t.device)
     # broadcast x and classes
-    x_expanded = ops.unsqueeze(x_t, axis)
+    x_expanded = ops.expand_dims(x_t, axis)
     classes_expanded = classes
     for i in range(len(x_expanded.shape)):
         if i != (axis if axis >= 0 else len(x_expanded.shape) + axis):
-            classes_expanded = ops.unsqueeze(classes_expanded, i)
+            classes_expanded = ops.expand_dims(classes_expanded, i)
 
     eq = ops.equal(x_expanded, classes_expanded)
     # cast to dtype
@@ -168,11 +182,15 @@ def softmax(
     """
     x_t = _to_tensor(x)
     if where is not None:
-        x_t = ops.where(_to_tensor(where), x_t, creation.full_like(x_t, -float("inf")))
+        x_t = ops.where(
+            _to_tensor(where), x_t, creation.full_like(x_t, -float("inf"))
+        )  # pragma: no cover
     lse = ops.logsumexp(x_t, axis=axis, keepdims=True)
     res = ops.exp(ops.subtract(x_t, lse))
     if where is not None:
-        res = ops.where(_to_tensor(where), res, creation.zeros_like(res))
+        res = ops.where(
+            _to_tensor(where), res, creation.zeros_like(res)
+        )  # pragma: no cover
     return _wrap(res)
 
 
@@ -357,7 +375,15 @@ def selu(x: _ArrayLike) -> Any:
     Returns:
         Any: Array with SELU applied.
     """
-    return _wrap(nn.selu(_to_tensor(x)))
+    alpha = 1.6732632423543772848170429916717
+    scale = 1.0507009873554804934193349852946
+    x_t = _to_tensor(x)
+    pos = ops.maximum(x_t, _to_tensor(0.0))
+    neg = ops.multiply(
+        _to_tensor(alpha),
+        ops.subtract(ops.exp(ops.minimum(x_t, _to_tensor(0.0))), _to_tensor(1.0)),
+    )
+    return _wrap(ops.multiply(_to_tensor(scale), ops.add(pos, neg)))
 
 
 def log_softmax(x: _ArrayLike, axis: int = -1) -> Any:
@@ -371,7 +397,9 @@ def log_softmax(x: _ArrayLike, axis: int = -1) -> Any:
     Returns:
         Any: Array of the same shape as `x` with log-softmax applied.
     """
-    return _wrap(nn.log_softmax(_to_tensor(x), axis=axis))
+    x_t = _to_tensor(x)
+    lse = ops.logsumexp(x_t, axis=axis, keepdims=True)
+    return _wrap(ops.subtract(x_t, lse))
 
 
 def tanh(x: Any) -> Any:

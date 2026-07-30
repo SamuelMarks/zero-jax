@@ -1,7 +1,8 @@
-import pytest
-from zero_jax import numpy as jnp_zero
 import numpy as np
+import pytest
 from ml_switcheroo_compiler.core.config import config
+
+from zero_jax import numpy as jnp_zero
 
 
 def test_jnp_sin(switcheroo_config):

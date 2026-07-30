@@ -1,5 +1,6 @@
-import pytest
 import jax.tree_util as tree_ref
+import pytest
+
 import zero_jax.tree_util as tree_zero
 
 

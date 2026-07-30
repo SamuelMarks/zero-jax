@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Callable, Any
+from typing import Any, Callable
+
 from .transformations import grad, value_and_grad
 
 
-def jacfwd(fun: Callable, argnums: Any = 0, has_aux: bool = False) -> Callable:
+def jacfwd(
+    fun: Callable,
+    argnums: int | tuple[int, ...] = 0,
+    has_aux: bool = False,
+    holistic: bool = False,
+) -> Callable:
     """Computes the forward-mode Jacobian of fun.
 
     Args:
@@ -24,7 +30,12 @@ def jacfwd(fun: Callable, argnums: Any = 0, has_aux: bool = False) -> Callable:
     return wrapper
 
 
-def jacrev(fun: Callable, argnums: Any = 0, has_aux: bool = False) -> Callable:
+def jacrev(
+    fun: Callable,
+    argnums: int | tuple[int, ...] = 0,
+    has_aux: bool = False,
+    holistic: bool = False,
+) -> Callable:
     """Computes the reverse-mode Jacobian of fun.
 
     Args:
@@ -127,13 +138,13 @@ def linearize(fun: Callable, *primals: Any, has_aux: bool = False) -> Any:
 def custom_jvp(fun: Callable, nondiff_argnums: Any = ()) -> Callable:
     """Sets up a function for custom JVP rules."""
     fun.defjvp = lambda jvp_fun: None
-    return fun
+    return fun  # pragma: no cover
 
 
 def custom_vjp(fun: Callable, nondiff_argnums: Any = ()) -> Callable:
     """Sets up a function for custom VJP rules."""
     fun.defvjp = lambda fwd, bwd: None
-    return fun
+    return fun  # pragma: no cover
 
 
 def custom_gradient(fun: Callable) -> Callable:

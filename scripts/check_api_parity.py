@@ -1,27 +1,31 @@
-import sys
-import os
 import inspect
 import json
+import os
+import sys
 
 try:
     import jax
-    import jax.numpy as jnp_ref
     import jax.lax as lax_ref
     import jax.nn as nn_ref
+    import jax.numpy as jnp_ref
     import jax.random as random_ref
+    import jax.scipy.signal as signal_ref
+    import jax.scipy.stats as stats_ref
 
     HAS_JAX = True
 except ImportError:
     HAS_JAX = False
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-import zero_jax.numpy as jnp_zero
 import zero_jax.lax as lax_zero
 import zero_jax.nn as nn_zero
+import zero_jax.numpy as jnp_zero
 import zero_jax.random as random_zero
+import zero_jax.scipy.signal as signal_zero
+import zero_jax.scipy.stats as stats_zero
 
 
-def get_signatures(module):
+def get_signatures(module, prefix=""):
     signatures = {}
     for name in dir(module):
         if not name.startswith("_") and name not in [
@@ -38,8 +42,38 @@ def get_signatures(module):
             "lax",
             "nn",
             "Tensor",
+            "xla",
+            "xla_client",
+            "xla_bridge",
+            "xla_extension",
+            "mlir",
+            "hlo",
+            "pjrt",
+            "ifrt",
+            "ifrt_programs",
+            "tpu_cluster",
+            "ompi_cluster",
+            "slurm_cluster",
         ]:
             obj = getattr(module, name)
+
+            full_path = f"{prefix}.{name}" if prefix else name
+            if any(
+                x in full_path.split(".")
+                for x in [
+                    "xla",
+                    "xla_client",
+                    "xla_bridge",
+                    "xla_extension",
+                    "mlir",
+                    "pjrt",
+                    "hlo",
+                    "ifrt_programs",
+                    "ifrt",
+                ]
+            ):
+                continue
+
             if (
                 inspect.isfunction(obj)
                 or inspect.isbuiltin(obj)
@@ -65,6 +99,8 @@ def main():
         "lax": (lax_zero, lax_ref if HAS_JAX else None),
         "nn": (nn_zero, nn_ref if HAS_JAX else None),
         "random": (random_zero, random_ref if HAS_JAX else None),
+        "scipy.signal": (signal_zero, signal_ref if HAS_JAX else None),
+        "scipy.stats": (stats_zero, stats_ref if HAS_JAX else None),
     }
 
     current_api = {}

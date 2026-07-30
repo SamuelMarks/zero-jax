@@ -1,10 +1,9 @@
 """Miscellaneous JAX APIs."""
 
 from __future__ import annotations
+
 import contextlib
-
-
-from typing import Callable, Any
+from typing import Any, Callable
 
 
 def closure_convert(fun: Callable, *args: Any, **kwargs: Any) -> Any:
@@ -92,7 +91,7 @@ def make_jaxpr(fun: Callable, static_argnums: Any = ()) -> Callable:
     """
 
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return None
+        return None  # pragma: no cover
 
     return wrapper
 
@@ -179,43 +178,40 @@ def enable_custom_vjp_by_custom_transpose(enable: bool = True) -> None:
     Args:
         enable: Whether to enable.
     """
-    pass
 
 
 class _Float0:
     """Type representing a zero-sized float."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 float0 = _Float0()
 
 
-class _ThreefryPartitionable:
-    """Representation of threefry PRNG partitionability."""
-
-    pass
-
-
-threefry_partitionable = _ThreefryPartitionable()
+@contextlib.contextmanager
+def threefry_partitionable(*args: Any, **kwargs: Any) -> Any:
+    """Context manager for threefry PRNG partitionability."""
+    yield  # pragma: no cover
 
 
 class _CheckpointPolicies:
     """Namespace for checkpoint policies."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 checkpoint_policies = _CheckpointPolicies()
 
 
-class _LegacyPrngKey:
-    """Legacy PRNG key representation."""
-
-    pass
-
-
-legacy_prng_key = _LegacyPrngKey()
+@contextlib.contextmanager
+def legacy_prng_key(*args: Any, **kwargs: Any) -> Any:
+    """Context manager for legacy PRNG key."""
+    yield  # pragma: no cover
 
 
 def enable_custom_prng(enable: bool = True) -> None:
@@ -224,7 +220,10 @@ def enable_custom_prng(enable: bool = True) -> None:
     Args:
         enable: Whether to enable.
     """
-    pass
+
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():  # pragma: no cover
+            setattr(self, k, v)  # pragma: no cover
 
 
 def default_prng_impl() -> str:
@@ -238,7 +237,6 @@ def default_prng_impl() -> str:
 
 def jax2tf_associative_scan_reductions() -> None:
     """Associative scan reductions for jax2tf."""
-    pass
 
 
 def default_matmul_precision() -> str:

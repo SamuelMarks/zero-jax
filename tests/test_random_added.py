@@ -1,12 +1,14 @@
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 import numpy as np
-import zero_jax.random as jrandom
+
 import zero_jax.numpy as jnp
+import zero_jax.random as jrandom
 
 
 def test_random_added():

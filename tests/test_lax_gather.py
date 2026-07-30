@@ -2,8 +2,10 @@ from ml_switcheroo_compiler.core.tensor import TensorConfig
 
 """Tests for lax gather and scatter operations."""
 
+from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+
 from zero_jax.lax import gather, scatter, scatter_add
-from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
 
 
 def test_gather_scatter_tracing():

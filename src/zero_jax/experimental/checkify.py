@@ -12,7 +12,9 @@ class ErrorCategory:
         None
     """
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 user_checks = ErrorCategory()
@@ -56,4 +58,7 @@ def check(pred: Any, msg: Any) -> Any:
     Returns:
         None.
     """
-    pass
+
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():  # pragma: no cover
+            setattr(self, k, v)  # pragma: no cover

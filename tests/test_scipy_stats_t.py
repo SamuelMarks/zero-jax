@@ -1,19 +1,21 @@
 """Tests for zero_jax module."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 import zero_jax.scipy.stats.t as mod
 
 
 def test_logpdf() -> None:
     """Test logpdf."""
-    with patch("ml_switcheroo_compiler.ops.logpdf") as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.logpdf", create=True) as mock_op:
         mod.logpdf()
         mock_op.assert_called_once_with()
 
 
 def test_pdf() -> None:
     """Test pdf."""
-    with patch("ml_switcheroo_compiler.ops.pdf") as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.pdf", create=True) as mock_op:
         mod.pdf()
         mock_op.assert_called_once_with()

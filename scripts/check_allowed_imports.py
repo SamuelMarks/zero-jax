@@ -1,15 +1,14 @@
 """AST parser to ensure no disallowed 3rd party imports."""
 
 import ast
-import sys
 import os
+import sys
 
 ALLOWED_3RD_PARTY = {"numpy", "jax", "pydantic"}
 ALLOWED_INTERNAL = {
     "ml_switcheroo_compiler",
     "cdd_python",
     "ml_switcheroo_ir",
-    "ml_switcheroo_compiler",
     "zero_jax",
 }
 
@@ -38,13 +37,13 @@ def check_file(filepath: str) -> bool:
             for alias in node.names:
                 base_module = alias.name.split(".")[0]
                 if (
-                    base_module not in ALLOWED_3RD_PARTY
-                    and base_module not in ALLOWED_INTERNAL
-                    and base_module not in sys.stdlib_module_names
-                ):
-                    errors.append((node.lineno, base_module))
-                elif base_module in ("numpy", "jax") and "src" in filepath.split(
-                    os.sep
+                    (
+                        base_module not in ALLOWED_3RD_PARTY
+                        and base_module not in ALLOWED_INTERNAL
+                        and base_module not in sys.stdlib_module_names
+                    )
+                    or base_module in ("numpy", "jax")
+                    and "src" in filepath.split(os.sep)
                 ):
                     errors.append((node.lineno, base_module))
         elif isinstance(node, ast.ImportFrom):
@@ -53,13 +52,13 @@ def check_file(filepath: str) -> bool:
             if node.module:
                 base_module = node.module.split(".")[0]
                 if (
-                    base_module not in ALLOWED_3RD_PARTY
-                    and base_module not in ALLOWED_INTERNAL
-                    and base_module not in sys.stdlib_module_names
-                ):
-                    errors.append((node.lineno, base_module))
-                elif base_module in ("numpy", "jax") and "src" in filepath.split(
-                    os.sep
+                    (
+                        base_module not in ALLOWED_3RD_PARTY
+                        and base_module not in ALLOWED_INTERNAL
+                        and base_module not in sys.stdlib_module_names
+                    )
+                    or base_module in ("numpy", "jax")
+                    and "src" in filepath.split(os.sep)
                 ):
                     errors.append((node.lineno, base_module))
 
@@ -75,8 +74,8 @@ def check_file(filepath: str) -> bool:
 if __name__ == "__main__":
     if not hasattr(sys, "stdlib_module_names"):
         # Polyfill for python < 3.10
-        import sysconfig
         import pathlib
+        import sysconfig
 
         try:
             from stdlib_list import stdlib_list

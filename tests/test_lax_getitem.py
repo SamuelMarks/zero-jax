@@ -1,8 +1,9 @@
+import pytest
+from ml_switcheroo_compiler.core.config import EagerMode
 from ml_switcheroo_compiler.core.tensor import TensorConfig
 from ml_switcheroo_ir import LogicalNode
-import pytest
+
 from zero_jax.numpy import array, array_equal
-from ml_switcheroo_compiler.core.config import EagerMode
 
 
 def test_getitem_eager():
@@ -17,10 +18,13 @@ def test_getitem_eager():
 
 
 def test_getitem_tracing():
-    from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
-    import ml_switcheroo_compiler as compiler
-    from zero_jax.numpy.lax_numpy import ndarray, array
     import uuid
+
+    import ml_switcheroo_compiler as compiler
+    from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+    from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+
+    from zero_jax.numpy.lax_numpy import array, ndarray
 
     prev_graph = _tracer.active_graph
     is_tracing = _tracer.is_tracing
@@ -51,11 +55,14 @@ def test_getitem_tracing():
 
 
 def test_getitem_tracing_padding():
-    from ml_switcheroo_compiler.tracing import _tracer, ProxyTensor
-    import ml_switcheroo_compiler as compiler
-    from ml_switcheroo_ir import LogicalNode
-    from zero_jax.numpy.lax_numpy import ndarray, array
     import uuid
+
+    import ml_switcheroo_compiler as compiler
+    from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+    from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+    from ml_switcheroo_ir import LogicalNode
+
+    from zero_jax.numpy.lax_numpy import array, ndarray
 
     prev_graph = _tracer.active_graph
     is_tracing = _tracer.is_tracing

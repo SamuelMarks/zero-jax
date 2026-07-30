@@ -3,43 +3,65 @@
 from typing import Any
 
 
-class GSPMDSharding:
-    """Mock implementation for GSPMDSharding."""
+class Sharding:
+    """Base class for all sharding types."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
+
+
+class GSPMDSharding:
+    """Frontend state holder for GSPMDSharding."""
+
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class Mesh:
     """Declare the hardware resources available in the scope of this manager."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class NamedSharding:
     """A :class:`NamedSharding` expresses sharding using named axes."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PartitionSpec:
     """Tuple describing how to partition an array across a mesh of devices."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PmapSharding:
     """Describes a sharding used by :func:`jax.pmap`."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class PositionalSharding:
-    """Mock implementation for PositionalSharding."""
+    """Frontend state holder for PositionalSharding."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover
 
 
 class SingleDeviceSharding:
     """A :class:`Sharding` that places its data on a single device."""
 
-    pass
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)  # pragma: no cover

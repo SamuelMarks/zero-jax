@@ -1,6 +1,7 @@
-import pytest
 import jax
 import jax.experimental.checkify as checkify_ref
+import pytest
+
 import zero_jax.experimental.checkify as checkify_zero
 
 

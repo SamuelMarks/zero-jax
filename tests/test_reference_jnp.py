@@ -1,7 +1,8 @@
-import pytest
 import jax.numpy as jnp_ref
-import zero_jax.numpy as jnp_zero
 import numpy as np
+import pytest
+
+import zero_jax.numpy as jnp_zero
 
 
 def test_jnp_zeros(check_allclose):

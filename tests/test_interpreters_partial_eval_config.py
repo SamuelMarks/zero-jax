@@ -1,6 +1,7 @@
 """Tests for zero_jax module."""
 
 import pytest
+
 import zero_jax.interpreters.partial_eval.config as mod
 
 
