@@ -1,3 +1,7 @@
+"""Tests for tests/test_reference_api.py."""
+
+from __future__ import annotations
+
 import jax
 import jax.numpy as jnp_ref
 import numpy as np
@@ -5,13 +9,18 @@ import pytest
 
 import zero_jax as zjax
 import zero_jax.numpy as jnp_zero
+from zero_jax._types import ArrayLikeSpec
 
 
-def test_api_jit(check_allclose):
-    def f(x):
+def test_api_jit(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_api_jit``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return jnp_ref.sin(x) * 2.0
 
-    def f_z(x):
+    def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f_z``."""
         return jnp_zero.sin(x) * 2.0
 
     x = np.array([1.0, 2.0])
@@ -21,11 +30,15 @@ def test_api_jit(check_allclose):
     check_allclose(jitted_z(x), jitted_r(x))
 
 
-def test_api_grad(check_allclose):
-    def f(x):
+def test_api_grad(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_api_grad``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return jnp_ref.sum(x * x)
 
-    def f_z(x):
+    def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f_z``."""
         return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0, 3.0])
@@ -38,11 +51,15 @@ def test_api_grad(check_allclose):
         pytest.skip(f"grad not fully implemented for this ops sequence: {e}")
 
 
-def test_api_value_and_grad(check_allclose):
-    def f(x):
+def test_api_value_and_grad(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_api_value_and_grad``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return jnp_ref.sum(x * x)
 
-    def f_z(x):
+    def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f_z``."""
         return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0])
@@ -55,8 +72,11 @@ def test_api_value_and_grad(check_allclose):
         pytest.skip(f"value_and_grad not fully implemented: {e}")
 
 
-def test_api_vmap(check_allclose):
-    def f(x):
+def test_api_vmap(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_api_vmap``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return x + 1.0
 
     x = np.array([1.0, 2.0])
@@ -67,15 +87,19 @@ def test_api_vmap(check_allclose):
     check_allclose(vmapped_z(x), vmapped_r(x))
 
 
-def test_api_disable_jit():
+def test_api_disable_jit() -> None:
     # Mostly ensuring it doesn't crash, difficult to test side effects easily
     # without running a jitted function and checking tracing
+    """Execute ``test_api_disable_jit``."""
     zjax.disable_jit()
     zjax.disable_jit(False)
 
 
-def test_api_pmap(check_allclose):
-    def f(x):
+def test_api_pmap(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_api_pmap``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return x + 1.0
 
     x = np.array([[1.0, 2.0]])
@@ -88,11 +112,15 @@ def test_api_pmap(check_allclose):
         pytest.skip("pmap might fail if no devices or not fully implemented")
 
 
-def test_api_eval_shape():
-    def f(x):
+def test_api_eval_shape() -> None:
+    """Execute ``test_api_eval_shape``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return jnp_ref.sin(x)
 
-    def f_z(x):
+    def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f_z``."""
         return jnp_zero.sin(x)
 
     x = np.array([1.0, 2.0])

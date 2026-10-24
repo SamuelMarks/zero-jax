@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.image as mod
 
@@ -22,8 +22,6 @@ def test_resize() -> None:
 
 def test_scale_and_translate() -> None:
     """Test scale_and_translate."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.scale_and_translate", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.scale_and_translate", create=True) as mock_op:
         mod.scale_and_translate()
         mock_op.assert_called_once_with()

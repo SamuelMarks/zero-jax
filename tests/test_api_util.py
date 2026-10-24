@@ -1,69 +1,80 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.api_util."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
 import pytest
 
 import zero_jax.api_util as mod
+import zero_jax.numpy as jnp
+from zero_jax.tree_util import tree_structure
 
 
 def test_argnums_partial() -> None:
-    """Test argnums_partial."""
-    with patch("zero_jax._compiler_proxy_ops.argnums_partial", create=True) as mock_op:
-        mod.argnums_partial()
-        mock_op.assert_called_once_with()
+    """Test argnums_partial with static and dynamic arguments."""
+    assert mod.argnums_partial() == (None, ())
+    fn, dyn = mod.argnums_partial(lambda a, b, c: a + b * c, 1, (10, 3, 4))
+    assert dyn == (3,)
+    assert fn(5) == 10 + 5 * 4
 
 
 def test_donation_vector() -> None:
-    """Test donation_vector."""
-    with patch("zero_jax._compiler_proxy_ops.donation_vector", create=True) as mock_op:
-        mod.donation_vector()
-        mock_op.assert_called_once_with()
+    """Test donation_vector with and without PyTreeDef."""
+    assert mod.donation_vector(0) == (True,)
+    td = tree_structure(([1, 2], 3))
+    assert mod.donation_vector((0,), (), td) == (True, True, False)
 
 
 def test_flatten_axes() -> None:
-    """Test flatten_axes."""
-    with patch("zero_jax._compiler_proxy_ops.flatten_axes", create=True) as mock_op:
-        mod.flatten_axes()
-        mock_op.assert_called_once_with()
+    """Test flatten_axes broadcasting over PyTreeDef."""
+    td = tree_structure({"a": 1, "b": [2, 3]})
+    assert mod.flatten_axes("in_axes", td, 0) == [0, 0, 0]
+    assert mod.flatten_axes("in_axes", td, [1]) == [1, 1, 1]
+    assert mod.flatten_axes("in_axes", td, {"a": 0, "b": [1, 2]}) == [0, 1, 2]
+    assert mod.flatten_axes("in_axes", None, (0, 1)) == [0, 1]
 
 
-def test_flatten_fun() -> None:
-    """Test flatten_fun."""
-    with patch("zero_jax._compiler_proxy_ops.flatten_fun", create=True) as mock_op:
-        mod.flatten_fun()
-        mock_op.assert_called_once_with()
+def test_flatten_fun_and_nokwargs() -> None:
+    """Test flatten_fun and flatten_fun_nokwargs."""
+    empty_fn, _ = mod.flatten_fun()
+    assert empty_fn() == []
 
+    in_td = tree_structure(((1, 2), {"scale": 3}))
+    flat_fn, out_td_thunk = mod.flatten_fun(lambda a, b, scale=1: (a + b) * scale, in_td)
+    assert flat_fn(2, 4, 5) == [30]
+    assert out_td_thunk() is not None
 
-def test_flatten_fun_nokwargs() -> None:
-    """Test flatten_fun_nokwargs."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.flatten_fun_nokwargs", create=True
-    ) as mock_op:
-        mod.flatten_fun_nokwargs()
-        mock_op.assert_called_once_with()
+    pos_td = tree_structure((1, 2))
+    flat_pos, _ = mod.flatten_fun_nokwargs(lambda a, b: a - b, pos_td)
+    assert flat_pos(9, 4) == [5]
+
+    scalar_td = tree_structure(1)
+    flat_scalar, _ = mod.flatten_fun_nokwargs(lambda a: a * 2, scalar_td)
+    assert flat_scalar(6) == [12]
+
+    no_td_fn, _ = mod.flatten_fun_nokwargs(lambda a, b: a + b, None)
+    assert no_td_fn(3, 7) == [10]
 
 
 def test_rebase_donate_argnums() -> None:
     """Test rebase_donate_argnums."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.rebase_donate_argnums", create=True
-    ) as mock_op:
-        mod.rebase_donate_argnums()
-        mock_op.assert_called_once_with()
+    assert mod.rebase_donate_argnums((1, 3), (0, 2)) == (0, 1)
+    assert mod.rebase_donate_argnums(2, 0) == (1,)
 
 
 def test_safe_map() -> None:
-    """Test safe_map."""
-    with patch("zero_jax._compiler_proxy_ops.safe_map", create=True) as mock_op:
-        mod.safe_map()
-        mock_op.assert_called_once_with()
+    """Test safe_map on equal and mismatched sequence lengths."""
+    assert mod.safe_map() == []
+    assert mod.safe_map(lambda x, y: x + y, [1, 2], [10, 20]) == [11, 22]
+    with pytest.raises(ValueError, match="safe_map requires equal lengths"):
+        mod.safe_map(lambda x, y: x + y, [1, 2], [10])
 
 
 def test_shaped_abstractify() -> None:
-    """Test shaped_abstractify."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.shaped_abstractify", create=True
-    ) as mock_op:
-        mod.shaped_abstractify()
-        mock_op.assert_called_once_with()
+    """Test shaped_abstractify on scalars, arrays, and ShapedArray."""
+    sa_scalar = mod.shaped_abstractify(3.0)
+    assert sa_scalar.shape == ()
+    assert mod.shaped_abstractify(sa_scalar) is sa_scalar
+
+    arr = jnp.zeros((2, 3))
+    sa_arr = mod.shaped_abstractify(arr)
+    assert sa_arr.shape == (2, 3)

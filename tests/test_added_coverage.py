@@ -1,7 +1,9 @@
-import pytest
+"""Tests for tests/test_added_coverage.py."""
+
+from __future__ import annotations
 
 
-def test_partial_eval_config():
+def test_partial_eval_config() -> None:
     """Test partial_eval config."""
     import zero_jax.interpreters.partial_eval as pe
 
@@ -13,7 +15,7 @@ def test_partial_eval_config():
     assert c is not None
 
 
-def test_traceback_util_config_functions():
+def test_traceback_util_config_functions() -> None:
     """Test traceback_util config functions."""
     import zero_jax.interpreters.traceback_util.config as tuc
 
@@ -65,7 +67,7 @@ def test_traceback_util_config_functions():
     assert tuc.annotations is None
 
 
-def test_traceback_util_util_config_functions():
+def test_traceback_util_util_config_functions() -> None:
     """Test traceback_util.util config functions."""
     import zero_jax.interpreters.traceback_util.util.config as tuuc
 

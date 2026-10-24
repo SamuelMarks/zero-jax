@@ -1,17 +1,19 @@
+"""Tests for tests/test_random_added.py."""
+
+from __future__ import annotations
+
 import os
 import sys
-
-import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 import numpy as np
 
-import zero_jax.numpy as jnp
 import zero_jax.random as jrandom
 
 
-def test_random_added():
+def test_random_added() -> None:
+    """Execute ``test_random_added``."""
     k = jrandom.key(0)
 
     funcs = [

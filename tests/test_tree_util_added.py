@@ -1,14 +1,17 @@
+"""Tests for tests/test_tree_util_added.py."""
+
+from __future__ import annotations
+
 import os
 import sys
-
-import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 import zero_jax.tree_util as jtu
 
 
-def test_tree_util_added():
+def test_tree_util_added() -> None:
+    """Execute ``test_tree_util_added``."""
     assert isinstance(jtu.DictKey(0), jtu.DictKey)
     assert isinstance(jtu.FlattenedIndexKey(0), jtu.FlattenedIndexKey)
     assert isinstance(jtu.GetAttrKey(0), jtu.GetAttrKey)
@@ -31,7 +34,7 @@ def test_tree_util_added():
 
     @jtu.register_pytree_node_class
     class A:
-        pass
+        """Test class ``A``."""
 
     assert A is not None
 
@@ -39,17 +42,17 @@ def test_tree_util_added():
 
     @jtu.register_pytree_with_keys_class
     class B:
-        pass
+        """Test class ``B``."""
 
     assert B is not None
 
     @jtu.register_static
     class C:
-        pass
+        """Test class ``C``."""
 
     assert C is not None
 
-    leaves_with_path, treedef2 = jtu.tree_flatten_with_path(tree)
+    leaves_with_path, _treedef2 = jtu.tree_flatten_with_path(tree)
     assert len(leaves_with_path) == 2
     assert len(jtu.tree_leaves_with_path(tree)) == 2
 

@@ -1,31 +1,32 @@
 """Module logging_config."""
 
-import typing
-
-import ml_switcheroo_compiler
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ConfigValue
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+def disable_all_debug_logging(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route disable_all_debug_logging to the compiler proxy operation.
 
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
 
-        return stub
-    except ImportError:  # pragma: no cover
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.disable_all_debug_logging(*args, **kwargs)
 
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
 
-        return stub  # pragma: no cover
+def enable_debug_logging(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route enable_debug_logging to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.enable_debug_logging(*args, **kwargs)

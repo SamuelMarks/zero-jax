@@ -1,12 +1,15 @@
-from unittest.mock import MagicMock, patch
+"""Tests for tests/test_numpy_added3.py."""
 
-import pytest
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
 
 import zero_jax.numpy as jnp
 from zero_jax.lax import missing_funcs
 
 
-def test_section_4_coverage():
+def test_section_4_coverage() -> None:
+    """Execute ``test_section_4_coverage``."""
     funcs = [
         "packbits",
         "unpackbits",

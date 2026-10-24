@@ -1,8 +1,8 @@
 """Tests for zero_jax.lax.linalg."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 from zero_jax.lax import linalg
 
@@ -63,9 +63,7 @@ def test_hessenberg_p() -> None:
 
 def test_householder_product() -> None:
     """Test householder_product."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.householder_product", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.householder_product", create=True) as mock_op:
         mock_op.return_value = 1.0
         assert linalg.householder_product(1.0, 1.0) is not None
 
@@ -91,9 +89,7 @@ def test_lu_p() -> None:
 
 def test_lu_pivots_to_permutation() -> None:
     """Test lu_pivots_to_permutation."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.lu_pivots_to_permutation", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.lu_pivots_to_permutation", create=True) as mock_op:
         mock_op.return_value = 1.0
         assert linalg.lu_pivots_to_permutation(1.0, 1) is not None
 
@@ -177,9 +173,7 @@ def test_tridiagonal_p() -> None:
 
 def test_tridiagonal_solve() -> None:
     """Test tridiagonal_solve."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.tridiagonal_solve", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.tridiagonal_solve", create=True) as mock_op:
         mock_op.return_value = 1.0
         assert linalg.tridiagonal_solve(1.0, 1.0, 1.0, 1.0) is not None
 

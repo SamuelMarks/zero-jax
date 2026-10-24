@@ -1,18 +1,8 @@
 """Tests for zero_jax.export."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.export as mod
-
-
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
 
 
 def test_class_DisabledSafetyCheck() -> None:

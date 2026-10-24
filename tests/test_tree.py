@@ -1,6 +1,6 @@
 """Tests for zero_jax.tree module."""
 
-import pytest
+from __future__ import annotations
 
 import zero_jax.tree as ztree
 
@@ -13,7 +13,7 @@ def test_all() -> None:
 
 def test_flatten() -> None:
     """Test flatten."""
-    leaves, treedef = ztree.flatten({"a": 1, "b": [2, 3]})
+    leaves, _treedef = ztree.flatten({"a": 1, "b": [2, 3]})
     assert leaves == [1, 2, 3]
 
 

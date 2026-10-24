@@ -1,13 +1,14 @@
 """Frontend API routing for jax.lib.xla_bridge."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 from . import xla_client
 
 
-def default_backend(*args: Any, **kwargs: Any) -> Any:
+def default_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Frontend wrapper for default_backend.
 
     Args:
@@ -15,12 +16,12 @@ def default_backend(*args: Any, **kwargs: Any) -> Any:
         **kwargs: Keyword arguments.
 
     Returns:
-        Any: Result.
+        ArrayLikeSpec: Result.
     """
     return _ops.default_backend(*args, **kwargs)
 
 
-def get_backend(*args: Any, **kwargs: Any) -> Any:
+def get_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Frontend wrapper for get_backend.
 
     Args:
@@ -28,12 +29,12 @@ def get_backend(*args: Any, **kwargs: Any) -> Any:
         **kwargs: Keyword arguments.
 
     Returns:
-        Any: Result.
+        ArrayLikeSpec: Result.
     """
     return _ops.get_backend(*args, **kwargs)
 
 
-def get_compile_options(*args: Any, **kwargs: Any) -> Any:
+def get_compile_options(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Frontend wrapper for get_compile_options.
 
     Args:
@@ -41,7 +42,7 @@ def get_compile_options(*args: Any, **kwargs: Any) -> Any:
         **kwargs: Keyword arguments.
 
     Returns:
-        Any: Result.
+        ArrayLikeSpec: Result.
     """
     return _ops.get_compile_options(*args, **kwargs)
 

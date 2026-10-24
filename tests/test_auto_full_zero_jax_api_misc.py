@@ -1,183 +1,104 @@
 """Tests for zero_jax.api.misc."""
 
-from typing import Any
+from __future__ import annotations
 
-import pytest
+import numpy as np
 
+import zero_jax
 import zero_jax.api.misc as mod
+import zero_jax.numpy as jnp
+from zero_jax._types import PyTree
 
 
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
+def test_checkpoint_and_remat() -> None:
+    """Verify checkpoint and remat both direct and parameterized."""
+
+    @mod.checkpoint
+    def f1(x: PyTree) -> PyTree:
+        """Direct checkpointed function."""
+        return x + 1
+
+    @mod.checkpoint(prevent_cse=False, policy=mod.checkpoint_policies.everything_saveable)
+    def f2(x: PyTree) -> PyTree:
+        """Parameterized checkpointed function."""
+        return x * 2
+
+    assert f1(3) == 4
+    assert f2(3) == 6
+    assert mod.remat(lambda x: x - 1)(5) == 4
+
+
+def test_closure_convert_and_make_jaxpr() -> None:
+    """Verify closure_convert and make_jaxpr."""
+
+    class CallableObj:
+        """Callable object holding an ndarray attribute."""
+
+        def __init__(self) -> None:
+            """Initialize CallableObj."""
+            self.w = jnp.array([1.0, 2.0])
+
+        def __call__(self, x: PyTree) -> PyTree:
+            """Apply CallableObj."""
+            return x + self.w
+
+    obj = CallableObj()
+    conv_fn, aux = mod.closure_convert(obj, jnp.array([3.0, 4.0]))
+    assert len(aux) == 1
+    np.testing.assert_allclose(np.asarray(conv_fn(jnp.array([3.0, 4.0]))), np.array([4.0, 6.0]))
+
+    # Builtin callable without __dict__
+    assert mod.getattr_safe_dict(len) == {}
+
+    jaxpr_repr = mod.make_jaxpr(lambda x: x + 1)(jnp.array([1.0, 2.0]))
+    assert "lambda" in repr(jaxpr_repr)
+
+    jaxpr_repr2, out_shape = mod.make_jaxpr(lambda x: x + 1, return_shape=True)(jnp.array([1.0, 2.0]))
+    assert "lambda" in repr(jaxpr_repr2)
+    assert out_shape.shape == (2,)
+
+
+def test_ensure_compile_time_eval_and_misc_helpers() -> None:
+    """Verify ensure_compile_time_eval and miscellaneous helpers."""
+    fn = mod.ensure_compile_time_eval(lambda x: x * 3)
+    assert callable(fn) and fn(4) == 12
+    import contextlib
+
+    ctx = mod.ensure_compile_time_eval()
+    assert isinstance(ctx, contextlib.AbstractContextManager)
+    with ctx:
         pass
 
-
-def test_Callable() -> None:
-    """Test Callable."""
-    try:
-        mod.Callable()
-    except Exception:
+    assert mod.named_call(lambda x: x + 2, name="add2")(3) == 5
+    with mod.named_scope("my_scope"):
         pass
 
+    assert mod.pure_callback(lambda x: x * 4, None, 3) == 12
+    assert mod.make_array_from_callback((2, 2), None, lambda idx: 0).shape == (2, 2)
+    assert mod.make_array_from_process_local_data(None, 42) == 42
+    assert mod.make_array_from_single_device_arrays((2,), None, [jnp.array(1.0), jnp.array(2.0)]).shape == (2,)
+    assert mod.softmax_custom_jvp(jnp.array([1.0, 2.0])).shape == (2,)
 
-def test_checkpoint() -> None:
-    """Test checkpoint."""
-    try:
-        mod.checkpoint(1.0)
-    except Exception:
+    mod.enable_custom_vjp_by_custom_transpose(True)
+    mod.enable_custom_prng(True)
+    mod.jax2tf_associative_scan_reductions()
+    assert mod.default_prng_impl() == "threefry2x32"
+    assert mod.default_matmul_precision() == "highest"
+    assert mod.float0.name == "float0"
+
+    with mod.threefry_partitionable():
+        pass
+    with mod.legacy_prng_key():
+        pass
+    with mod.debug_key_reuse():
         pass
 
+    # Exercise jit stage methods and disable_jit
+    j_fn = zero_jax.jit(lambda x: x + 1)
+    assert j_fn.trace(jnp.array(1.0)) is not None
+    assert j_fn.lower(jnp.array(1.0)) is not None
+    with zero_jax.disable_jit():
+        assert j_fn(jnp.array(2.0)) == jnp.array(3.0)
 
-def test_closure_convert() -> None:
-    """Test closure_convert."""
-    try:
-        mod.closure_convert(1.0)
-    except Exception:
-        pass
-
-
-def test_debug_key_reuse() -> None:
-    """Test debug_key_reuse."""
-    try:
-        mod.debug_key_reuse()
-    except Exception:
-        pass
-
-
-def test_default_matmul_precision() -> None:
-    """Test default_matmul_precision."""
-    try:
-        mod.default_matmul_precision()
-    except Exception:
-        pass
-
-
-def test_default_prng_impl() -> None:
-    """Test default_prng_impl."""
-    try:
-        mod.default_prng_impl()
-    except Exception:
-        pass
-
-
-def test_enable_custom_prng() -> None:
-    """Test enable_custom_prng."""
-    try:
-        mod.enable_custom_prng()
-    except Exception:
-        pass
-
-
-def test_enable_custom_vjp_by_custom_transpose() -> None:
-    """Test enable_custom_vjp_by_custom_transpose."""
-    try:
-        mod.enable_custom_vjp_by_custom_transpose()
-    except Exception:
-        pass
-
-
-def test_ensure_compile_time_eval() -> None:
-    """Test ensure_compile_time_eval."""
-    try:
-        mod.ensure_compile_time_eval(1.0)
-    except Exception:
-        pass
-
-
-def test_jax2tf_associative_scan_reductions() -> None:
-    """Test jax2tf_associative_scan_reductions."""
-    try:
-        mod.jax2tf_associative_scan_reductions()
-    except Exception:
-        pass
-
-
-def test_legacy_prng_key() -> None:
-    """Test legacy_prng_key."""
-    try:
-        mod.legacy_prng_key()
-    except Exception:
-        pass
-
-
-def test_make_array_from_callback() -> None:
-    """Test make_array_from_callback."""
-    try:
-        mod.make_array_from_callback(1.0, 1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_make_array_from_process_local_data() -> None:
-    """Test make_array_from_process_local_data."""
-    try:
-        mod.make_array_from_process_local_data(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_make_array_from_single_device_arrays() -> None:
-    """Test make_array_from_single_device_arrays."""
-    try:
-        mod.make_array_from_single_device_arrays(1.0, 1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_make_jaxpr() -> None:
-    """Test make_jaxpr."""
-    try:
-        mod.make_jaxpr(1.0)
-    except Exception:
-        pass
-
-
-def test_named_call() -> None:
-    """Test named_call."""
-    try:
-        mod.named_call(1.0)
-    except Exception:
-        pass
-
-
-def test_named_scope() -> None:
-    """Test named_scope."""
-    try:
-        mod.named_scope(1.0)
-    except Exception:
-        pass
-
-
-def test_pure_callback() -> None:
-    """Test pure_callback."""
-    try:
-        mod.pure_callback(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_remat() -> None:
-    """Test remat."""
-    try:
-        mod.remat(1.0)
-    except Exception:
-        pass
-
-
-def test_softmax_custom_jvp() -> None:
-    """Test softmax_custom_jvp."""
-    try:
-        mod.softmax_custom_jvp(1.0)
-    except Exception:
-        pass
-
-
-def test_threefry_partitionable() -> None:
-    """Test threefry_partitionable."""
-    try:
-        mod.threefry_partitionable()
-    except Exception:
-        pass
+    j_static = zero_jax.jit(lambda x, n: x + n, static_argnums=1)
+    assert j_static(jnp.array(2.0), 5) == jnp.array(7.0)

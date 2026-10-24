@@ -1,7 +1,12 @@
+"""Tests for tests/test_jax_init.py."""
+
+from __future__ import annotations
+
 import zero_jax
 
 
-def test_devices():
+def test_devices() -> None:
+    """Execute ``test_devices``."""
     devices = zero_jax.devices()
     assert len(devices) == 1
     assert devices[0].platform == "numpy"

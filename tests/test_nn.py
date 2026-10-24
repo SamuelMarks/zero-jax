@@ -1,13 +1,13 @@
-import pytest
-
 """Tests for zero_jax.nn.activation."""
+
+from __future__ import annotations
 
 import numpy as np
 
 from zero_jax.nn.activation import gelu, logsumexp, one_hot, softmax
 
 
-def test_gelu():
+def test_gelu() -> None:
     """Test gelu."""
     x = np.array([-1.0, 0.0, 1.0])
     y_approx = gelu(x, approximate=True)
@@ -16,14 +16,14 @@ def test_gelu():
     assert y_exact.shape == x.shape
 
 
-def test_logsumexp():
+def test_logsumexp() -> None:
     """Test logsumexp."""
     x = np.array([1.0, 2.0, 3.0])
     res = logsumexp(x)
     assert hasattr(res, "shape") or isinstance(res, float)
 
     # Test with b, keepdims, return_sign, where
-    res2, sign2 = logsumexp(
+    _res2, sign2 = logsumexp(
         x,
         b=np.array([1.0, 1.0, 1.0]),
         keepdims=True,
@@ -37,7 +37,7 @@ def test_logsumexp():
     logsumexp(x_inf)
 
 
-def test_one_hot():
+def test_one_hot() -> None:
     """Test one_hot."""
     x = np.array([0, 1, 2])
     y = one_hot(x, num_classes=3)
@@ -47,7 +47,7 @@ def test_one_hot():
     assert y2.shape == (3, 3)
 
 
-def test_softmax():
+def test_softmax() -> None:
     """Test softmax."""
     x = np.array([1.0, 2.0, 3.0])
     y = softmax(x)
@@ -58,7 +58,8 @@ def test_softmax():
     assert y2[1] == 0.0
 
 
-def test_sigmoid():
+def test_sigmoid() -> None:
+    """Execute ``test_sigmoid``."""
     import numpy as np
 
     from zero_jax.nn.activation import sigmoid
@@ -67,7 +68,8 @@ def test_sigmoid():
     assert sigmoid(x) == 0.5
 
 
-def test_log_sigmoid():
+def test_log_sigmoid() -> None:
+    """Execute ``test_log_sigmoid``."""
     import numpy as np
 
     from zero_jax.nn.activation import log_sigmoid
@@ -77,7 +79,8 @@ def test_log_sigmoid():
     assert res < 0.0
 
 
-def test_gelu_eager_non_approx():
+def test_gelu_eager_non_approx() -> None:
+    """Execute ``test_gelu_eager_non_approx``."""
     import numpy as np
 
     from zero_jax.nn.activation import gelu
@@ -87,19 +90,19 @@ def test_gelu_eager_non_approx():
     assert res2.shape == (3,)
 
 
-def test_logsumexp_eager_extra():
+def test_logsumexp_eager_extra() -> None:
+    """Execute ``test_logsumexp_eager_extra``."""
     import numpy as np
 
     from zero_jax.nn.activation import logsumexp
 
     x = np.array([0.0, 1.0, 2.0])
-    res, sign = logsumexp(
-        x, b=np.array([1, 1, 1]), where=np.array([True, True, False]), return_sign=True
-    )
+    _res, sign = logsumexp(x, b=np.array([1, 1, 1]), where=np.array([True, True, False]), return_sign=True)
     assert sign > 0
 
 
-def test_softmax_eager_extra():
+def test_softmax_eager_extra() -> None:
+    """Execute ``test_softmax_eager_extra``."""
     import numpy as np
 
     from zero_jax.nn.activation import softmax
@@ -109,7 +112,8 @@ def test_softmax_eager_extra():
     assert res2.shape == (3,)
 
 
-def test_selu():
+def test_selu() -> None:
+    """Execute ``test_selu``."""
     import numpy as np
 
     from zero_jax.nn.activation import selu
@@ -119,7 +123,8 @@ def test_selu():
     assert res.shape == x.shape
 
 
-def test_log_softmax():
+def test_log_softmax() -> None:
+    """Execute ``test_log_softmax``."""
     import numpy as np
 
     from zero_jax.nn.activation import log_softmax
@@ -129,7 +134,8 @@ def test_log_softmax():
     assert res.shape == x.shape
 
 
-def test_erf():
+def test_erf() -> None:
+    """Execute ``test_erf``."""
     import numpy as np
 
     from zero_jax.nn.activation import _erf
@@ -139,7 +145,8 @@ def test_erf():
     assert res.shape == x.shape
 
 
-def test_nn_tanh():
+def test_nn_tanh() -> None:
+    """Execute ``test_nn_tanh``."""
     import numpy as np
 
     from zero_jax import nn

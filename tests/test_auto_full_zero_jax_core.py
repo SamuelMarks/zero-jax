@@ -1,8 +1,6 @@
 """Tests for zero_jax.core."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.core as mod
 
@@ -19,14 +17,6 @@ def test_class_AbstractValue() -> None:
     """Test class AbstractValue."""
     try:
         mod.AbstractValue()
-    except Exception:
-        pass
-
-
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
     except Exception:
         pass
 

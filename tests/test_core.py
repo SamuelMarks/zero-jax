@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.core as mod
 
@@ -249,9 +249,7 @@ def test_call() -> None:
 
 def test_call_bind_with_continuation() -> None:
     """Test call_bind_with_continuation."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.call_bind_with_continuation", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.call_bind_with_continuation", create=True) as mock_op:
         mod.call_bind_with_continuation()
         mock_op.assert_called_once_with()
 
@@ -286,9 +284,7 @@ def test_check_type() -> None:
 
 def test_check_valid_jaxtype() -> None:
     """Test check_valid_jaxtype."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.check_valid_jaxtype", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.check_valid_jaxtype", create=True) as mock_op:
         mod.check_valid_jaxtype()
         mock_op.assert_called_once_with()
 
@@ -302,18 +298,14 @@ def test_concrete_aval() -> None:
 
 def test_concrete_or_error() -> None:
     """Test concrete_or_error."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.concrete_or_error", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.concrete_or_error", create=True) as mock_op:
         mod.concrete_or_error()
         mock_op.assert_called_once_with()
 
 
 def test_concretization_function_error() -> None:
     """Test concretization_function_error."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.concretization_function_error", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.concretization_function_error", create=True) as mock_op:
         mod.concretization_function_error()
         mock_op.assert_called_once_with()
 
@@ -334,27 +326,21 @@ def test_dedup_referents() -> None:
 
 def test_do_subst_axis_names_jaxpr() -> None:
     """Test do_subst_axis_names_jaxpr."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.do_subst_axis_names_jaxpr", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.do_subst_axis_names_jaxpr", create=True) as mock_op:
         mod.do_subst_axis_names_jaxpr()
         mock_op.assert_called_once_with()
 
 
 def test_ensure_compile_time_eval() -> None:
     """Test ensure_compile_time_eval."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.ensure_compile_time_eval", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.ensure_compile_time_eval", create=True) as mock_op:
         mod.ensure_compile_time_eval()
         mock_op.assert_called_once_with()
 
 
 def test_escaped_tracer_error() -> None:
     """Test escaped_tracer_error."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.escaped_tracer_error", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.escaped_tracer_error", create=True) as mock_op:
         mod.escaped_tracer_error()
         mock_op.assert_called_once_with()
 
@@ -382,9 +368,7 @@ def test_extend_axis_env() -> None:
 
 def test_extend_axis_env_nd() -> None:
     """Test extend_axis_env_nd."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.extend_axis_env_nd", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.extend_axis_env_nd", create=True) as mock_op:
         mod.extend_axis_env_nd()
         mock_op.assert_called_once_with()
 
@@ -433,9 +417,7 @@ def test_is_constant_dim() -> None:
 
 def test_is_constant_shape() -> None:
     """Test is_constant_shape."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.is_constant_shape", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.is_constant_shape", create=True) as mock_op:
         mod.is_constant_shape()
         mock_op.assert_called_once_with()
 
@@ -449,9 +431,7 @@ def test_jaxpr_as_fun() -> None:
 
 def test_jaxpr_uses_outfeed() -> None:
     """Test jaxpr_uses_outfeed."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.jaxpr_uses_outfeed", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.jaxpr_uses_outfeed", create=True) as mock_op:
         mod.jaxpr_uses_outfeed()
         mock_op.assert_called_once_with()
 
@@ -472,9 +452,7 @@ def test_join_effects() -> None:
 
 def test_join_named_shapes() -> None:
     """Test join_named_shapes."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.join_named_shapes", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.join_named_shapes", create=True) as mock_op:
         mod.join_named_shapes()
         mock_op.assert_called_once_with()
 
@@ -488,9 +466,7 @@ def test_lattice_join() -> None:
 
 def test_leaked_tracer_error() -> None:
     """Test leaked_tracer_error."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.leaked_tracer_error", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.leaked_tracer_error", create=True) as mock_op:
         mod.leaked_tracer_error()
         mock_op.assert_called_once_with()
 
@@ -504,9 +480,7 @@ def test_map_bind() -> None:
 
 def test_map_bind_with_continuation() -> None:
     """Test map_bind_with_continuation."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.map_bind_with_continuation", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.map_bind_with_continuation", create=True) as mock_op:
         mod.map_bind_with_continuation()
         mock_op.assert_called_once_with()
 
@@ -527,9 +501,7 @@ def test_max_dim() -> None:
 
 def test_maybe_find_leaked_tracers() -> None:
     """Test maybe_find_leaked_tracers."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.maybe_find_leaked_tracers", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.maybe_find_leaked_tracers", create=True) as mock_op:
         mod.maybe_find_leaked_tracers()
         mock_op.assert_called_once_with()
 
@@ -571,45 +543,35 @@ def test_new_sublevel() -> None:
 
 def test_primal_dtype_to_tangent_dtype() -> None:
     """Test primal_dtype_to_tangent_dtype."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.primal_dtype_to_tangent_dtype", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.primal_dtype_to_tangent_dtype", create=True) as mock_op:
         mod.primal_dtype_to_tangent_dtype()
         mock_op.assert_called_once_with()
 
 
 def test_primitive_uses_outfeed() -> None:
     """Test primitive_uses_outfeed."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.primitive_uses_outfeed", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.primitive_uses_outfeed", create=True) as mock_op:
         mod.primitive_uses_outfeed()
         mock_op.assert_called_once_with()
 
 
 def test_process_env_traces_call() -> None:
     """Test process_env_traces_call."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.process_env_traces_call", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.process_env_traces_call", create=True) as mock_op:
         mod.process_env_traces_call()
         mock_op.assert_called_once_with()
 
 
 def test_process_env_traces_map() -> None:
     """Test process_env_traces_map."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.process_env_traces_map", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.process_env_traces_map", create=True) as mock_op:
         mod.process_env_traces_map()
         mock_op.assert_called_once_with()
 
 
 def test_raise_as_much_as_possible() -> None:
     """Test raise_as_much_as_possible."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.raise_as_much_as_possible", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.raise_as_much_as_possible", create=True) as mock_op:
         mod.raise_as_much_as_possible()
         mock_op.assert_called_once_with()
 
@@ -623,9 +585,7 @@ def test_raise_to_shaped() -> None:
 
 def test_reset_trace_state() -> None:
     """Test reset_trace_state."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.reset_trace_state", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.reset_trace_state", create=True) as mock_op:
         mod.reset_trace_state()
         mock_op.assert_called_once_with()
 
@@ -660,54 +620,42 @@ def test_subst_axis_names() -> None:
 
 def test_subst_axis_names_eqn() -> None:
     """Test subst_axis_names_eqn."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.subst_axis_names_eqn", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.subst_axis_names_eqn", create=True) as mock_op:
         mod.subst_axis_names_eqn()
         mock_op.assert_called_once_with()
 
 
 def test_subst_axis_names_jaxpr() -> None:
     """Test subst_axis_names_jaxpr."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.subst_axis_names_jaxpr", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.subst_axis_names_jaxpr", create=True) as mock_op:
         mod.subst_axis_names_jaxpr()
         mock_op.assert_called_once_with()
 
 
 def test_subst_axis_names_var() -> None:
     """Test subst_axis_names_var."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.subst_axis_names_var", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.subst_axis_names_var", create=True) as mock_op:
         mod.subst_axis_names_var()
         mock_op.assert_called_once_with()
 
 
 def test_substitute_vars_in_output_ty() -> None:
     """Test substitute_vars_in_output_ty."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.substitute_vars_in_output_ty", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.substitute_vars_in_output_ty", create=True) as mock_op:
         mod.substitute_vars_in_output_ty()
         mock_op.assert_called_once_with()
 
 
 def test_trace_state_clean() -> None:
     """Test trace_state_clean."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.trace_state_clean", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.trace_state_clean", create=True) as mock_op:
         mod.trace_state_clean()
         mock_op.assert_called_once_with()
 
 
 def test_traverse_jaxpr_params() -> None:
     """Test traverse_jaxpr_params."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.traverse_jaxpr_params", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.traverse_jaxpr_params", create=True) as mock_op:
         mod.traverse_jaxpr_params()
         mock_op.assert_called_once_with()
 
@@ -749,9 +697,7 @@ def test_used_axis_names() -> None:
 
 def test_used_axis_names_jaxpr() -> None:
     """Test used_axis_names_jaxpr."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.used_axis_names_jaxpr", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.used_axis_names_jaxpr", create=True) as mock_op:
         mod.used_axis_names_jaxpr()
         mock_op.assert_called_once_with()
 

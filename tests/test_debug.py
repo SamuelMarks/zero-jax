@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.debug as mod
 
@@ -29,9 +29,7 @@ def test_callback() -> None:
 
 def test_inspect_array_sharding() -> None:
     """Test inspect_array_sharding."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.inspect_array_sharding", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.inspect_array_sharding", create=True) as mock_op:
         mod.inspect_array_sharding()
         mock_op.assert_called_once_with()
 
@@ -45,17 +43,13 @@ def test_print() -> None:
 
 def test_visualize_array_sharding() -> None:
     """Test visualize_array_sharding."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.visualize_array_sharding", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.visualize_array_sharding", create=True) as mock_op:
         mod.visualize_array_sharding()
         mock_op.assert_called_once_with()
 
 
 def test_visualize_sharding() -> None:
     """Test visualize_sharding."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.visualize_sharding", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.visualize_sharding", create=True) as mock_op:
         mod.visualize_sharding()
         mock_op.assert_called_once_with()

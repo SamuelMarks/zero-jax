@@ -1,6 +1,6 @@
-from ml_switcheroo_compiler.core.tensor import TensorConfig
-
 """Tests for zero_jax.numpy (jnp) API parity."""
+
+from __future__ import annotations
 
 import numpy as np
 import pytest
@@ -8,56 +8,66 @@ from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 
 from zero_jax import numpy as jnp
+from zero_jax._types import ArrayLikeSpec
 
 
-def test_unary_ops_eager():
+def test_unary_ops_eager() -> None:
+    """Execute ``test_unary_ops_eager``."""
     np.testing.assert_allclose(jnp.sin(0.0), 0.0)
     np.testing.assert_allclose(jnp.cos(0.0), 1.0)
     np.testing.assert_allclose(jnp.exp(0.0), 1.0)
     np.testing.assert_allclose(jnp.log(1.0), 0.0)
 
 
-def test_transpose_eager():
+def test_transpose_eager() -> None:
+    """Execute ``test_transpose_eager``."""
     x = np.array([[1, 2], [3, 4]])
     np.testing.assert_allclose(jnp.transpose(x), [[1, 3], [2, 4]])
 
 
-def test_reshape_eager():
+def test_reshape_eager() -> None:
+    """Execute ``test_reshape_eager``."""
     x = np.array([1, 2, 3, 4])
     np.testing.assert_allclose(jnp.reshape(x, (2, 2)), [[1, 2], [3, 4]])
 
 
-def test_broadcast_to_eager():
+def test_broadcast_to_eager() -> None:
+    """Execute ``test_broadcast_to_eager``."""
     x = np.array([1, 2])
     np.testing.assert_allclose(jnp.broadcast_to(x, (2, 2)), [[1, 2], [1, 2]])
 
 
-def test_concatenate_eager():
+def test_concatenate_eager() -> None:
+    """Execute ``test_concatenate_eager``."""
     x = np.array([1, 2])
     y = np.array([3, 4])
     np.testing.assert_allclose(jnp.concatenate([x, y]), [1, 2, 3, 4])
 
 
-def test_where_eager():
+def test_where_eager() -> None:
+    """Execute ``test_where_eager``."""
     cond = np.array([True, False])
     x = np.array([1, 2])
     y = np.array([3, 4])
     np.testing.assert_allclose(jnp.where(cond, x, y), [1, 4])
 
 
-def test_einsum_eager():
+def test_einsum_eager() -> None:
+    """Execute ``test_einsum_eager``."""
     x = np.array([[1, 2], [3, 4]])
     y = np.array([[5, 6], [7, 8]])
     res = jnp.einsum("ij,jk->ik", x, y)
     np.testing.assert_allclose(res, np.dot(x, y))
 
 
-def test_add_mul_eager():
+def test_add_mul_eager() -> None:
+    """Execute ``test_add_mul_eager``."""
     assert jnp.add(1, 2) == 3
     assert jnp.multiply(2, 3) == 6
 
 
-def test_unary_ops_tracing():
+def test_unary_ops_tracing() -> None:
+    """Execute ``test_unary_ops_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2,))
 
@@ -69,7 +79,8 @@ def test_unary_ops_tracing():
     _tracer.stop_tracing()
 
 
-def test_transpose_tracing():
+def test_transpose_tracing() -> None:
+    """Execute ``test_transpose_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2, 3))
     y = jnp.transpose(x)
@@ -82,7 +93,8 @@ def test_transpose_tracing():
     _tracer.stop_tracing()
 
 
-def test_reshape_tracing():
+def test_reshape_tracing() -> None:
+    """Execute ``test_reshape_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2, 3))
     y = jnp.reshape(x, (6,))
@@ -92,7 +104,8 @@ def test_reshape_tracing():
     _tracer.stop_tracing()
 
 
-def test_broadcast_to_tracing():
+def test_broadcast_to_tracing() -> None:
+    """Execute ``test_broadcast_to_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2,))
     y = jnp.broadcast_to(x, (2, 2))
@@ -102,7 +115,8 @@ def test_broadcast_to_tracing():
     _tracer.stop_tracing()
 
 
-def test_concatenate_tracing():
+def test_concatenate_tracing() -> None:
+    """Execute ``test_concatenate_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2,))
     y = ProxyTensor(id="y", shape=(3,))
@@ -113,7 +127,8 @@ def test_concatenate_tracing():
     _tracer.stop_tracing()
 
 
-def test_where_tracing():
+def test_where_tracing() -> None:
+    """Execute ``test_where_tracing``."""
     _tracer.start_tracing()
     cond = ProxyTensor(id="c", shape=(2,))
     x = ProxyTensor(id="x", shape=(2,))
@@ -126,7 +141,8 @@ def test_where_tracing():
     _tracer.stop_tracing()
 
 
-def test_einsum_tracing():
+def test_einsum_tracing() -> None:
+    """Execute ``test_einsum_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2, 2))
     y = ProxyTensor(id="y", shape=(2, 2))
@@ -137,7 +153,8 @@ def test_einsum_tracing():
     _tracer.stop_tracing()
 
 
-def test_add_mul_tracing():
+def test_add_mul_tracing() -> None:
+    """Execute ``test_add_mul_tracing``."""
     _tracer.start_tracing()
     x = ProxyTensor(id="x", shape=(2,))
     y = ProxyTensor(id="y", shape=(2,))
@@ -151,7 +168,8 @@ def test_add_mul_tracing():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_missing_numpy_methods():
+def test_missing_numpy_methods() -> None:
+    """Execute ``test_missing_numpy_methods``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -170,7 +188,8 @@ def test_missing_numpy_methods():
     assert jnp.broadcast_shapes((1,), (1, 2)) == (1, 2)
 
 
-def test_multiply_proxy_y():
+def test_multiply_proxy_y() -> None:
+    """Execute ``test_multiply_proxy_y``."""
     from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
     from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 
@@ -183,20 +202,23 @@ def test_multiply_proxy_y():
     _tracer.stop_tracing()
 
 
-def test_lax_numpy_missing_cov():
+def test_lax_numpy_missing_cov() -> None:
+    """Execute ``test_lax_numpy_missing_cov``."""
     from zero_jax import numpy as jnp
 
     assert jnp.max([1, 2], where=[True, False], initial=0) == 1
     assert jnp.sum([1, 2], where=[True, False]) == 1
 
 
-def test_shape():
+def test_shape() -> None:
+    """Execute ``test_shape``."""
     import zero_jax.numpy as jnp
 
     assert jnp.shape([1, 2, 3]) == (3,)
 
 
-def test_jnp_trig():
+def test_jnp_trig() -> None:
+    """Execute ``test_jnp_trig``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -220,7 +242,8 @@ def test_jnp_trig():
     np.testing.assert_allclose(jnp.atan2(x1, x2), np.arctan2(x1, x2))
 
 
-def test_jnp_bitwise_logical_compare():
+def test_jnp_bitwise_logical_compare() -> None:
+    """Execute ``test_jnp_bitwise_logical_compare``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -245,7 +268,8 @@ def test_jnp_bitwise_logical_compare():
     np.testing.assert_allclose(jnp.less_equal(i1, i2), np.less_equal(i1, i2))
 
 
-def test_jnp_math_numeric():
+def test_jnp_math_numeric() -> None:
+    """Execute ``test_jnp_math_numeric``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -275,18 +299,14 @@ def test_jnp_math_numeric():
     np.testing.assert_allclose(jnp.isinf(x), np.isinf(x))
     np.testing.assert_allclose(jnp.lcm(i_array, i_array), np.lcm(i_array, i_array))
     np.testing.assert_allclose(jnp.ldexp(x, i_array), np.ldexp(x, i_array))
-    np.testing.assert_allclose(
-        jnp.left_shift(i_array, i_array), np.left_shift(i_array, i_array)
-    )
+    np.testing.assert_allclose(jnp.left_shift(i_array, i_array), np.left_shift(i_array, i_array))
     np.testing.assert_allclose(jnp.logaddexp(x, y), np.logaddexp(x, y))
     np.testing.assert_allclose(jnp.logaddexp2(x, y), np.logaddexp2(x, y))
     np.testing.assert_allclose(jnp.nextafter(x, y), np.nextafter(x, y))
     np.testing.assert_allclose(jnp.rad2deg(x), np.rad2deg(x))
     np.testing.assert_allclose(jnp.real(x), np.real(x))
     np.testing.assert_allclose(jnp.reciprocal(x), np.reciprocal(x))
-    np.testing.assert_allclose(
-        jnp.right_shift(i_array, i_array), np.right_shift(i_array, i_array)
-    )
+    np.testing.assert_allclose(jnp.right_shift(i_array, i_array), np.right_shift(i_array, i_array))
     np.testing.assert_allclose(jnp.roll(x, shift=1), np.roll(x, shift=1))
     np.testing.assert_allclose(jnp.round(x), np.round(x))
     np.testing.assert_allclose(jnp.sinc(x), np.sinc(x))
@@ -301,13 +321,12 @@ def test_jnp_math_numeric():
 
     # unstack is a jnp function, but wait, numpy does not have unstack
     # np.unstack does not exist. We can compare with list of slices
-    for z_un, n_un in zip(
-        jnp.unstack(x), [np.squeeze(arr, axis=0) for arr in np.split(x, x.shape[0])]
-    ):
+    for z_un, n_un in zip(jnp.unstack(x), [np.squeeze(arr, axis=0) for arr in np.split(x, x.shape[0])]):
         np.testing.assert_allclose(z_un, n_un)
 
 
-def test_jnp_fft_linalg():
+def test_jnp_fft_linalg() -> None:
+    """Execute ``test_jnp_fft_linalg``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -329,7 +348,8 @@ def test_jnp_fft_linalg():
     _ = jnp.linalg.svd(m)
 
 
-def test_jnp_aliases():
+def test_jnp_aliases() -> None:
+    """Execute ``test_jnp_aliases``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -347,7 +367,8 @@ def test_jnp_aliases():
     np.testing.assert_allclose(jnp.pow(x, y), np.power(x, y))
 
 
-def test_jnp_more_aliases():
+def test_jnp_more_aliases() -> None:
+    """Execute ``test_jnp_more_aliases``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -373,7 +394,8 @@ def test_jnp_more_aliases():
     np.testing.assert_allclose(jnp.isposinf(z), np.isposinf(z))
 
 
-def test_jnp_frexp():
+def test_jnp_frexp() -> None:
+    """Execute ``test_jnp_frexp``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -386,7 +408,8 @@ def test_jnp_frexp():
     np.testing.assert_allclose(b, nb)
 
 
-def test_jnp_nan_to_num_searchsorted_signbit():
+def test_jnp_nan_to_num_searchsorted_signbit() -> None:
+    """Execute ``test_jnp_nan_to_num_searchsorted_signbit``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -400,7 +423,8 @@ def test_jnp_nan_to_num_searchsorted_signbit():
     np.testing.assert_allclose(jnp.searchsorted(a, v), np.searchsorted(a, v))
 
 
-def test_jnp_copy():
+def test_jnp_copy() -> None:
+    """Execute ``test_jnp_copy``."""
     import numpy as np
 
     from zero_jax import numpy as jnp
@@ -410,7 +434,8 @@ def test_jnp_copy():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_added_funcs_eager():
+def test_jnp_added_funcs_eager() -> None:
+    """Execute ``test_jnp_added_funcs_eager``."""
     x = np.array([1 + 1j, 1 - 1j])
     np.testing.assert_allclose(jnp.angle(x), np.angle(x))
 
@@ -442,9 +467,12 @@ def test_jnp_added_funcs_eager():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_batch2_eager():
+def test_jnp_batch2_eager() -> None:
     # apply_along_axis
-    def my_func(a):
+    """Execute ``test_jnp_batch2_eager``."""
+
+    def my_func(a: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``my_func``."""
         return jnp.sum(a)
 
     x = np.array([[1, 2, 3], [4, 5, 6]])
@@ -462,33 +490,23 @@ def test_jnp_batch2_eager():
     np.testing.assert_allclose(res4, np.argwhere(x > 3))
 
     # choose
-    res5 = jnp.choose(
-        np.array([0, 1, 0]), [np.array([10, 20, 30]), np.array([40, 50, 60])]
-    )
+    res5 = jnp.choose(np.array([0, 1, 0]), [np.array([10, 20, 30]), np.array([40, 50, 60])])
     np.testing.assert_allclose(
         res5,
-        np.choose(
-            np.array([0, 1, 0]), [np.array([10, 20, 30]), np.array([40, 50, 60])]
-        ),
+        np.choose(np.array([0, 1, 0]), [np.array([10, 20, 30]), np.array([40, 50, 60])]),
     )
 
     # column_stack
     res6 = jnp.column_stack((np.array([1, 2]), np.array([3, 4])))
-    np.testing.assert_allclose(
-        res6, np.column_stack((np.array([1, 2]), np.array([3, 4])))
-    )
+    np.testing.assert_allclose(res6, np.column_stack((np.array([1, 2]), np.array([3, 4]))))
 
     # compress
     res7 = jnp.compress(np.array([True, False, True]), np.array([1, 2, 3]))
-    np.testing.assert_allclose(
-        res7, np.compress(np.array([True, False, True]), np.array([1, 2, 3]))
-    )
+    np.testing.assert_allclose(res7, np.compress(np.array([True, False, True]), np.array([1, 2, 3])))
 
     # convolve
     res8 = jnp.convolve(np.array([1, 2, 3]), np.array([0, 1, 0.5]))
-    np.testing.assert_allclose(
-        res8, np.convolve(np.array([1, 2, 3]), np.array([0, 1, 0.5]))
-    )
+    np.testing.assert_allclose(res8, np.convolve(np.array([1, 2, 3]), np.array([0, 1, 0.5])))
 
     # corrcoef
     res9 = jnp.corrcoef(np.array([[1, 2, 3], [4, 5, 6]]))
@@ -496,9 +514,7 @@ def test_jnp_batch2_eager():
 
     # correlate
     res10 = jnp.correlate(np.array([1, 2, 3]), np.array([0, 1]))
-    np.testing.assert_allclose(
-        res10, np.correlate(np.array([1, 2, 3]), np.array([0, 1]))
-    )
+    np.testing.assert_allclose(res10, np.correlate(np.array([1, 2, 3]), np.array([0, 1])))
 
     # cov
     res11 = jnp.cov(np.array([[1, 2, 3], [4, 5, 6]]))
@@ -506,7 +522,8 @@ def test_jnp_batch2_eager():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_batch3_eager():
+def test_jnp_batch3_eager() -> None:
+    """Execute ``test_jnp_batch3_eager``."""
     x = np.array([1, 2, 3])
     y = np.array([1, 2, 3])
     # array_equiv
@@ -520,9 +537,7 @@ def test_jnp_batch3_eager():
     np.testing.assert_allclose(jnp.bartlett(3), np.bartlett(3))
 
     # bincount
-    np.testing.assert_allclose(
-        jnp.bincount(np.array([1, 1, 2])), np.bincount(np.array([1, 1, 2]))
-    )
+    np.testing.assert_allclose(jnp.bincount(np.array([1, 1, 2])), np.bincount(np.array([1, 1, 2])))
 
     # bitwise_count
     if hasattr(np, "bitwise_count"):
@@ -562,9 +577,7 @@ def test_jnp_batch3_eager():
     np.testing.assert_allclose(r2, nr2)
 
     # diagflat
-    np.testing.assert_allclose(
-        jnp.diagflat(np.array([1, 2])), np.diagflat(np.array([1, 2]))
-    )
+    np.testing.assert_allclose(jnp.diagflat(np.array([1, 2])), np.diagflat(np.array([1, 2])))
 
     # diagonal
     np.testing.assert_allclose(jnp.diagonal(np.eye(2)), np.diagonal(np.eye(2)))
@@ -580,7 +593,8 @@ def test_jnp_batch3_eager():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_batch4_eager():
+def test_jnp_batch4_eager() -> None:
+    """Execute ``test_jnp_batch4_eager``."""
     x = np.array([1, 2, 3])
     # dtype
     assert jnp.dtype(np.int32).value == np.dtype(np.int32).name
@@ -598,16 +612,12 @@ def test_jnp_batch4_eager():
     np.testing.assert_allclose(jnp.extract(x > 1, x), np.extract(x > 1, x))
 
     # fabs
-    np.testing.assert_allclose(
-        jnp.fabs(np.array([-1.5, 2.5])), np.fabs(np.array([-1.5, 2.5]))
-    )
+    np.testing.assert_allclose(jnp.fabs(np.array([-1.5, 2.5])), np.fabs(np.array([-1.5, 2.5])))
 
     # fill_diagonal
     a1 = np.zeros((3, 3))
     a2 = np.zeros((3, 3))
-    jnp.fill_diagonal(
-        a1, 1
-    )  # Note: returns copy in eager mode due to backend wrapping, JAX might modify in place
+    jnp.fill_diagonal(a1, 1)  # Note: returns copy in eager mode due to backend wrapping, JAX might modify in place
     np.fill_diagonal(a2, 1)
     # the returned array is verified
     res = jnp.fill_diagonal(np.zeros((3, 3)), 1)
@@ -617,9 +627,7 @@ def test_jnp_batch4_eager():
     assert jnp.finfo(np.float32).eps == np.finfo(np.float32).eps
 
     # flatnonzero
-    np.testing.assert_allclose(
-        jnp.flatnonzero(np.array([-1, 0, 1])), np.flatnonzero(np.array([-1, 0, 1]))
-    )
+    np.testing.assert_allclose(jnp.flatnonzero(np.array([-1, 0, 1])), np.flatnonzero(np.array([-1, 0, 1])))
 
     # flip
     np.testing.assert_allclose(jnp.flip(x), np.flip(x))
@@ -635,14 +643,13 @@ def test_jnp_batch4_eager():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_batch5_eager():
-    x = np.array([1, 2, 3])
+def test_jnp_batch5_eager() -> None:
+    """Execute ``test_jnp_batch5_eager``."""
+    np.array([1, 2, 3])
 
     # frombuffer
     b = bytes([1, 2, 3, 4])
-    np.testing.assert_allclose(
-        jnp.frombuffer(b, dtype=np.uint8), np.frombuffer(b, dtype=np.uint8)
-    )
+    np.testing.assert_allclose(jnp.frombuffer(b, dtype=np.uint8), np.frombuffer(b, dtype=np.uint8))
 
     # fromfunction
     np.testing.assert_allclose(
@@ -653,9 +660,7 @@ def test_jnp_batch5_eager():
     # fromiter
     iterable = (x * x for x in range(5))
     iterable2 = (x * x for x in range(5))
-    np.testing.assert_allclose(
-        jnp.fromiter(iterable, float), np.fromiter(iterable2, float)
-    )
+    np.testing.assert_allclose(jnp.fromiter(iterable, float), np.fromiter(iterable2, float))
 
     # fromstring
     np.testing.assert_allclose(
@@ -664,9 +669,7 @@ def test_jnp_batch5_eager():
     )
 
     # geomspace
-    np.testing.assert_allclose(
-        jnp.geomspace(1, 1000, num=4), np.geomspace(1, 1000, num=4)
-    )
+    np.testing.assert_allclose(jnp.geomspace(1, 1000, num=4), np.geomspace(1, 1000, num=4))
 
     # get_printoptions
     assert isinstance(jnp.get_printoptions(), dict)
@@ -690,12 +693,8 @@ def test_jnp_batch5_eager():
     np.testing.assert_allclose(e1, e2)
 
     # histogram2d
-    h1, x1, y1 = jnp.histogram2d(
-        np.array([1, 2, 1]), np.array([1, 2, 1]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]]
-    )
-    h2, x2, y2 = np.histogram2d(
-        np.array([1, 2, 1]), np.array([1, 2, 1]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]]
-    )
+    h1, _x1, _y1 = jnp.histogram2d(np.array([1, 2, 1]), np.array([1, 2, 1]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]])
+    h2, _x2, _y2 = np.histogram2d(np.array([1, 2, 1]), np.array([1, 2, 1]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]])
     np.testing.assert_allclose(h1, h2)
 
     # histogram_bin_edges
@@ -705,12 +704,8 @@ def test_jnp_batch5_eager():
     )
 
     # histogramdd
-    h1, e1 = jnp.histogramdd(
-        np.array([[1, 1], [2, 2], [1, 1]]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]]
-    )
-    h2, e2 = np.histogramdd(
-        np.array([[1, 1], [2, 2], [1, 1]]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]]
-    )
+    h1, e1 = jnp.histogramdd(np.array([[1, 1], [2, 2], [1, 1]]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]])
+    h2, e2 = np.histogramdd(np.array([[1, 1], [2, 2], [1, 1]]), bins=[[0, 1, 2, 3], [0, 1, 2, 3]])
     np.testing.assert_allclose(h1, h2)
 
     # i0
@@ -720,19 +715,15 @@ def test_jnp_batch5_eager():
     assert jnp.iinfo(np.int32).max == np.iinfo(np.int32).max
 
     # indices
-    r1, r2 = jnp.indices((2, 3), sparse=True)
-    nr1, nr2 = np.indices((2, 3), sparse=True)
+    r1, _r2 = jnp.indices((2, 3), sparse=True)
+    nr1, _nr2 = np.indices((2, 3), sparse=True)
     np.testing.assert_allclose(r1, nr1)
 
     # insert
-    np.testing.assert_allclose(
-        jnp.insert(np.array([1, 2, 3]), 1, 5), np.insert(np.array([1, 2, 3]), 1, 5)
-    )
+    np.testing.assert_allclose(jnp.insert(np.array([1, 2, 3]), 1, 5), np.insert(np.array([1, 2, 3]), 1, 5))
 
     # interp
-    np.testing.assert_allclose(
-        jnp.interp(2.5, [1, 2, 3], [3, 2, 0]), np.interp(2.5, [1, 2, 3], [3, 2, 0])
-    )
+    np.testing.assert_allclose(jnp.interp(2.5, [1, 2, 3], [3, 2, 0]), np.interp(2.5, [1, 2, 3], [3, 2, 0]))
 
     # intersect1d
     np.testing.assert_allclose(
@@ -742,7 +733,8 @@ def test_jnp_batch5_eager():
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_jnp_batch6_eager():
+def test_jnp_batch6_eager() -> None:
+    """Execute ``test_jnp_batch6_eager``."""
     x = np.array([1, 2, 3])
 
     # iscomplex

@@ -1,6 +1,12 @@
+"""Tests for tests/test_stubs.py."""
+
+from __future__ import annotations
+
 import importlib
 
 import pytest
+
+from zero_jax._types import ArrayLikeSpec
 
 STUBS = [
     ("zero_jax", "jax", "function"),
@@ -690,7 +696,6 @@ STUBS = [
         "function",
     ),
     ("zero_jax.interpreters.traceback_util.util.config", "config", "function"),
-    ("zero_jax.interpreters.traceback_util.util.config.xla_client", "Any", "class"),
     (
         "zero_jax.interpreters.traceback_util.util.config.xla_client",
         "ArrayImpl",
@@ -2609,7 +2614,6 @@ STUBS = [
     ),
     ("zero_jax.interpreters.traceback_util.config", "xla_runtime_errors", "function"),
     ("zero_jax.interpreters.traceback_util.config", "config", "function"),
-    ("zero_jax.interpreters.traceback_util.config.xla_client", "Any", "class"),
     ("zero_jax.interpreters.traceback_util.config.xla_client", "ArrayImpl", "class"),
     ("zero_jax.interpreters.traceback_util.config.xla_client", "Client", "class"),
     (
@@ -4049,8 +4053,9 @@ STUBS = [
 ]
 
 
-@pytest.mark.parametrize("mod_name, obj_name, obj_type", STUBS)
-def test_generated_stubs(mod_name, obj_name, obj_type):
+@pytest.mark.parametrize(("mod_name", "obj_name", "obj_type"), STUBS)
+def test_generated_stubs(mod_name: ArrayLikeSpec, obj_name: ArrayLikeSpec, obj_type: ArrayLikeSpec) -> None:
+    """Execute ``test_generated_stubs``."""
     mod = importlib.import_module(mod_name)
     obj = getattr(mod, obj_name)
     if obj_type == "function":

@@ -1,60 +1,75 @@
 """Frontend API routing for jax.experimental.x64_context.config.transfer_guard_lib."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
-def global_state(*args: Any, **kwargs: Any) -> Any:
+def global_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``global_state``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def thread_local_state(*args: Any, **kwargs: Any) -> Any:
+def thread_local_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``thread_local_state``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
 class TransferGuardLevel:
     """Frontend state holder for TransferGuardLevel."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+        """Initialize instance with optional configuration attributes.
+
+        Args:
+            *args: Positional arguments.
+            id: Optional identifier.
+            name: Optional name.
+            value: Optional value.
+            dummy: Optional test placeholder attribute.
+            **kwargs: Additional keyword attributes.
+        """
+        self.args = args
+        self.id = id
+        self.name = name
+        self.value = value
+        self.dummy = dummy
+        self.kwargs = kwargs
 
 
 class TransferGuardState:
     """Frontend state holder for TransferGuardState."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+        """Initialize instance with optional configuration attributes.
 
-
-import typing
-
-import ml_switcheroo_compiler
-
-import zero_jax._compiler_proxy_ops as _ops
-
-
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
-
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
-
-        return stub
-    except ImportError:  # pragma: no cover
-
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
-
-        return stub  # pragma: no cover
+        Args:
+            *args: Positional arguments.
+            id: Optional identifier.
+            name: Optional name.
+            value: Optional value.
+            dummy: Optional test placeholder attribute.
+            **kwargs: Additional keyword attributes.
+        """
+        self.args = args
+        self.id = id
+        self.name = name
+        self.value = value
+        self.dummy = dummy
+        self.kwargs = kwargs

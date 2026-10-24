@@ -1,45 +1,110 @@
 """Frontend API routing for jax.scipy.stats.cauchy."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
-def cdf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy cumulative distribution function."""
+def cdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy cumulative distribution function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.cdf(*args, **kwargs)
 
 
-def isf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy distribution inverse survival function."""
+def isf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy distribution inverse survival function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.isf(*args, **kwargs)
 
 
-def logcdf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy log cumulative distribution function."""
+def logcdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy log cumulative distribution function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.logcdf(*args, **kwargs)
 
 
-def logpdf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy log probability distribution function."""
+def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy log probability distribution function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.logpdf(*args, **kwargs)
 
 
-def logsf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy distribution log survival function."""
+def logsf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy distribution log survival function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.logsf(*args, **kwargs)
 
 
-def pdf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy probability distribution function."""
+def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy probability distribution function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.pdf(*args, **kwargs)
 
 
-def ppf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy distribution percent point function."""
+def ppf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy distribution percent point function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.ppf(*args, **kwargs)
 
 
-def sf(*args: Any, **kwargs: Any) -> Any:
-    """Cauchy distribution log survival function."""
+def sf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Cauchy distribution log survival function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.sf(*args, **kwargs)

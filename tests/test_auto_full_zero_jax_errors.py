@@ -1,95 +1,85 @@
 """Tests for zero_jax.errors."""
 
-from typing import Any
+from __future__ import annotations
 
 import pytest
 
 import zero_jax.errors as mod
 
 
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
-
-
 def test_class_ConcretizationTypeError() -> None:
     """Test class ConcretizationTypeError."""
-    try:
-        mod.ConcretizationTypeError()
-    except Exception:
-        pass
+    err = mod.ConcretizationTypeError("msg")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.ConcretizationTypeError):
+        raise err
 
 
 def test_class_JAXIndexError() -> None:
     """Test class JAXIndexError."""
-    try:
-        mod.JAXIndexError()
-    except Exception:
-        pass
+    err = mod.JAXIndexError("msg")
+    assert isinstance(err, IndexError)
+    with pytest.raises(mod.JAXIndexError):
+        raise err
 
 
 def test_class_JAXTypeError() -> None:
     """Test class JAXTypeError."""
-    try:
-        mod.JAXTypeError()
-    except Exception:
-        pass
+    err = mod.JAXTypeError("msg")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.JAXTypeError):
+        raise err
 
 
 def test_class_KeyReuseError() -> None:
     """Test class KeyReuseError."""
-    try:
-        mod.KeyReuseError()
-    except Exception:
-        pass
+    err = mod.KeyReuseError("msg")
+    assert isinstance(err, RuntimeError)
+    with pytest.raises(mod.KeyReuseError):
+        raise err
 
 
 def test_class_NonConcreteBooleanIndexError() -> None:
     """Test class NonConcreteBooleanIndexError."""
-    try:
-        mod.NonConcreteBooleanIndexError()
-    except Exception:
-        pass
+    err = mod.NonConcreteBooleanIndexError("msg")
+    assert isinstance(err, IndexError)
+    with pytest.raises(mod.NonConcreteBooleanIndexError):
+        raise err
 
 
 def test_class_SimplifiedTraceback() -> None:
     """Test class SimplifiedTraceback."""
-    try:
-        mod.SimplifiedTraceback()
-    except Exception:
-        pass
+    tb = mod.SimplifiedTraceback(frames=["f1"])
+    assert tb.frames == ["f1"]
 
 
 def test_class_TracerArrayConversionError() -> None:
     """Test class TracerArrayConversionError."""
-    try:
-        mod.TracerArrayConversionError()
-    except Exception:
-        pass
+    err = mod.TracerArrayConversionError("msg")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerArrayConversionError):
+        raise err
 
 
 def test_class_TracerBoolConversionError() -> None:
     """Test class TracerBoolConversionError."""
-    try:
-        mod.TracerBoolConversionError()
-    except Exception:
-        pass
+    err = mod.TracerBoolConversionError("msg")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerBoolConversionError):
+        raise err
 
 
 def test_class_TracerIntegerConversionError() -> None:
     """Test class TracerIntegerConversionError."""
-    try:
-        mod.TracerIntegerConversionError()
-    except Exception:
-        pass
+    err = mod.TracerIntegerConversionError("msg")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerIntegerConversionError):
+        raise err
 
 
 def test_class_UnexpectedTracerError() -> None:
     """Test class UnexpectedTracerError."""
-    try:
-        mod.UnexpectedTracerError()
-    except Exception:
-        pass
+    err = mod.UnexpectedTracerError("msg")
+    assert isinstance(err, RuntimeError)
+    with pytest.raises(mod.UnexpectedTracerError):
+        raise err

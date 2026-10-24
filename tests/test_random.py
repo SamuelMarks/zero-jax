@@ -1,6 +1,6 @@
-from ml_switcheroo_compiler.core.tensor import TensorConfig
-
 """Tests for zero_jax.random."""
+
+from __future__ import annotations
 
 import numpy as np
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
@@ -9,20 +9,23 @@ from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 from zero_jax.random import fold_in, split
 
 
-def test_random_split_eager():
+def test_random_split_eager() -> None:
+    """Execute ``test_random_split_eager``."""
     key = np.array([0, 0])
     keys = split(key, 2)
     assert keys.shape == (2, 2)
     split(key, 1)
 
 
-def test_random_fold_in_eager():
+def test_random_fold_in_eager() -> None:
+    """Execute ``test_random_fold_in_eager``."""
     key = np.array([0, 0])
     new_key = fold_in(key, 5)
     assert new_key.shape == (2,)
 
 
-def test_random_tracing():
+def test_random_tracing() -> None:
+    """Execute ``test_random_tracing``."""
     _tracer.start_tracing()
     key = ProxyTensor(id="k", shape=(2,))
     keys = split(key, 2)
@@ -35,14 +38,14 @@ def test_random_tracing():
     _tracer.stop_tracing()
 
 
-def test_random_fallback():
+def test_random_fallback() -> None:
+    """Execute ``test_random_fallback``."""
     assert split(None) is None
     assert fold_in(None, 5) is None
 
 
-def test_truncated_normal():
-    import numpy as np
-
+def test_truncated_normal() -> None:
+    """Execute ``test_truncated_normal``."""
     from zero_jax import random
 
     key = random.PRNGKey(0)

@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.util as mod
 
@@ -15,9 +15,7 @@ def test_HashableFunction() -> None:
 
 def test_as_hashable_function() -> None:
     """Test as_hashable_function."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.as_hashable_function", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.as_hashable_function", create=True) as mock_op:
         mod.as_hashable_function()
         mock_op.assert_called_once_with()
 
@@ -59,9 +57,7 @@ def test_split_list() -> None:
 
 def test_split_list_checked() -> None:
     """Test split_list_checked."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.split_list_checked", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.split_list_checked", create=True) as mock_op:
         mod.split_list_checked()
         mock_op.assert_called_once_with()
 

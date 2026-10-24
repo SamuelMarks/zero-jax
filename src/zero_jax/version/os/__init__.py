@@ -1,3 +1,3 @@
 """Frontend API routing for jax.version.os."""
 
-from typing import Any
+from __future__ import annotations

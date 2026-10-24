@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.interpreters.traceback_util.util as mod
 
@@ -72,9 +72,7 @@ def test_Iterator() -> None:
 
 def test_NumpyComplexWarning() -> None:
     """Test NumpyComplexWarning."""
-    obj = mod.NumpyComplexWarning(
-        id=1, name="test_NumpyComplexWarning", value="test_value"
-    )
+    obj = mod.NumpyComplexWarning(id=1, name="test_NumpyComplexWarning", value="test_value")
     assert obj is not None
     assert obj.id == 1
     assert obj.name == "test_NumpyComplexWarning"
@@ -146,18 +144,14 @@ def test_WrapKwArgs() -> None:
 
 def test_as_hashable_function() -> None:
     """Test as_hashable_function."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.as_hashable_function", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.as_hashable_function", create=True) as mock_op:
         mod.as_hashable_function()
         mock_op.assert_called_once_with()
 
 
 def test_assert_unreachable() -> None:
     """Test assert_unreachable."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.assert_unreachable", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.assert_unreachable", create=True) as mock_op:
         mod.assert_unreachable()
         mock_op.assert_called_once_with()
 
@@ -171,9 +165,7 @@ def test_cache() -> None:
 
 def test_canonicalize_axis() -> None:
     """Test canonicalize_axis."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.canonicalize_axis", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.canonicalize_axis", create=True) as mock_op:
         mod.canonicalize_axis()
         mock_op.assert_called_once_with()
 
@@ -208,9 +200,7 @@ def test_clear_all_caches() -> None:
 
 def test_clear_all_weakref_lru_caches() -> None:
     """Test clear_all_weakref_lru_caches."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.clear_all_weakref_lru_caches", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.clear_all_weakref_lru_caches", create=True) as mock_op:
         mod.clear_all_weakref_lru_caches()
         mock_op.assert_called_once_with()
 
@@ -231,9 +221,7 @@ def test_curry() -> None:
 
 def test_distributed_debug_log() -> None:
     """Test distributed_debug_log."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.distributed_debug_log", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.distributed_debug_log", create=True) as mock_op:
         mod.distributed_debug_log()
         mock_op.assert_called_once_with()
 
@@ -340,9 +328,7 @@ def test_split_list() -> None:
 
 def test_split_list_checked() -> None:
     """Test split_list_checked."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.split_list_checked", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.split_list_checked", create=True) as mock_op:
         mod.split_list_checked()
         mock_op.assert_called_once_with()
 
@@ -447,9 +433,7 @@ def test_use_cpp_method() -> None:
 
 def test_weakref_lru_cache() -> None:
     """Test weakref_lru_cache."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.weakref_lru_cache", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.weakref_lru_cache", create=True) as mock_op:
         mod.weakref_lru_cache()
         mock_op.assert_called_once_with()
 

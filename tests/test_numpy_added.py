@@ -1,4 +1,6 @@
-import pytest
+"""Tests for tests/test_numpy_added.py."""
+
+from __future__ import annotations
 
 import zero_jax.numpy as jnp
 

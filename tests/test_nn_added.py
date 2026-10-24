@@ -1,3 +1,7 @@
+"""Tests for tests/test_nn_added.py."""
+
+from __future__ import annotations
+
 import os
 import sys
 
@@ -5,14 +9,14 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-import numpy as np
 
 import zero_jax.nn as jnn
 import zero_jax.numpy as jnp
 
 
 @pytest.mark.skip(reason="Not implemented without numpy")
-def test_nn_added():
+def test_nn_added() -> None:
+    """Execute ``test_nn_added``."""
     x = jnp.array([-2.0, -1.0, 0.0, 1.0, 2.0])
 
     assert jnn.glu(jnp.array([1.0, 2.0, 3.0, 4.0])).shape is not None

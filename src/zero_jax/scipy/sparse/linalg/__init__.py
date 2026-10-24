@@ -1,104 +1,129 @@
 """Frontend API routing for jax.scipy.sparse.linalg."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
-def bicgstab(*args: Any, **kwargs: Any) -> Any:
-    """Use Bi-Conjugate Gradient Stable iteration to solve ``Ax = b``."""
+def bicgstab(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Use Bi-Conjugate Gradient Stable iteration to solve ``Ax = b``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.bicgstab(*args, **kwargs)
 
 
-def cg(*args: Any, **kwargs: Any) -> Any:
-    """Use Conjugate Gradient iteration to solve ``Ax = b``."""
+def cg(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Use Conjugate Gradient iteration to solve ``Ax = b``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.cg(*args, **kwargs)
 
 
-def gmres(*args: Any, **kwargs: Any) -> Any:
-    """GMRES solves the linear system A x = b for x, given A and b."""
+def gmres(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """GMRES solves the linear system A x = b for x, given A and b.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.gmres(*args, **kwargs)
 
 
 class LinearOperator:
-    pass
+    """Frontend class for ``LinearOperator``."""
 
 
 class LinearOperatorAdjoint(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorAdjoint``."""
 
 
 class LinearOperatorBlockDiag(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorBlockDiag``."""
 
 
 class LinearOperatorBlockLowerTriangular(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorBlockLowerTriangular``."""
 
 
 class LinearOperatorCirculant(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorCirculant``."""
 
 
 class LinearOperatorCirculant2D(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorCirculant2D``."""
 
 
 class LinearOperatorCirculant3D(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorCirculant3D``."""
 
 
 class LinearOperatorComposition(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorComposition``."""
 
 
 class LinearOperatorDiag(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorDiag``."""
 
 
 class LinearOperatorFullMatrix(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorFullMatrix``."""
 
 
 class LinearOperatorHouseholder(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorHouseholder``."""
 
 
 class LinearOperatorIdentity(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorIdentity``."""
 
 
 class LinearOperatorInversion(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorInversion``."""
 
 
 class LinearOperatorKronecker(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorKronecker``."""
 
 
 class LinearOperatorLowRankUpdate(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorLowRankUpdate``."""
 
 
 class LinearOperatorLowerTriangular(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorLowerTriangular``."""
 
 
 class LinearOperatorPermutation(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorPermutation``."""
 
 
 class LinearOperatorScaledIdentity(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorScaledIdentity``."""
 
 
 class LinearOperatorToeplitz(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorToeplitz``."""
 
 
 class LinearOperatorTridiag(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorTridiag``."""
 
 
 class LinearOperatorZeros(LinearOperator):
-    pass
+    """Frontend class for ``LinearOperatorZeros``."""

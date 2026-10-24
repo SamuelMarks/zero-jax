@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.interpreters.batching as mod
 
@@ -188,18 +188,14 @@ def test_batch() -> None:
 
 def test_batch_custom_jvp_subtrace() -> None:
     """Test batch_custom_jvp_subtrace."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.batch_custom_jvp_subtrace", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.batch_custom_jvp_subtrace", create=True) as mock_op:
         mod.batch_custom_jvp_subtrace()
         mock_op.assert_called_once_with()
 
 
 def test_batch_custom_vjp_bwd() -> None:
     """Test batch_custom_vjp_bwd."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.batch_custom_vjp_bwd", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.batch_custom_vjp_bwd", create=True) as mock_op:
         mod.batch_custom_vjp_bwd()
         mock_op.assert_called_once_with()
 
@@ -248,9 +244,7 @@ def test_broadcast() -> None:
 
 def test_broadcast_batcher() -> None:
     """Test broadcast_batcher."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.broadcast_batcher", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.broadcast_batcher", create=True) as mock_op:
         mod.broadcast_batcher()
         mock_op.assert_called_once_with()
 
@@ -278,9 +272,7 @@ def test_defvectorized() -> None:
 
 def test_flatten_fun_for_vmap() -> None:
     """Test flatten_fun_for_vmap."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.flatten_fun_for_vmap", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.flatten_fun_for_vmap", create=True) as mock_op:
         mod.flatten_fun_for_vmap()
         mock_op.assert_called_once_with()
 
@@ -329,9 +321,7 @@ def test_reducer_batcher() -> None:
 
 def test_register_vmappable() -> None:
     """Test register_vmappable."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.register_vmappable", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.register_vmappable", create=True) as mock_op:
         mod.register_vmappable()
         mock_op.assert_called_once_with()
 
@@ -345,18 +335,14 @@ def test_to_elt() -> None:
 
 def test_unregister_vmappable() -> None:
     """Test unregister_vmappable."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.unregister_vmappable", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.unregister_vmappable", create=True) as mock_op:
         mod.unregister_vmappable()
         mock_op.assert_called_once_with()
 
 
 def test_vectorized_batcher() -> None:
     """Test vectorized_batcher."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.vectorized_batcher", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.vectorized_batcher", create=True) as mock_op:
         mod.vectorized_batcher()
         mock_op.assert_called_once_with()
 

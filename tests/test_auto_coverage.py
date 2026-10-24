@@ -1,14 +1,18 @@
+"""Tests for tests/test_auto_coverage.py."""
+
+from __future__ import annotations
+
 import os
 import sys
 
 import numpy as np
 import pytest
 
+from zero_jax._types import ArrayLikeSpec
+
 sys.path.insert(
     0,
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")
-    ),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")),
 )
 import jax
 import ml_switcheroo_compiler
@@ -63,10 +67,9 @@ SKIP_OPS = {
 }
 
 
-@pytest.mark.parametrize(
-    "op_name", [op for op in compiler_ops.__all__ if op not in SKIP_OPS]
-)
-def test_op_coverage(op_name, check_allclose):
+@pytest.mark.parametrize("op_name", [op for op in compiler_ops.__all__ if op not in SKIP_OPS])
+def test_op_coverage(op_name: ArrayLikeSpec, check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_op_coverage``."""
     op_func = getattr(compiler_ops, op_name, None)
     if not op_func:
         pytest.skip(f"{op_name} not found in compiler_ops")
@@ -99,6 +102,4 @@ def test_op_coverage(op_name, check_allclose):
             res_j = jax_func(x)
             check_allclose(res_z, res_j)
         except Exception as e2:
-            pytest.skip(
-                f"Dynamic fuzzing failed for {op_name}. Binary err: {e1}, Unary err: {e2}"
-            )
+            pytest.skip(f"Dynamic fuzzing failed for {op_name}. Binary err: {e1}, Unary err: {e2}")

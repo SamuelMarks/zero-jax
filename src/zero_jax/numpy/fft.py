@@ -1,12 +1,13 @@
 """Module documentation."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as ops
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
-def fft(a: Any, n: Any = None, axis: int = -1, norm: Any = None) -> Any:
+def fft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: int = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for fft.
 
     Args:
@@ -16,12 +17,12 @@ def fft(a: Any, n: Any = None, axis: int = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fft(_to_tensor(a)))
 
 
-def rfft(a: Any, n: Any = None, axis: int = -1, norm: Any = None) -> Any:
+def rfft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: int = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for rfft.
 
     Args:
@@ -31,12 +32,12 @@ def rfft(a: Any, n: Any = None, axis: int = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.rfft(_to_tensor(a)))
 
 
-def fft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
+def fft2(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = (-2, -1), norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for fft2.
 
     Args:
@@ -46,19 +47,16 @@ def fft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.fft2(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.fft2(_to_tensor(a), s, axes, norm))
 
 
-def fftfreq(n: Any, d: Any = 1.0, dtype: Any = None) -> Any:
+def fftfreq(n: ArrayLikeSpec, d: ArrayLikeSpec = 1.0, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for fftfreq.
 
     Args:
@@ -67,19 +65,16 @@ def fftfreq(n: Any, d: Any = 1.0, dtype: Any = None) -> Any:
         dtype: Argument dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.fftfreq(n, d, dtype)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.fftfreq(n, d))
 
 
-def fftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
+def fftn(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = None, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for fftn.
 
     Args:
@@ -89,19 +84,16 @@ def fftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.fftn(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.fftn(_to_tensor(a), s, axes, norm))
 
 
-def fftshift(x: Any, axes: Any = None) -> Any:
+def fftshift(x: ArrayLikeSpec, axes: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for fftshift.
 
     Args:
@@ -109,19 +101,16 @@ def fftshift(x: Any, axes: Any = None) -> Any:
         axes: Argument axes.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.fftshift(_to_tensor(x), axes)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.fftshift(_to_tensor(x), axes))
 
 
-def hfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
+def hfft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: ArrayLikeSpec = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for hfft.
 
     Args:
@@ -131,19 +120,16 @@ def hfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.hfft(_to_tensor(a), n, axis, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.hfft(_to_tensor(a), n, axis, norm))
 
 
-def ifft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
+def ifft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: ArrayLikeSpec = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for ifft.
 
     Args:
@@ -153,19 +139,16 @@ def ifft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.ifft(_to_tensor(a), n, axis, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.ifft(_to_tensor(a), n, axis, norm))
 
 
-def ifft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
+def ifft2(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = (-2, -1), norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for ifft2.
 
     Args:
@@ -175,19 +158,16 @@ def ifft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.ifft2(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.ifft2(_to_tensor(a), s, axes, norm))
 
 
-def ifftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
+def ifftn(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = None, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for ifftn.
 
     Args:
@@ -197,19 +177,16 @@ def ifftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.ifftn(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.ifftn(_to_tensor(a), s, axes, norm))
 
 
-def ifftshift(x: Any, axes: Any = None) -> Any:
+def ifftshift(x: ArrayLikeSpec, axes: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for ifftshift.
 
     Args:
@@ -217,19 +194,16 @@ def ifftshift(x: Any, axes: Any = None) -> Any:
         axes: Argument axes.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.ifftshift(_to_tensor(x), axes)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.ifftshift(_to_tensor(x), axes))
 
 
-def ihfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
+def ihfft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: ArrayLikeSpec = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for ihfft.
 
     Args:
@@ -239,19 +213,16 @@ def ihfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.ihfft(_to_tensor(a), n, axis, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.ihfft(_to_tensor(a), n, axis, norm))
 
 
-def irfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
+def irfft(a: ArrayLikeSpec, n: ArrayLikeSpec = None, axis: ArrayLikeSpec = -1, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for irfft.
 
     Args:
@@ -261,19 +232,16 @@ def irfft(a: Any, n: Any = None, axis: Any = -1, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.irfft(_to_tensor(a), n, axis, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.irfft(_to_tensor(a), n, axis, norm))
 
 
-def irfft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
+def irfft2(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = (-2, -1), norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for irfft2.
 
     Args:
@@ -283,19 +251,16 @@ def irfft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.irfft2(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.irfft2(_to_tensor(a), s, axes, norm))
 
 
-def irfftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
+def irfftn(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = None, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for irfftn.
 
     Args:
@@ -305,19 +270,16 @@ def irfftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.irfftn(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.irfftn(_to_tensor(a), s, axes, norm))
 
 
-def rfft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
+def rfft2(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = (-2, -1), norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for rfft2.
 
     Args:
@@ -327,19 +289,16 @@ def rfft2(a: Any, s: Any = None, axes: Any = (-2, -1), norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.rfft2(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.rfft2(_to_tensor(a), s, axes, norm))
 
 
-def rfftfreq(n: Any, d: Any = 1.0, dtype: Any = None) -> Any:
+def rfftfreq(n: ArrayLikeSpec, d: ArrayLikeSpec = 1.0, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for rfftfreq.
 
     Args:
@@ -348,19 +307,16 @@ def rfftfreq(n: Any, d: Any = 1.0, dtype: Any = None) -> Any:
         dtype: Argument dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.rfftfreq(n, d, dtype)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.rfftfreq(n, d))
 
 
-def rfftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
+def rfftn(a: ArrayLikeSpec, s: ArrayLikeSpec = None, axes: ArrayLikeSpec = None, norm: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for rfftn.
 
     Args:
@@ -370,16 +326,13 @@ def rfftn(a: Any, s: Any = None, axes: Any = None, norm: Any = None) -> Any:
         norm: Argument norm.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.rfftn(_to_tensor(a), s, axes, norm)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.rfftn(_to_tensor(a), s, axes, norm))
 
 
 __all__ = [

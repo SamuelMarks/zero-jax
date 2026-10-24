@@ -1,21 +1,26 @@
-from ml_switcheroo_compiler.core.tensor import TensorConfig
-
 """Tests for zero_jax.lax primitives."""
+
+from __future__ import annotations
 
 import pytest
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.lax import cond, scan
 
 
-def test_cond_eager():
+def test_cond_eager() -> None:
+    """Execute ``test_cond_eager``."""
     assert cond(True, lambda x: x + 1, lambda x: x - 1, 5) == 6
     assert cond(False, lambda x: x + 1, lambda x: x - 1, 5) == 4
 
 
-def test_scan_eager():
-    def f(carry, x):
+def test_scan_eager() -> None:
+    """Execute ``test_scan_eager``."""
+
+    def f(carry: ArrayLikeSpec, x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return carry + 1, carry * 2
 
     carry, ys = scan(f, 0, [1, 2, 3])
@@ -23,8 +28,11 @@ def test_scan_eager():
     assert ys == [0, 2, 4]
 
 
-def test_scan_eager_no_xs():
-    def f(carry, x):
+def test_scan_eager_no_xs() -> None:
+    """Execute ``test_scan_eager_no_xs``."""
+
+    def f(carry: ArrayLikeSpec, x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return carry + 1, carry * 2
 
     carry, ys = scan(f, 0, None, length=3)
@@ -35,7 +43,8 @@ def test_scan_eager_no_xs():
         scan(f, 0, None)
 
 
-def test_cond_tracing():
+def test_cond_tracing() -> None:
+    """Execute ``test_cond_tracing``."""
     _tracer.start_tracing()
     pred = ProxyTensor(id="p", shape=())
     x = ProxyTensor(id="x", shape=())
@@ -45,7 +54,8 @@ def test_cond_tracing():
     _tracer.stop_tracing()
 
 
-def test_scan_tracing():
+def test_scan_tracing() -> None:
+    """Execute ``test_scan_tracing``."""
     _tracer.start_tracing()
     init = ProxyTensor(id="i", shape=())
     xs = ProxyTensor(id="xs", shape=(10,))
@@ -56,13 +66,15 @@ def test_scan_tracing():
     _tracer.stop_tracing()
 
 
-def test_stop_gradient():
+def test_stop_gradient() -> None:
+    """Execute ``test_stop_gradient``."""
     from zero_jax.lax import stop_gradient
 
     assert stop_gradient(5) == 5
 
 
-def test_lax_trig():
+def test_lax_trig() -> None:
+    """Execute ``test_lax_trig``."""
     import numpy as np
 
     from zero_jax import lax
@@ -86,7 +98,8 @@ def test_lax_trig():
     np.testing.assert_allclose(lax.atan2(x1, x2), np.arctan2(x1, x2))
 
 
-def test_lax_bitwise_compare():
+def test_lax_bitwise_compare() -> None:
+    """Execute ``test_lax_bitwise_compare``."""
     import numpy as np
 
     from zero_jax import lax
@@ -105,7 +118,8 @@ def test_lax_bitwise_compare():
     np.testing.assert_allclose(lax.le(i1, i2), np.less_equal(i1, i2))
 
 
-def test_lax_math_numeric():
+def test_lax_math_numeric() -> None:
+    """Execute ``test_lax_math_numeric``."""
     import numpy as np
 
     from zero_jax import lax
@@ -123,18 +137,13 @@ def test_lax_math_numeric():
     np.testing.assert_allclose(lax.round(x), np.round(x))
     np.testing.assert_allclose(lax.sort(x), np.sort(x))
 
-    np.testing.assert_allclose(
-        lax.shift_left(i_array, i_array), np.left_shift(i_array, i_array)
-    )
-    np.testing.assert_allclose(
-        lax.shift_right_arithmetic(i_array, i_array), np.right_shift(i_array, i_array)
-    )
-    np.testing.assert_allclose(
-        lax.shift_right_logical(i_array, i_array), np.right_shift(i_array, i_array)
-    )
+    np.testing.assert_allclose(lax.shift_left(i_array, i_array), np.left_shift(i_array, i_array))
+    np.testing.assert_allclose(lax.shift_right_arithmetic(i_array, i_array), np.right_shift(i_array, i_array))
+    np.testing.assert_allclose(lax.shift_right_logical(i_array, i_array), np.right_shift(i_array, i_array))
 
 
-def test_lax_more_functions():
+def test_lax_more_functions() -> None:
+    """Execute ``test_lax_more_functions``."""
     import numpy as np
 
     from zero_jax import lax
@@ -191,7 +200,8 @@ def test_lax_more_functions():
     )
 
 
-def test_lax_fft_linalg():
+def test_lax_fft_linalg() -> None:
+    """Execute ``test_lax_fft_linalg``."""
     import numpy as np
 
     from zero_jax import lax
@@ -204,7 +214,8 @@ def test_lax_fft_linalg():
     _ = lax.linalg.svd(m)
 
 
-def test_lax_neg():
+def test_lax_neg() -> None:
+    """Execute ``test_lax_neg``."""
     import numpy as np
 
     from zero_jax import lax

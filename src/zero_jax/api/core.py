@@ -2,21 +2,33 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+import typing
+from collections.abc import Sequence
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue, DTypeSpec, ShapeTuple, T
+from zero_jax.numpy.lax_numpy import ndarray
+from zero_jax.sharding import NamedSharding
+
+if typing.TYPE_CHECKING:
+    from zero_jax import Device
 
 
 class ShapeDtypeStruct:
-    """An object specifying the shape and dtype of an array.
+    """Object specifying the shape, dtype, and optional sharding of an array.
 
     Attributes:
         shape: A tuple of integers representing the shape.
         dtype: The data type of the array.
+        sharding: Optional sharding specification.
     """
 
     def __init__(
-        self, shape: Tuple[int, ...], dtype: Any, sharding: Any = None
+        self,
+        shape: ShapeTuple,
+        dtype: DTypeSpec,
+        sharding: ConfigValue | NamedSharding = None,
     ) -> None:
-        """Initializes the ShapeDtypeStruct.
+        """Initialize ``ShapeDtypeStruct``.
 
         Args:
             shape: The shape of the expected array.
@@ -29,10 +41,15 @@ class ShapeDtypeStruct:
 
 
 class Shard:
-    """A single data shard of an array."""
+    """A single data shard of an array.
 
-    def __init__(self, device: Any, index: Any) -> None:
-        """Initializes a Shard.
+    Attributes:
+        device: The device where the shard is stored.
+        index: The index slice of this shard.
+    """
+
+    def __init__(self, device: ConfigValue, index: ConfigValue) -> None:
+        """Initialize ``Shard``.
 
         Args:
             device: The device where the shard is stored.
@@ -42,160 +59,163 @@ class Shard:
         self.index = index
 
 
-class NamedSharding:
-    """A sharding that specifies how an array is partitioned across devices."""
-
-    def __init__(self, mesh: Any, spec: Any) -> None:
-        """Initializes NamedSharding.
-
-        Args:
-            mesh: The device mesh.
-            spec: The partition specification.
-        """
-        self.mesh = mesh
-        self.spec = spec
-
-
-def block_until_ready(x: Any) -> Any:
-    """Blocks until the computation for x is complete.
-
-    Since zero-jax executes eagerly or blocks by default on evaluation,
-    this simply returns the input.
+def block_until_ready(x: T) -> T:
+    """Block until the computation for ``x`` is complete.
 
     Args:
-        x: The array or tree of arrays to block on.
+        x: The array or PyTree of arrays to block on.
 
     Returns:
-        The input x.
+        T: The input ``x``.
     """
     return x
 
 
 def default_backend() -> str:
-    """Returns the default backend for execution.
+    """Return the default backend name for execution.
 
     Returns:
-        A string representing the default backend ('cpu' by default).
+        str: Default backend identifier (``"cpu"``).
     """
     return "cpu"
 
 
-def default_device() -> Any:
-    """Returns the default device for execution.
+def default_device() -> Device:
+    """Return the default device for execution.
 
     Returns:
-        A Device object representing the default device.
+        Device: A ``Device`` object representing the default device.
     """
-    from zero_jax import Device  # pragma: no cover
+    from zero_jax import Device
 
-    return Device("cpu")  # pragma: no cover
+    return Device("cpu")
 
 
-def device_count(backend: Any = None) -> int:
-    """Returns the number of devices available.
+def device_count(backend: str | None = None) -> int:
+    """Return the total number of devices available.
 
     Args:
         backend: Optional backend name.
 
     Returns:
-        The total number of devices.
+        int: Total number of devices.
     """
     return 1
 
 
-def local_device_count(backend: Any = None) -> int:
-    """Returns the number of local devices available.
+def local_device_count(backend: str | None = None) -> int:
+    """Return the number of local devices available to the current process.
 
     Args:
         backend: Optional backend name.
 
     Returns:
-        The total number of local devices.
+        int: Number of local devices.
     """
     return 1
 
 
 def process_count() -> int:
-    """Returns the total number of processes in the JAX cluster.
+    """Return the total number of processes in the JAX cluster.
 
     Returns:
-        The number of processes (1 in non-distributed).
+        int: Number of processes (1 in single-process execution).
     """
     return 1
 
 
 def process_index() -> int:
-    """Returns the index of the current process in the JAX cluster.
+    """Return the index of the current process in the JAX cluster.
 
     Returns:
-        The index of the current process (0 in non-distributed).
+        int: Current process index (0 in single-process execution).
     """
     return 0
 
 
 def host_count() -> int:
-    """Returns the total number of hosts in the JAX cluster.
+    """Return the total number of hosts in the JAX cluster.
 
     Returns:
-        The number of hosts (1 in non-distributed).
+        int: Number of hosts.
     """
     return process_count()
 
 
 def host_id() -> int:
-    """Returns the index of the current host in the JAX cluster.
+    """Return the index of the current host in the JAX cluster.
 
     Returns:
-        The index of the current host (0 in non-distributed).
+        int: Current host index.
     """
     return process_index()
 
 
 def host_ids() -> list[int]:
-    """Returns a list of all host IDs in the JAX cluster.
+    """Return a list of all host IDs in the JAX cluster.
 
     Returns:
-        A list of integer host IDs.
+        list[int]: List of integer host IDs.
     """
     return [0]
 
 
-def device_put(x: Any, device: Any = None) -> Any:
-    """Transfers data to the specified device.
+def device_put(x: T, device: ConfigValue = None) -> T:
+    """Transfer data to the specified device.
 
     Args:
-        x: The array or tree of arrays to transfer.
-        device: The target device. If None, the default device is used.
+        x: The array or PyTree of arrays to transfer.
+        device: Optional target device.
 
     Returns:
-        The array(s) on the specified device.
+        T: The transferred value.
     """
     return x
 
 
-def device_put_replicated(x: Any, devices: Any) -> Any:
-    """Replicates data across the specified devices.
+def device_put_replicated(x: T, devices: Sequence[ConfigValue]) -> list[T]:
+    """Replicate data across the specified sequence of devices.
 
     Args:
-        x: The array or tree of arrays to replicate.
-        devices: A sequence of target devices.
+        x: The array or PyTree of arrays to replicate.
+        devices: Sequence of target devices.
 
     Returns:
-        A sequence of arrays replicated on the target devices.
+        list[T]: List of replicated values per device.
     """
     return [x for _ in devices]
 
 
-def device_put_sharded(shards: Any, devices: Any) -> Any:
-    """Constructs an array from a sequence of shards on the specified devices.
+def device_put_sharded(shards: Sequence[ArrayLikeSpec], devices: Sequence[ConfigValue]) -> ndarray:
+    """Construct an array from a sequence of shards on the specified devices.
 
     Args:
-        shards: A sequence of arrays representing the shards.
-        devices: A sequence of target devices.
+        shards: Sequence of arrays representing the shards.
+        devices: Sequence of target devices.
 
     Returns:
-        A sharded array constructed from the inputs.
+        ndarray: Stacked array constructed from ``shards``.
     """
     from zero_jax.numpy import stack
 
     return stack(shards)
+
+
+__all__ = [
+    "NamedSharding",
+    "ShapeDtypeStruct",
+    "Shard",
+    "block_until_ready",
+    "default_backend",
+    "default_device",
+    "device_count",
+    "device_put",
+    "device_put_replicated",
+    "device_put_sharded",
+    "host_count",
+    "host_id",
+    "host_ids",
+    "local_device_count",
+    "process_count",
+    "process_index",
+]

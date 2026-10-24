@@ -1,10 +1,13 @@
 """Tests for zero_jax.tree_util."""
 
+from __future__ import annotations
+
 from zero_jax.tree_util import tree_flatten, tree_unflatten
 
 
-def test_tree_flatten_unflatten():
+def test_tree_flatten_unflatten() -> None:
     # Simple scalar
+    """Execute ``test_tree_flatten_unflatten``."""
     leaves, treedef = tree_flatten(1.0)
     assert leaves == [1.0]
     assert tree_unflatten(treedef, leaves) == 1.0
@@ -31,7 +34,8 @@ def test_tree_flatten_unflatten():
     assert tree_unflatten(treedef, leaves) == nested
 
 
-def test_pytreedef_eq():
+def test_pytreedef_eq() -> None:
+    """Execute ``test_pytreedef_eq``."""
     from zero_jax.tree_util.pytree import tree_structure
 
     d1 = tree_structure({"a": 1, "b": [2, 3]})

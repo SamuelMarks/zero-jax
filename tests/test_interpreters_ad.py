@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.interpreters.ad as mod
 
@@ -80,18 +80,14 @@ def test_backward_pass() -> None:
 
 def test_backward_pass_internal() -> None:
     """Test backward_pass_internal."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.backward_pass_internal", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.backward_pass_internal", create=True) as mock_op:
         mod.backward_pass_internal()
         mock_op.assert_called_once_with()
 
 
 def test_bilinear_transpose() -> None:
     """Test bilinear_transpose."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.bilinear_transpose", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.bilinear_transpose", create=True) as mock_op:
         mod.bilinear_transpose()
         mock_op.assert_called_once_with()
 
@@ -105,9 +101,7 @@ def test_call_transpose() -> None:
 
 def test_closed_backward_pass() -> None:
     """Test closed_backward_pass."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.closed_backward_pass", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.closed_backward_pass", create=True) as mock_op:
         mod.closed_backward_pass()
         mock_op.assert_called_once_with()
 
@@ -163,27 +157,21 @@ def test_f_jvp_traceable() -> None:
 
 def test_get_primitive_transpose() -> None:
     """Test get_primitive_transpose."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.get_primitive_transpose", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.get_primitive_transpose", create=True) as mock_op:
         mod.get_primitive_transpose()
         mock_op.assert_called_once_with()
 
 
 def test_instantiate_zeros() -> None:
     """Test instantiate_zeros."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.instantiate_zeros", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.instantiate_zeros", create=True) as mock_op:
         mod.instantiate_zeros()
         mock_op.assert_called_once_with()
 
 
 def test_is_undefined_primal() -> None:
     """Test is_undefined_primal."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.is_undefined_primal", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.is_undefined_primal", create=True) as mock_op:
         mod.is_undefined_primal()
         mock_op.assert_called_once_with()
 
@@ -239,9 +227,7 @@ def test_linear_transpose() -> None:
 
 def test_linear_transpose2() -> None:
     """Test linear_transpose2."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.linear_transpose2", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.linear_transpose2", create=True) as mock_op:
         mod.linear_transpose2()
         mock_op.assert_called_once_with()
 
@@ -269,18 +255,14 @@ def test_nonzero_outputs() -> None:
 
 def test_nonzero_tangent_outputs() -> None:
     """Test nonzero_tangent_outputs."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.nonzero_tangent_outputs", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.nonzero_tangent_outputs", create=True) as mock_op:
         mod.nonzero_tangent_outputs()
         mock_op.assert_called_once_with()
 
 
 def test_rearrange_binders() -> None:
     """Test rearrange_binders."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.rearrange_binders", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.rearrange_binders", create=True) as mock_op:
         mod.rearrange_binders()
         mock_op.assert_called_once_with()
 
@@ -350,8 +332,6 @@ def test_zeros_like_aval() -> None:
 
 def test_zeros_like_jaxval() -> None:
     """Test zeros_like_jaxval."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.zeros_like_jaxval", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.zeros_like_jaxval", create=True) as mock_op:
         mod.zeros_like_jaxval()
         mock_op.assert_called_once_with()

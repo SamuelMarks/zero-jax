@@ -1,38 +1,39 @@
 """Module documentation."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as ops
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 Deprecated = "Deprecated"
 
 
-def cholesky(a: Any) -> Any:
+def cholesky(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cholesky.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cholesky(_to_tensor(a)))
 
 
-def det(a: Any) -> Any:
+def det(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for det.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.det(_to_tensor(a)))
 
 
-def eigh(a: Any, UPLO: str = "L", symmetrize_input: bool = True) -> Any:
+def eigh(a: ArrayLikeSpec, UPLO: str = "L", symmetrize_input: bool = True) -> ArrayLikeSpec:
     """JAX API implementation for eigh.
 
     Args:
@@ -41,28 +42,24 @@ def eigh(a: Any, UPLO: str = "L", symmetrize_input: bool = True) -> Any:
         symmetrize_input: Argument symmetrize_input.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.eigh(_to_tensor(a))  # pragma: no cover
-    return tuple(_wrap(t) for t in res)  # pragma: no cover
+    return _wrap(ops.eigh(_to_tensor(a)))
 
 
-def eigvals(a: Any) -> Any:
+def eigvals(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for eigvals.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.eigvals(_to_tensor(a))
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+    return _wrap(ops.eigvals(_to_tensor(a)))
 
 
-def eigvalsh(a: Any, UPLO: str = "L") -> Any:
+def eigvalsh(a: ArrayLikeSpec, UPLO: str = "L") -> ArrayLikeSpec:
     """JAX API implementation for eigvalsh.
 
     Args:
@@ -70,24 +67,24 @@ def eigvalsh(a: Any, UPLO: str = "L") -> Any:
         UPLO: Argument UPLO.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    return _wrap(ops.eigvalsh(_to_tensor(a)))  # pragma: no cover
+    return _wrap(ops.eigvalsh(_to_tensor(a)))
 
 
-def inv(a: Any) -> Any:
+def inv(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for inv.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.inv(_to_tensor(a)))
 
 
-def matrix_power(a: Any, n: int) -> Any:
+def matrix_power(a: ArrayLikeSpec, n: int) -> ArrayLikeSpec:
     """JAX API implementation for matrix_power.
 
     Args:
@@ -95,12 +92,12 @@ def matrix_power(a: Any, n: int) -> Any:
         n: Argument n.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.matrix_power(_to_tensor(a), n))
 
 
-def pinv(a: Any, rcond: Any = None, hermitian: bool = False) -> Any:
+def pinv(a: ArrayLikeSpec, rcond: ArrayLikeSpec = None, hermitian: bool = False) -> ArrayLikeSpec:
     """JAX API implementation for pinv.
 
     Args:
@@ -109,12 +106,12 @@ def pinv(a: Any, rcond: Any = None, hermitian: bool = False) -> Any:
         hermitian: Argument hermitian.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.pinv(_to_tensor(a)))
 
 
-def qr(a: Any, mode: str = "reduced") -> Any:
+def qr(a: ArrayLikeSpec, mode: str = "reduced") -> ArrayLikeSpec:
     """JAX API implementation for qr.
 
     Args:
@@ -122,26 +119,24 @@ def qr(a: Any, mode: str = "reduced") -> Any:
         mode: Argument mode.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.qr(_to_tensor(a))
-    return tuple(_wrap(t) for t in res)
+    return _wrap(ops.qr(_to_tensor(a)))
 
 
-def slogdet(a: Any) -> Any:
+def slogdet(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for slogdet.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.slogdet(_to_tensor(a))
-    return tuple(_wrap(t) for t in res)
+    return _wrap(ops.slogdet(_to_tensor(a)))
 
 
-def solve(a: Any, b: Any) -> Any:
+def solve(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for solve.
 
     Args:
@@ -149,14 +144,12 @@ def solve(a: Any, b: Any) -> Any:
         b: Argument b.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.solve(_to_tensor(a), _to_tensor(b)))
 
 
-def svd(
-    a: Any, full_matrices: bool = True, compute_uv: bool = True, hermitian: bool = False
-) -> Any:
+def svd(a: ArrayLikeSpec, full_matrices: bool = True, compute_uv: bool = True, hermitian: bool = False) -> ArrayLikeSpec:
     """JAX API implementation for svd.
 
     Args:
@@ -166,15 +159,12 @@ def svd(
         hermitian: Argument hermitian.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.svd(_to_tensor(a))
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.svd(_to_tensor(a)))
 
 
-def cond(x: Any, p: Any = None) -> Any:
+def cond(x: ArrayLikeSpec, p: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for cond.
 
     Args:
@@ -182,19 +172,18 @@ def cond(x: Any, p: Any = None) -> Any:
         p: Argument p.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.cond(_to_tensor(x), p)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    from ml_switcheroo_compiler.ops.base import get_op
+
+    return _wrap(get_op("Cond")()(_to_tensor(x), p))
 
 
-def cross(x1: Any, x2: Any, axis: Any = -1) -> Any:
+def cross(x1: ArrayLikeSpec, x2: ArrayLikeSpec, axis: ArrayLikeSpec = -1) -> ArrayLikeSpec:
     """JAX API implementation for cross.
 
     Args:
@@ -203,19 +192,12 @@ def cross(x1: Any, x2: Any, axis: Any = -1) -> Any:
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.cross(_to_tensor(x1), _to_tensor(x2), axis)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.cross(_to_tensor(x1), _to_tensor(x2)))
 
 
-def diagonal(x: Any, offset: Any = 0) -> Any:
+def diagonal(x: ArrayLikeSpec, offset: ArrayLikeSpec = 0) -> ArrayLikeSpec:
     """JAX API implementation for diagonal.
 
     Args:
@@ -223,38 +205,28 @@ def diagonal(x: Any, offset: Any = 0) -> Any:
         offset: Argument offset.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.diagonal(_to_tensor(x), offset)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.diagonal(_to_tensor(x), offset=offset))
 
 
-def eig(a: Any) -> Any:
+def eig(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for eig.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.eig(_to_tensor(a))  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.eig(_to_tensor(a)))
 
 
-def lstsq(a: Any, b: Any, rcond: Any = None, numpy_resid: Any = False) -> Any:
+def lstsq(a: ArrayLikeSpec, b: ArrayLikeSpec, rcond: ArrayLikeSpec = None, numpy_resid: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """JAX API implementation for lstsq.
 
     Args:
@@ -264,23 +236,12 @@ def lstsq(a: Any, b: Any, rcond: Any = None, numpy_resid: Any = False) -> Any:
         numpy_resid: Argument numpy_resid.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.lstsq(
-        _to_tensor(a), _to_tensor(b), rcond, numpy_resid
-    )  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.lstsq(_to_tensor(a), _to_tensor(b), rcond=rcond))
 
 
-def matmul(
-    x1: Any, x2: Any, precision: Any = None, preferred_element_type: Any = None
-) -> Any:
+def matmul(x1: ArrayLikeSpec, x2: ArrayLikeSpec, precision: ArrayLikeSpec = None, preferred_element_type: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for matmul.
 
     Args:
@@ -290,21 +251,12 @@ def matmul(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.matmul(
-        _to_tensor(x1), _to_tensor(x2), precision, preferred_element_type
-    )  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.matmul(_to_tensor(x1), _to_tensor(x2)))
 
 
-def matrix_norm(x: Any, keepdims: Any = False, ord: Any = "fro") -> Any:
+def matrix_norm(x: ArrayLikeSpec, keepdims: ArrayLikeSpec = False, ord: ArrayLikeSpec = "fro") -> ArrayLikeSpec:
     """JAX API implementation for matrix_norm.
 
     Args:
@@ -313,19 +265,12 @@ def matrix_norm(x: Any, keepdims: Any = False, ord: Any = "fro") -> Any:
         ord: Argument ord.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.matrix_norm(_to_tensor(x), keepdims, ord)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.matrix_norm(_to_tensor(x), keepdims=keepdims))
 
 
-def matrix_rank(M: Any, rtol: Any = None, tol: Any = Deprecated) -> Any:
+def matrix_rank(M: ArrayLikeSpec, rtol: ArrayLikeSpec = None, tol: ArrayLikeSpec = Deprecated) -> ArrayLikeSpec:
     """JAX API implementation for matrix_rank.
 
     Args:
@@ -334,38 +279,24 @@ def matrix_rank(M: Any, rtol: Any = None, tol: Any = Deprecated) -> Any:
         tol: Argument tol.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.matrix_rank(_to_tensor(M), rtol, tol)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.matrix_rank(_to_tensor(M), tol=rtol))
 
 
-def matrix_transpose(x: Any) -> Any:
+def matrix_transpose(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for matrix_transpose.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.matrix_transpose(_to_tensor(x))  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.matrix_transpose(_to_tensor(x)))
 
 
-def multi_dot(arrays: Any, precision: Any = None) -> Any:
+def multi_dot(arrays: ArrayLikeSpec, precision: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for multi_dot.
 
     Args:
@@ -373,19 +304,12 @@ def multi_dot(arrays: Any, precision: Any = None) -> Any:
         precision: Argument precision.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.multi_dot(_to_tensor(arrays), precision)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.multi_dot([_to_tensor(arr) for arr in arrays]))
 
 
-def norm(x: Any, ord: Any = None, axis: Any = None, keepdims: Any = False) -> Any:
+def norm(x: ArrayLikeSpec, ord: ArrayLikeSpec = None, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """JAX API implementation for norm.
 
     Args:
@@ -395,19 +319,16 @@ def norm(x: Any, ord: Any = None, axis: Any = None, keepdims: Any = False) -> An
         keepdims: Argument keepdims.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.norm(_to_tensor(x), ord, axis, keepdims)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.norm(_to_tensor(x), ord, axis, keepdims))
 
 
-def outer(x1: Any, x2: Any) -> Any:
+def outer(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for outer.
 
     Args:
@@ -415,44 +336,38 @@ def outer(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.outer(_to_tensor(x1), _to_tensor(x2))  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.outer(_to_tensor(x1), _to_tensor(x2)))
 
 
-def svdvals(x: Any) -> Any:
+def svdvals(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for svdvals.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
     # by catching TypeError and retrying, or just passing them if possible.
     # But for a robust API, we just pass what we can.
     # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.svdvals(_to_tensor(x))  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.svdvals(_to_tensor(x)))
 
 
 def tensordot(
-    x1: Any,
-    x2: Any,
-    axes: Any = 2,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    x1: ArrayLikeSpec,
+    x2: ArrayLikeSpec,
+    axes: ArrayLikeSpec = 2,
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for tensordot.
 
     Args:
@@ -463,21 +378,12 @@ def tensordot(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.tensordot(  # pragma: no cover
-        _to_tensor(x1), _to_tensor(x2), axes, precision, preferred_element_type
-    )
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.tensordot(_to_tensor(x1), _to_tensor(x2), axes=axes))
 
 
-def tensorinv(a: Any, ind: Any = 2) -> Any:
+def tensorinv(a: ArrayLikeSpec, ind: ArrayLikeSpec = 2) -> ArrayLikeSpec:
     """JAX API implementation for tensorinv.
 
     Args:
@@ -485,19 +391,12 @@ def tensorinv(a: Any, ind: Any = 2) -> Any:
         ind: Argument ind.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.tensorinv(_to_tensor(a), ind)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.tensorinv(_to_tensor(a), ind))
 
 
-def tensorsolve(a: Any, b: Any, axes: Any = None) -> Any:
+def tensorsolve(a: ArrayLikeSpec, b: ArrayLikeSpec, axes: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for tensorsolve.
 
     Args:
@@ -506,19 +405,12 @@ def tensorsolve(a: Any, b: Any, axes: Any = None) -> Any:
         axes: Argument axes.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.tensorsolve(_to_tensor(a), _to_tensor(b), axes)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.tensorsolve(_to_tensor(a), _to_tensor(b), axes))
 
 
-def trace(x: Any, offset: Any = 0, dtype: Any = None) -> Any:
+def trace(x: ArrayLikeSpec, offset: ArrayLikeSpec = 0, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for trace.
 
     Args:
@@ -527,25 +419,18 @@ def trace(x: Any, offset: Any = 0, dtype: Any = None) -> Any:
         dtype: Argument dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.trace(_to_tensor(x), offset, dtype)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.trace(_to_tensor(x), offset=offset))
 
 
 def vecdot(
-    x1: Any,
-    x2: Any,
-    axis: Any = -1,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    x1: ArrayLikeSpec,
+    x2: ArrayLikeSpec,
+    axis: ArrayLikeSpec = -1,
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for vecdot.
 
     Args:
@@ -556,21 +441,12 @@ def vecdot(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.vecdot(  # pragma: no cover
-        _to_tensor(x1), _to_tensor(x2), axis, precision, preferred_element_type
-    )
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.vecdot(_to_tensor(x1), _to_tensor(x2), axis=axis))
 
 
-def vector_norm(x: Any, axis: Any = None, keepdims: Any = False, ord: Any = 2) -> Any:
+def vector_norm(x: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False, ord: ArrayLikeSpec = 2) -> ArrayLikeSpec:
     """JAX API implementation for vector_norm.
 
     Args:
@@ -580,16 +456,9 @@ def vector_norm(x: Any, axis: Any = None, keepdims: Any = False, ord: Any = 2) -
         ord: Argument ord.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
-    res = ops.vector_norm(_to_tensor(x), axis, keepdims, ord)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.vector_norm(_to_tensor(x), ord=ord, axis=axis, keepdims=keepdims))
 
 
 __all__ = [

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from ml_switcheroo_compiler import random
 
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
-def split(key: Any, num: int = 2) -> Any:
+def split(key: ArrayLikeSpec, num: int = 2) -> ArrayLikeSpec:
     """Splits a PRNG key into `num` new keys.
 
     Args:
@@ -21,10 +20,12 @@ def split(key: Any, num: int = 2) -> Any:
     """
     if key is None:
         return None
-    return _wrap(random.split(_to_tensor(key), num))
+    from ml_switcheroo_compiler.ops import random_stateless
+
+    return _wrap(random_stateless.stateless_split(_to_tensor(key), num))
 
 
-def fold_in(key: Any, data: Any) -> Any:
+def fold_in(key: ArrayLikeSpec, data: ArrayLikeSpec) -> ArrayLikeSpec:
     """Folds in data to a PRNG key to derive a new key.
 
     Args:
@@ -36,11 +37,13 @@ def fold_in(key: Any, data: Any) -> Any:
     """
     if key is None:
         return None
+    from ml_switcheroo_compiler.ops import random_stateless
+
     key_t = _to_tensor(key)
-    return _wrap(random.fold_in(key_t, data))
+    return _wrap(random_stateless.stateless_fold_in(key_t, data))
 
 
-def PRNGKey(seed: int) -> Any:
+def PRNGKey(seed: int) -> ArrayLikeSpec:
     """Creates a PRNG key given an integer seed.
 
     Args:
@@ -49,12 +52,12 @@ def PRNGKey(seed: int) -> Any:
     Returns:
         A PRNG key.
     """
-    return _wrap(random.PRNGKey(seed))
+    from zero_jax.numpy.lax_numpy import array
+
+    return array([0, int(seed)])
 
 
-def uniform(
-    key: Any, shape: Any, dtype: Any = None, minval: float = 0.0, maxval: float = 1.0
-) -> Any:
+def uniform(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None, minval: float = 0.0, maxval: float = 1.0) -> ArrayLikeSpec:
     """Samples uniform random values from a given key.
 
     Args:
@@ -71,14 +74,10 @@ def uniform(
 
     if dtype is None:
         dtype = config.default_float_dtype
-    return _wrap(
-        random.uniform(
-            _to_tensor(key), shape=shape, dtype=dtype, minval=minval, maxval=maxval
-        )
-    )
+    return _wrap(random.uniform(_to_tensor(key), shape=shape, dtype=dtype, minval=minval, maxval=maxval))
 
 
-def normal(key: Any, shape: Any, dtype: Any = None) -> Any:
+def normal(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Samples standard normal random values from a given key.
 
     Args:
@@ -96,7 +95,7 @@ def normal(key: Any, shape: Any, dtype: Any = None) -> Any:
     return _wrap(random.normal(_to_tensor(key), shape=shape, dtype=dtype))
 
 
-def randint(key: Any, shape: Any, minval: int, maxval: int, dtype: Any = None) -> Any:
+def randint(key: ArrayLikeSpec, shape: ArrayLikeSpec, minval: int, maxval: int, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Samples uniform random integers from a given key.
 
     Args:
@@ -113,14 +112,10 @@ def randint(key: Any, shape: Any, minval: int, maxval: int, dtype: Any = None) -
 
     if dtype is None:
         dtype = DType.Int32
-    return _wrap(
-        random.randint(
-            _to_tensor(key), shape=shape, minval=minval, maxval=maxval, dtype=dtype
-        )
-    )
+    return _wrap(random.randint(_to_tensor(key), shape=shape, minval=minval, maxval=maxval, dtype=dtype))
 
 
-def bernoulli(key: Any, p: float = 0.5, shape: Any = None) -> Any:
+def bernoulli(key: ArrayLikeSpec, p: float = 0.5, shape: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Samples Bernoulli random variables from a given key.
 
     Args:
@@ -136,7 +131,7 @@ def bernoulli(key: Any, p: float = 0.5, shape: Any = None) -> Any:
     return _wrap(random.bernoulli(_to_tensor(key), p=p, shape=shape))
 
 
-def categorical(key: Any, logits: Any, axis: int = -1, shape: Any = None) -> Any:
+def categorical(key: ArrayLikeSpec, logits: ArrayLikeSpec, axis: int = -1, shape: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Samples categorical random variables from a given key.
 
     Args:
@@ -150,12 +145,10 @@ def categorical(key: Any, logits: Any, axis: int = -1, shape: Any = None) -> Any
     """
     from ml_switcheroo_compiler import random
 
-    return _wrap(
-        random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape)
-    )
+    return _wrap(random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape))
 
 
-def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> Any:
+def permutation(key: ArrayLikeSpec, x: ArrayLikeSpec, axis: int = 0, independent: bool = False) -> ArrayLikeSpec:
     """Randomly permutes a sequence or array.
 
     Args:
@@ -169,10 +162,12 @@ def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> A
     """
     from ml_switcheroo_compiler import random
 
+    from zero_jax._types import ArrayProtocol
+
     return _wrap(
         random.permutation(
             _to_tensor(key),
-            _to_tensor(x) if hasattr(x, "shape") else x,
+            _to_tensor(x) if isinstance(x, ArrayProtocol) else x,
             axis=axis,
             independent=independent,
         )
@@ -180,13 +175,13 @@ def permutation(key: Any, x: Any, axis: int = 0, independent: bool = False) -> A
 
 
 def choice(
-    key: Any,
-    a: Any,
-    shape: Any = (),
+    key: ArrayLikeSpec,
+    a: ArrayLikeSpec,
+    shape: ArrayLikeSpec = (),
     replace: bool = True,
-    p: Any = None,
+    p: ArrayLikeSpec = None,
     axis: int = 0,
-) -> Any:
+) -> ArrayLikeSpec:
     """Generates a random sample from a given 1-D array.
 
     Args:
@@ -216,9 +211,7 @@ def choice(
     )
 
 
-def truncated_normal(
-    key: Any, lower: Any, upper: Any, shape: Any = None, dtype: Any = None
-) -> Any:
+def truncated_normal(key: ArrayLikeSpec, lower: ArrayLikeSpec, upper: ArrayLikeSpec, shape: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Samples truncated normal random values from a given key.
 
     Args:

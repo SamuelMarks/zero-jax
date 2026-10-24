@@ -1,83 +1,103 @@
 """Frontend API routing for jax.errors."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ConfigValue
 
 
-class ConcretizationTypeError(Exception):
-    """This error occurs when a JAX Tracer object is used in a context where a"""
+class _BaseJAXException(Exception):
+    """Base exception class for JAX-compatible error types."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+    def __init__(
+        self,
+        *args: ConfigValue,
+        id: ConfigValue = None,
+        name: ConfigValue = None,
+        value: ConfigValue = None,
+    ) -> None:
+        """Initialize the JAX exception with message arguments and optional metadata.
 
-
-class JAXIndexError(Exception):
-    """JAX index error."""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
-
-
-class JAXTypeError(Exception):
-    """JAX type error."""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
-
-
-class KeyReuseError(Exception):
-    """This error occurs when a PRNG key is reused in an unsafe manner."""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+        Args:
+            *args: Positional exception message arguments.
+            id: Optional identifier metadata.
+            name: Optional name metadata.
+            value: Optional value metadata.
+        """
+        super().__init__(*args)
+        self.id = id
+        self.name = name
+        self.value = value
 
 
-class NonConcreteBooleanIndexError(Exception):
-    """This error occurs when a program attempts to use non-concrete boolean indices"""
+class ConcretizationTypeError(_BaseJAXException, TypeError):
+    """Error raised when a JAX Tracer object is used where a concrete value is required."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+
+class JAXIndexError(_BaseJAXException, IndexError):
+    """Error raised for invalid out-of-bounds or malformed indexing in JAX operations."""
+
+
+class JAXTypeError(_BaseJAXException, TypeError):
+    """Error raised for invalid argument or operand types in JAX operations."""
+
+
+class KeyReuseError(_BaseJAXException, RuntimeError):
+    """Error raised when a PRNG key is reused in an unsafe manner."""
+
+
+class NonConcreteBooleanIndexError(_BaseJAXException, IndexError):
+    """Error raised when a program attempts to use non-concrete boolean indices."""
 
 
 class SimplifiedTraceback:
-    """Simplified traceback."""
+    """Context manager and helper for simplified JAX tracebacks."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+    def __init__(
+        self,
+        frames: ConfigValue = None,
+        id: ConfigValue = None,
+        name: ConfigValue = None,
+        value: ConfigValue = None,
+    ) -> None:
+        """Initialize a ``SimplifiedTraceback`` instance.
 
-
-class TracerArrayConversionError(Exception):
-    """This error occurs when a program attempts to convert a JAX Tracer object into"""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
-
-
-class TracerBoolConversionError(Exception):
-    """This error occurs when a traced value in JAX is used in a context where a"""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
-
-
-class TracerIntegerConversionError(Exception):
-    """This error can occur when a JAX Tracer object is used in a context where a"""
-
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+        Args:
+            frames: Optional sequence of traceback frames.
+            id: Optional identifier metadata.
+            name: Optional name metadata.
+            value: Optional value metadata.
+        """
+        self.frames = frames
+        self.id = id
+        self.name = name
+        self.value = value
 
 
-class UnexpectedTracerError(Exception):
-    """This error occurs when you use a JAX value that has leaked out of a function."""
+class TracerArrayConversionError(_BaseJAXException, TypeError):
+    """Error raised when converting a JAX Tracer object into a standard NumPy array."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+
+class TracerBoolConversionError(_BaseJAXException, TypeError):
+    """Error raised when a traced value in JAX is used in a Python boolean context."""
+
+
+class TracerIntegerConversionError(_BaseJAXException, TypeError):
+    """Error raised when a JAX Tracer object is used where a Python integer is required."""
+
+
+class UnexpectedTracerError(_BaseJAXException, RuntimeError):
+    """Error raised when using a JAX value that has leaked out of a traced function."""
+
+
+__all__ = [
+    "ConcretizationTypeError",
+    "JAXIndexError",
+    "JAXTypeError",
+    "KeyReuseError",
+    "NonConcreteBooleanIndexError",
+    "SimplifiedTraceback",
+    "TracerArrayConversionError",
+    "TracerBoolConversionError",
+    "TracerIntegerConversionError",
+    "UnexpectedTracerError",
+]

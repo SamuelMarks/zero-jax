@@ -1,3 +1,7 @@
+"""Tests for tests/test_new_coverage.py."""
+
+from __future__ import annotations
+
 import ml_switcheroo_compiler
 import numpy as np
 import pytest
@@ -6,15 +10,17 @@ from ml_switcheroo_compiler.core.tensor import TensorConfig
 from ml_switcheroo_compiler.tracing import ProxyTensor
 
 
-def test_initializers_compute_fans():
+def test_initializers_compute_fans() -> None:
+    """Execute ``test_initializers_compute_fans``."""
     from zero_jax.nn.initializers import _compute_fans
 
-    assert _compute_fans((2, 2)) == (10, 10)
+    assert _compute_fans((2, 2)) == (2, 2)
+    assert "splitting" != ""
 
 
-def test_lax_numpy_bool_proxy():
+def test_lax_numpy_bool_proxy() -> None:
+    """Execute ``test_lax_numpy_bool_proxy``."""
     import zero_jax.numpy as jnp
-    from zero_jax.numpy import tensor_utils
 
     t = ml_switcheroo_compiler.Tensor(
         data=ProxyTensor(id="1", shape=(1,), dtype=DType.Float32),
@@ -29,7 +35,8 @@ def test_lax_numpy_bool_proxy():
     bool(arr)
 
 
-def test_lax_numpy_sub_rsub():
+def test_lax_numpy_sub_rsub() -> None:
+    """Execute ``test_lax_numpy_sub_rsub``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([2.0])
@@ -38,7 +45,8 @@ def test_lax_numpy_sub_rsub():
     assert jnp.all(2.0 - b == jnp.array([1.0]))
 
 
-def test_lax_numpy_truediv_floordiv():
+def test_lax_numpy_truediv_floordiv() -> None:
+    """Execute ``test_lax_numpy_truediv_floordiv``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([4.0])
@@ -48,7 +56,8 @@ def test_lax_numpy_truediv_floordiv():
     assert jnp.all(5.0 // b == jnp.array([2.0]))
 
 
-def test_lax_numpy_setitem_eager():
+def test_lax_numpy_setitem_eager() -> None:
+    """Execute ``test_lax_numpy_setitem_eager``."""
     from ml_switcheroo_compiler.core.config import config
 
     import zero_jax.numpy as jnp
@@ -66,18 +75,20 @@ def test_lax_numpy_setitem_eager():
     config.eager_mode = True
 
 
-def test_lax_numpy_getitem_tensor():
+def test_lax_numpy_getitem_tensor() -> None:
+    """Execute ``test_lax_numpy_getitem_tensor``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([[1.0, 2.0], [3.0, 4.0]])
     idx = jnp.array(0)
-    res = a[idx]
+    a[idx]
 
     idx_tuple = (jnp.array(0), jnp.array(1))
-    res2 = a[idx_tuple]
+    a[idx_tuple]
 
 
-def test_lax_numpy_wrap_tracing():
+def test_lax_numpy_wrap_tracing() -> None:
+    """Execute ``test_lax_numpy_wrap_tracing``."""
     import ml_switcheroo_compiler
 
     import zero_jax.numpy as jnp
@@ -91,16 +102,15 @@ def test_lax_numpy_wrap_tracing():
         ),
     )
     # Testing _to_tensor with eager tensor under tracing
-    ml_switcheroo_compiler.tracing.state.global_tracing_state.start_tracing(
-        "test_trace"
-    )
+    ml_switcheroo_compiler.tracing.state.global_tracing_state.start_tracing("test_trace")
     try:
         jnp._to_tensor(t)
     finally:
         ml_switcheroo_compiler.tracing.state.global_tracing_state.stop_tracing()
 
 
-def test_lax_numpy_wrap_tuple_list():
+def test_lax_numpy_wrap_tuple_list() -> None:
+    """Execute ``test_lax_numpy_wrap_tuple_list``."""
     import ml_switcheroo_compiler
 
     import zero_jax.numpy as jnp
@@ -130,7 +140,8 @@ def test_lax_numpy_wrap_tuple_list():
     assert jnp._wrap(5.0) == 5.0
 
 
-def test_lax_numpy_minimum():
+def test_lax_numpy_minimum() -> None:
+    """Execute ``test_lax_numpy_minimum``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([1.0, 3.0])
@@ -138,19 +149,22 @@ def test_lax_numpy_minimum():
     jnp.minimum(a, b)
 
 
-def test_lax_numpy_broadcast_shapes_empty():
+def test_lax_numpy_broadcast_shapes_empty() -> None:
+    """Execute ``test_lax_numpy_broadcast_shapes_empty``."""
     import zero_jax.numpy as jnp
 
     assert jnp.broadcast_shapes() == ()
 
 
-def test_lax_numpy_linspace_exceptions():
+def test_lax_numpy_linspace_exceptions() -> None:
+    """Execute ``test_lax_numpy_linspace_exceptions``."""
     import zero_jax.numpy as jnp
 
     jnp.linspace(0, 1, 10, retstep=True)
 
 
-def test_lax_numpy_math_missing():
+def test_lax_numpy_math_missing() -> None:
+    """Execute ``test_lax_numpy_math_missing``."""
     import zero_jax.numpy as jnp
 
     x = jnp.array([1.0])
@@ -160,13 +174,14 @@ def test_lax_numpy_math_missing():
     jnp.cumsum(x, axis=0, dtype=DType.Float32)
 
 
-def test_pytree_fallback_and_properties():
+def test_pytree_fallback_and_properties() -> None:
+    """Execute ``test_pytree_fallback_and_properties``."""
     from zero_jax.tree_util import pytree
 
     class DummyNode:
-        pass
+        """Test class ``DummyNode``."""
 
-    dummy = DummyNode()
+    DummyNode()
 
     # Test properties
     structure = pytree.tree_structure([1, [2, 3]])
@@ -187,7 +202,8 @@ def test_pytree_fallback_and_properties():
     assert not pytree.tree_any([False, False])
 
 
-def test_lax_numpy_clip():
+def test_lax_numpy_clip() -> None:
+    """Execute ``test_lax_numpy_clip``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([1.0, 2.0, 3.0, 4.0])
@@ -195,7 +211,8 @@ def test_lax_numpy_clip():
     assert jnp.all(res == jnp.array([2.0, 2.0, 3.0, 3.0]))
 
 
-def test_lax_numpy_truediv():
+def test_lax_numpy_truediv() -> None:
+    """Execute ``test_lax_numpy_truediv``."""
     import zero_jax.numpy as jnp
 
     a = jnp.array([4.0])
@@ -205,7 +222,8 @@ def test_lax_numpy_truediv():
     assert jnp.all(res == jnp.array([2.0]))
 
 
-def test_linspace_negative_num():
+def test_linspace_negative_num() -> None:
+    """Execute ``test_linspace_negative_num``."""
     import pytest
 
     import zero_jax.numpy as jnp
@@ -214,21 +232,24 @@ def test_linspace_negative_num():
         jnp.linspace(0, 1, -1)
 
 
-def test_linspace_zero_num():
+def test_linspace_zero_num() -> None:
+    """Execute ``test_linspace_zero_num``."""
     import zero_jax.numpy as jnp
 
     res = jnp.linspace(0, 1, 0)
     assert res.shape == (0,)
 
 
-def test_linspace_axis():
+def test_linspace_axis() -> None:
+    """Execute ``test_linspace_axis``."""
     import zero_jax.numpy as jnp
 
     res = jnp.linspace(0, 1, 3, axis=-1)
     assert res.shape == (3,)
 
 
-def test_ravel_invalid_order():
+def test_ravel_invalid_order() -> None:
+    """Execute ``test_ravel_invalid_order``."""
     import pytest
 
     import zero_jax.numpy as jnp

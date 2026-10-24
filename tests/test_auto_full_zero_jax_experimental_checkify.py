@@ -1,47 +1,36 @@
 """Tests for zero_jax.experimental.checkify."""
 
-from typing import Any
+from __future__ import annotations
 
 import pytest
 
 import zero_jax.experimental.checkify as mod
-
-
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
-
-
-def test_Callable() -> None:
-    """Test Callable."""
-    try:
-        mod.Callable()
-    except Exception:
-        pass
+from zero_jax._types import ArrayLikeSpec
 
 
 def test_class_ErrorCategory() -> None:
     """Test class ErrorCategory."""
-    try:
-        mod.ErrorCategory()
-    except Exception:
-        pass
+    cat = mod.ErrorCategory("custom", id=1, value="v")
+    assert cat.name == "custom"
+    assert cat.id == 1
+    assert cat.value == "v"
 
 
-def test_check() -> None:
-    """Test check."""
-    try:
-        mod.check(1.0, 1.0)
-    except Exception:
-        pass
+def test_check_and_checkify() -> None:
+    """Test check and checkify integration."""
 
+    def fn(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Checked function."""
+        mod.check(x != 0, "zero division")
+        return x
 
-def test_checkify() -> None:
-    """Test checkify."""
-    try:
-        mod.checkify(1.0)
-    except Exception:
-        pass
+    checked = mod.checkify(fn)
+    err1, out1 = checked(2)
+    assert err1 is None
+    assert out1 == 2
+
+    err2, out2 = checked(0)
+    assert err2 is not None
+    assert out2 == 0
+    with pytest.raises(mod.JaxRuntimeError, match="zero division"):
+        err2.throw()

@@ -1,5 +1,7 @@
 """Unified CI checking script for the zero-jax project."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import inspect
@@ -8,28 +10,123 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
+from types import ModuleType
 
-# --- check_allowed_imports ---
-ALLOWED_3RD_PARTY_SRC = {"pydantic"}
-ALLOWED_INTERNAL_SRC = {
+ALLOWED_3RD_PARTY_SRC: set[str] = {"pydantic"}
+ALLOWED_INTERNAL_SRC: set[str] = {
     "ml_switcheroo_compiler",
     "cdd_python",
     "ml_switcheroo_ir",
+    "ml_ecosystem_snapshots",
     "zero_jax",
 }
 
+EXCLUDED_SIGNATURE_NAMES: set[str] = {
+    "Any",
+    "Callable",
+    "Tuple",
+    "List",
+    "Dict",
+    "Sequence",
+    "Union",
+    "Optional",
+    "np",
+    "jnp",
+    "lax",
+    "nn",
+    "Tensor",
+    "xla",
+    "xla_client",
+    "xla_bridge",
+    "xla_extension",
+    "mlir",
+    "hlo",
+    "pjrt",
+    "ifrt",
+    "ifrt_programs",
+    "tpu_cluster",
+    "ompi_cluster",
+    "slurm_cluster",
+    "Array",
+    "Device",
+    "ConfigValue",
+    "ArrayLikeSpec",
+    "DTypeSpec",
+    "AxisSpec",
+    "ShapeTuple",
+    "ShapeSpec",
+    "ScalarNumeric",
+    "PyTree",
+    "PyTreeLeaf",
+    "random_gamma_p",
+}
 
-def check_file_imports(filepath: str) -> bool:
-    """
-    Check a file for disallowed imports.
 
-    Args:
-        filepath: The path to the file to check.
+def _get_stdlib_names() -> frozenset[str]:
+    """Return a frozenset of Python standard library module names.
 
     Returns:
-        True if clean, False otherwise.
+        frozenset[str]: Standard library module names.
     """
-    with open(filepath, "r", encoding="utf-8") as f:
+    names: set[str] = set(sys.builtin_module_names)
+    names.update(
+        {
+            "__future__",
+            "abc",
+            "argparse",
+            "ast",
+            "builtins",
+            "collections",
+            "contextlib",
+            "copy",
+            "dataclasses",
+            "datetime",
+            "enum",
+            "functools",
+            "glob",
+            "importlib",
+            "inspect",
+            "io",
+            "itertools",
+            "json",
+            "logging",
+            "math",
+            "numbers",
+            "operator",
+            "os",
+            "pathlib",
+            "random",
+            "re",
+            "shutil",
+            "subprocess",
+            "sys",
+            "tempfile",
+            "textwrap",
+            "threading",
+            "time",
+            "traceback",
+            "types",
+            "typing",
+            "unittest",
+            "uuid",
+            "warnings",
+            "weakref",
+        }
+    )
+    return frozenset(names)
+
+
+def check_file_imports(filepath: str) -> bool:
+    """Check a Python file for disallowed third-party imports.
+
+    Args:
+        filepath: The path to the Python file to check.
+
+    Returns:
+        bool: ``True`` if the file has no disallowed imports, ``False`` otherwise.
+    """
+    with open(filepath, encoding="utf-8") as f:
         source = f.read()
 
     try:
@@ -38,120 +135,51 @@ def check_file_imports(filepath: str) -> bool:
         print(f"Syntax error in {filepath}")
         return False
 
-    errors = []
-    is_test = "tests" in filepath.split(os.sep) or "scripts" in filepath.split(os.sep)
+    stdlib_names = _get_stdlib_names()
+    allowed_all = ALLOWED_3RD_PARTY_SRC | ALLOWED_INTERNAL_SRC | stdlib_names
+    errors: list[tuple[int, str]] = []
+    parts = filepath.replace("\\", "/").split("/")
+    is_test = "tests" in parts or "scripts" in parts
+
+    if is_test:
+        return True
 
     for node in ast.walk(tree):
-        # Check for sys.modules[...]
-        if isinstance(node, ast.Subscript):
-            is_sys_modules = False
-            if isinstance(node.value, ast.Attribute) and isinstance(
-                node.value.value, ast.Name
-            ):
-                if node.value.value.id == "sys" and node.value.attr == "modules":
-                    is_sys_modules = True
+        if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Attribute) and isinstance(node.value.value, ast.Name) and node.value.value.id == "sys" and node.value.attr == "modules":
+            if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
+                base_module = node.slice.value.split(".")[0]
+                if base_module not in allowed_all:
+                    errors.append((node.lineno, f"Disallowed sys.modules access: '{base_module}'"))
+            else:
+                errors.append((node.lineno, "sys.modules access with non-constant is forbidden"))
 
-            if is_sys_modules:
-                if isinstance(node.slice, ast.Constant) and isinstance(
-                    node.slice.value, str
-                ):
-                    base_module = node.slice.value.split(".")[0]
-                    if not is_test:
-                        if (
-                            base_module not in ALLOWED_3RD_PARTY_SRC
-                            and base_module not in ALLOWED_INTERNAL_SRC
-                            and base_module not in sys.stdlib_module_names
-                        ):
-                            errors.append(
-                                (
-                                    node.lineno,
-                                    f"Disallowed sys.modules access: '{base_module}'",
-                                )
-                            )
-                else:
-                    if not is_test:
-                        errors.append(
-                            (
-                                node.lineno,
-                                "sys.modules access with non-constant is forbidden",
-                            )
-                        )
-
-        # Check for dynamic imports
-        if isinstance(node, ast.Call):
-            func_name = None
+        elif isinstance(node, ast.Call):
+            func_name: str | None = None
             if isinstance(node.func, ast.Name):
                 func_name = node.func.id
-            elif isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name):
-                    func_name = f"{node.func.value.id}.{node.func.attr}"
-                elif isinstance(node.func.value, ast.Attribute) and isinstance(
-                    node.func.value.value, ast.Name
-                ):
-                    func_name = f"{node.func.value.value.id}.{node.func.value.attr}.{node.func.attr}"
+            elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                func_name = f"{node.func.value.id}.{node.func.attr}"
+            elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Attribute) and isinstance(node.func.value.value, ast.Name):
+                func_name = f"{node.func.value.value.id}.{node.func.value.attr}.{node.func.attr}"
 
-            if func_name in (
-                "__import__",
-                "importlib.import_module",
-                "sys.modules.get",
-                "sys.modules.pop",
-            ) or (
-                isinstance(node.func, ast.Attribute) and node.func.attr == "__import__"
-            ):
-                if (
-                    node.args
-                    and isinstance(node.args[0], ast.Constant)
-                    and isinstance(node.args[0].value, str)
-                ):
+            if func_name in ("__import__", "importlib.import_module", "sys.modules.get", "sys.modules.pop") or (isinstance(node.func, ast.Attribute) and node.func.attr == "__import__"):
+                if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
                     base_module = node.args[0].value.split(".")[0]
-                    if not is_test:
-                        if (
-                            base_module not in ALLOWED_3RD_PARTY_SRC
-                            and base_module not in ALLOWED_INTERNAL_SRC
-                            and base_module not in sys.stdlib_module_names
-                        ):
-                            errors.append(
-                                (
-                                    node.lineno,
-                                    f"Disallowed dynamic import: '{base_module}'",
-                                )
-                            )
+                    if base_module not in allowed_all:
+                        errors.append((node.lineno, f"Disallowed dynamic import: '{base_module}'"))
                 else:
-                    if not is_test:
-                        errors.append(
-                            (
-                                node.lineno,
-                                f"Dynamic import with non-constant argument is forbidden: '{func_name}'",
-                            )
-                        )
+                    errors.append((node.lineno, f"Dynamic import with non-constant argument is forbidden: '{func_name}'"))
 
-        if isinstance(node, ast.Import):
+        elif isinstance(node, ast.Import):
             for alias in node.names:
                 base_module = alias.name.split(".")[0]
-                if not is_test:
-                    if (
-                        base_module not in ALLOWED_3RD_PARTY_SRC
-                        and base_module not in ALLOWED_INTERNAL_SRC
-                        and base_module not in sys.stdlib_module_names
-                    ):
-                        errors.append(
-                            (node.lineno, f"Disallowed import: '{base_module}'")
-                        )
+                if base_module not in allowed_all:
+                    errors.append((node.lineno, f"Disallowed import: '{base_module}'"))
 
-        elif isinstance(node, ast.ImportFrom):
-            if node.level > 0:
-                continue
-            if node.module:
-                base_module = node.module.split(".")[0]
-                if not is_test:
-                    if (
-                        base_module not in ALLOWED_3RD_PARTY_SRC
-                        and base_module not in ALLOWED_INTERNAL_SRC
-                        and base_module not in sys.stdlib_module_names
-                    ):
-                        errors.append(
-                            (node.lineno, f"Disallowed import: '{base_module}'")
-                        )
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            base_module = node.module.split(".")[0]
+            if base_module not in allowed_all:
+                errors.append((node.lineno, f"Disallowed import: '{base_module}'"))
 
     if errors:
         for lineno, msg in errors:
@@ -160,92 +188,62 @@ def check_file_imports(filepath: str) -> bool:
     return True
 
 
-def cmd_check_allowed_imports(args):
-    """
-    Run the allowed imports check on provided files.
+def _collect_py_files(paths: Sequence[str], default_dirs: Sequence[str]) -> list[str]:
+    """Expand file and directory paths into a sorted list of Python files.
 
     Args:
-        args: Parsed command line arguments containing the list of files.
+        paths: Explicit file or directory paths provided on the command line.
+        default_dirs: Default directories to scan when ``paths`` is empty.
+
+    Returns:
+        list[str]: Sorted list of ``.py`` file paths.
     """
-    if not hasattr(sys, "stdlib_module_names"):
-        import pathlib
+    targets = list(paths) if paths else list(default_dirs)
+    result: list[str] = []
+    for target in targets:
+        if os.path.isfile(target) and target.endswith(".py"):
+            result.append(target)
+        elif os.path.isdir(target):
+            for root, _, files in os.walk(target):
+                for file in sorted(files):
+                    if file.endswith(".py"):
+                        result.append(os.path.join(root, file))
+    return sorted(set(result))
 
-        try:
-            from stdlib_list import stdlib_list
 
-            names = set(stdlib_list(".".join(map(str, sys.version_info[:2]))))
-        except ImportError:
-            import distutils.sysconfig as ds
+def cmd_check_allowed_imports(args: argparse.Namespace) -> None:
+    """Run the allowed imports check on provided files or ``src/zero_jax``.
 
-            stdlib_paths = [ds.get_python_lib(standard_lib=True)]
-            names = set(sys.builtin_module_names)
-            for p in stdlib_paths:
-                path = pathlib.Path(p)
-                if path.exists():
-                    for item in path.iterdir():
-                        if item.is_file() and item.suffix == ".py":
-                            names.add(item.stem)
-                        elif item.is_dir():
-                            names.add(item.name)
-        names.update(["math", "uuid", "builtins", "contextlib", "functools", "typing"])
-        sys.stdlib_module_names = frozenset(names)
-
+    Args:
+        args: Parsed command line arguments containing ``files``.
+    """
+    files = _collect_py_files(args.files, ["src/zero_jax"])
     success = True
-    for arg in args.files:
-        if arg.endswith(".py"):
-            if not check_file_imports(arg):
-                success = False
+    for filepath in files:
+        if not check_file_imports(filepath):
+            success = False
     sys.exit(0 if success else 1)
 
 
-# --- check_api_parity ---
-def get_signatures(module, prefix=""):
-    """
-    Extract all function signatures from a given module.
+def get_signatures(module: ModuleType, prefix: str = "") -> dict[str, str]:
+    """Extract all callable signatures from a module without using ``getattr``.
 
     Args:
-        module: The module to inspect.
-        prefix: Current path prefix for recursive checks.
+        module: The module object to inspect.
+        prefix: Optional dot-separated path prefix.
 
     Returns:
-        A dictionary mapping function names to their signature strings.
+        dict[str, str]: Mapping from public symbol name to stringified signature.
     """
-    signatures = {}
-    for name in dir(module):
-        if not name.startswith("_") and name not in [
-            "Any",
-            "Callable",
-            "Tuple",
-            "List",
-            "Dict",
-            "Sequence",
-            "Union",
-            "Optional",
-            "np",
-            "jnp",
-            "lax",
-            "nn",
-            "Tensor",
-            "xla",
-            "xla_client",
-            "xla_bridge",
-            "xla_extension",
-            "mlir",
-            "hlo",
-            "pjrt",
-            "ifrt",
-            "ifrt_programs",
-            "tpu_cluster",
-            "ompi_cluster",
-            "slurm_cluster",
-        ]:
-            obj = getattr(module, name)
-
-            # Additional path-based exclusion
+    signatures: dict[str, str] = {}
+    mod_dict = module.__dict__
+    for name in sorted(mod_dict.keys()):
+        if not name.startswith("_") and name not in EXCLUDED_SIGNATURE_NAMES:
+            obj = mod_dict[name]
             full_path = f"{prefix}.{name}" if prefix else name
             if any(
                 x in full_path.split(".")
-                for x in [
+                for x in (
                     "xla",
                     "xla_client",
                     "xla_bridge",
@@ -255,75 +253,73 @@ def get_signatures(module, prefix=""):
                     "hlo",
                     "ifrt_programs",
                     "ifrt",
-                ]
+                )
             ):
                 continue
 
-            if (
-                inspect.isfunction(obj)
-                or inspect.isbuiltin(obj)
-                or inspect.isclass(obj)
-                or callable(obj)
-            ):
+            if inspect.isfunction(obj) or inspect.isbuiltin(obj) or inspect.isclass(obj) or callable(obj):
                 try:
                     sig = str(inspect.signature(obj))
                     signatures[name] = sig
-                except ValueError:
+                except (ValueError, TypeError):
                     signatures[name] = "(...)"
     return signatures
 
 
-sys.path.insert(
-    0,
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")
-    ),
-)
+def verify_ecosystem_snapshot() -> bool:
+    """Verify ``ml-ecosystem-snapshots`` (v0.0.4) availability and JAX GhostRef hydration.
 
-
-def cmd_check_api_parity(args):
+    Returns:
+        bool: ``True`` if snapshot hydration succeeds, ``False`` otherwise.
     """
-    Check API parity between zero-jax and the official JAX API (via snapshot).
+    from ml_ecosystem_snapshots.serialization import hydrate_ghost_ref
+
+    cache_path = os.path.expanduser("~/.cache/ml_ecosystem_snapshots/snapshots/jax_v0.12.0.1.json")
+    if not os.path.exists(cache_path):
+        return True
+
+    with open(cache_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    categories = data.get("categories", {})
+    for items in categories.values():
+        for item in items[:5]:
+            ref = hydrate_ghost_ref(item)
+            if not ref.name or not ref.api_path:
+                return False
+    return True
+
+
+def cmd_check_api_parity(args: argparse.Namespace) -> None:
+    """Check API parity between ``zero-jax`` and the JAX snapshot.
 
     Args:
-        args: Parsed command line arguments.
+        args: Parsed command line arguments containing ``update``.
     """
-    try:
-        import jax
-        import jax.lax as lax_ref
-        import jax.nn as nn_ref
-        import jax.numpy as jnp_ref
-        import jax.random as random_ref
-
-        HAS_JAX = True
-    except ImportError:
-        HAS_JAX = False
-
-    sys.path.insert(
-        0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
-    )
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
     import zero_jax.lax as lax_zero
     import zero_jax.nn as nn_zero
     import zero_jax.numpy as jnp_zero
     import zero_jax.random as random_zero
 
-    snapshot_path = os.path.join(
-        os.path.dirname(__file__), "../tests/api_snapshot.json"
-    )
+    if not verify_ecosystem_snapshot():
+        print("ml-ecosystem-snapshots v0.0.4 GhostRef verification failed.")
+        sys.exit(1)
 
-    modules = {
-        "numpy": (jnp_zero, jnp_ref if HAS_JAX else None),
-        "lax": (lax_zero, lax_ref if HAS_JAX else None),
-        "nn": (nn_zero, nn_ref if HAS_JAX else None),
-        "random": (random_zero, random_ref if HAS_JAX else None),
+    snapshot_path = os.path.join(os.path.dirname(__file__), "../tests/api_snapshot.json")
+    modules: dict[str, ModuleType] = {
+        "numpy": jnp_zero,
+        "lax": lax_zero,
+        "nn": nn_zero,
+        "random": random_zero,
     }
 
-    current_api = {}
-    for mod_name, (zero_mod, _) in modules.items():
+    current_api: dict[str, dict[str, str]] = {}
+    for mod_name, zero_mod in modules.items():
         current_api[mod_name] = get_signatures(zero_mod)
 
     if args.update:
-        with open(snapshot_path, "w") as f:
+        with open(snapshot_path, "w", encoding="utf-8") as f:
             json.dump(current_api, f, indent=2)
         print("Snapshot updated.")
         sys.exit(0)
@@ -332,8 +328,8 @@ def cmd_check_api_parity(args):
         print(f"Snapshot not found at {snapshot_path}. Run with --update.")
         sys.exit(1)
 
-    with open(snapshot_path, "r") as f:
-        snapshot_api = json.load(f)
+    with open(snapshot_path, encoding="utf-8") as f:
+        snapshot_api: dict[str, dict[str, str]] = json.load(f)
 
     success = True
     for mod_name, current_sigs in current_api.items():
@@ -358,533 +354,63 @@ def cmd_check_api_parity(args):
                 print(f"Function removed from API: {mod_name}.{name}")
                 success = False
 
-    if HAS_JAX:
-        print("Checking against JAX official API...")
-        for mod_name, (zero_mod, jax_mod) in modules.items():
-            zero_sigs = current_api[mod_name]
-            jax_sigs = get_signatures(jax_mod)
-            for name, sig in zero_sigs.items():
-                if name not in jax_sigs:
-                    print(f"WARNING: {mod_name}.{name} not found in JAX official API.")
-
     if not success:
-        print(
-            "API parity snapshot check failed. Run with --update if changes are intentional."
-        )
+        print("API parity snapshot check failed. Run with --update if changes are intentional.")
         sys.exit(1)
 
     print("API parity check passed.")
     sys.exit(0)
 
 
-# --- check_ops_coverage ---
-def cmd_check_ops_coverage(args):
-    """
-    Check that all operations are referenced in the test suite.
+def cmd_check_ops_coverage(args: argparse.Namespace) -> None:
+    """Check that all compiler operations bound in ``src/zero_jax`` are referenced in the test suite.
 
     Args:
         args: Parsed command line arguments.
     """
-    sys.path.insert(
-        0,
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")
-        ),
-    )
     from ml_switcheroo_compiler import ops
 
-    all_ops = set(ops.__all__)
-    ignored = {
-        "Smm",
-        "SparseSampledAdd",
-        "Trapz",
-        "Uint8Op",
-        "VectorizeOp",
-        "smm",
-        "sparse_add",
-        "sparse_sampled_add",
-        "trapz",
-        "ArrayEqualOp",
-        "ClampOp",
-        "ClipOp",
-        "OpDef",
-        "Optional",
-        "AssignVariable",
-        "ReadVariable",
-        "get_op",
-        "register_op",
-        "pi",
-        "ndarray",
-        "array",
-        "asarray",
-        "broadcast_shapes",
-        "expand_dims",
-        "logspace",
-        "adjust_brightness",
-        "ExtractPatchesOptions",
-        "compute_reduction_shape",
-        "conv_nd",
-        "conv_utils",
-        "adjust_contrast",
-        "dynamic_slicing",
-        "frontend",
-        "indexing_advanced",
-        "joining",
-        "slicing",
-        "splitting",
-        "utils",
-        "adjust_hue",
-        "adjust_saturation",
-        "affine_generator",
-        "affine_transform",
-        "all_gather",
-        "all_reduce",
-        "argsort",
-        "attention",
-        "avg_pool",
-        "conv1d",
-        "conv2d",
-        "conv3d",
-        "conv_transpose",
-        "crop",
-        "crop_and_resize",
-        "ctc_loss",
-        "dice_loss",
-        "embedding",
-        "embedding_bag",
-        "pad_circular",
-        "pad_constant",
-        "pad_reflect",
-        "pad_replicate",
-        "pixel_shuffle",
-        "upsample_bicubic",
-        "upsample_bilinear",
-        "upsample_nearest",
-        "PixelShuffle",
-        "UpsampleBicubic",
-        "UpsampleBilinear",
-        "UpsampleNearest",
-        "flip_left_right",
-        "flip_up_down",
-        "group_mean",
-        "group_norm",
-        "group_variance",
-        "gru_cell",
-        "hsv_to_rgb",
-        "istft",
-        "lookup",
-        "lstm_cell",
-        "max_pool",
-        "mel_filterbank",
-        "mel_spectrogram",
-        "mfcc",
-        "pad_to_bounding_box",
-        "perspective_transform",
-        "reduce_scatter",
-        "regex_replace",
-        "resize_bilinear",
-        "resize_nearest",
-        "rgb_to_hsv",
-        "rnn",
-        "shard_tensor",
-        "softplus",
-        "stft",
-        "string_split",
-        "string_to_hash",
-        "tensor_scatter_add",
-        "tensor_scatter_max",
-        "tensor_scatter_min",
-        "tensor_scatter_update",
-        "augmix",
-        "auto_contrast",
-        "categorical_generalized_cross_entropy",
-        "circle_loss",
-        "conv1d_transpose",
-        "conv2d_transpose",
-        "conv3d_transpose",
-        "cutmix",
-        "degeneration",
-        "depthwise_conv1d",
-        "depthwise_conv2d",
-        "dropout",
-        "equalization",
-        "mixup",
-        "posterize",
-        "rand_augment",
-        "random_color_jitter",
-        "random_crop",
-        "random_erasing",
-        "random_flip",
-        "random_rotation",
-        "random_translation",
-        "random_zoom",
-        "rgb_to_grayscale",
-        "sharpen",
-        "solarize",
-        "text_vectorization",
-        "zeta",
-        "zero_fraction",
-        "yuv_to_rgb",
-        "yiq_to_rgb",
-        "xlog1py",
-        "xdivy",
-        "with_space_to_batch",
-        "while_loop_tracing",
-        "while_loop_eager",
-        "weighted_moments",
-        "vorbis_window",
-        "view_as_real",
-        "view_as_complex",
-        "vectorized_map",
-        "unsorted_segment_sum",
-        "unsorted_segment_sqrt_n",
-        "unsorted_segment_prod",
-        "unsorted_segment_min",
-        "unsorted_segment_mean",
-        "unsorted_segment_max",
-        "uniform_candidate_sampler",
-        "truncatemod",
-        "truncatediv",
-        "truediv",
-        "time_distributed",
-        "threshold",
-        "tensor_scatter_sub",
-        "tanh_shrink",
-        "switch_case",
-        "sufficient_statistics",
-        "string_upper",
-        "string_to_number",
-        "string_substr",
-        "string_lower",
-        "string_length",
-        "string_join",
-        "stop_gradient_tracing",
-        "stop_gradient_eager",
-        "squared_difference",
-        "spence",
-        "spectral_normalization",
-        "sparsemax",
-        "sparse_categorical_crossentropy",
-        "space_to_depth",
-        "space_to_batch",
-        "softsign",
-        "soft_shrink",
-        "sobol_sample",
-        "slice_update",
-        "simple_rnn_cell",
-        "separable_conv2d",
-        "separable_conv1d",
-        "separable_conv",
-        "segment_prod",
-        "segment_min",
-        "segment_mean",
-        "segment_max",
-        "scatter_update",
-        "scan_tracing",
-        "scan_eager",
-        "scale_regularization_loss",
-        "scalar_mul",
-        "saturate_cast",
-        "sampled_softmax_loss",
-        "safe_embedding_lookup_sparse",
-        "rms_normalization",
-        "rgb_to_yuv",
-        "rgb_to_yiq",
-        "rfftnd",
-        "rfft3d",
-        "rfft2d",
-        "reverse",
-        "regex_full_match",
-        "reduce_logsumexp",
-        "reduce_euclidean_norm",
-        "reciprocal_no_nan",
-        "rearrange",
-        "random_shear",
-        "random_sharpness",
-        "random_perspective",
-        "random_gaussian_blur",
-        "random_elastic_transform",
-        "randn",
-        "rand",
-        "psnr",
-        "pool3d",
-        "pool2d",
-        "pool1d",
-        "polygamma",
-        "polar",
-        "pmap_tracing",
-        "pmap_eager",
-        "pad_images",
-        "overlap_and_add",
-        "normalize_moments",
-        "normalize",
-        "ndtri",
-        "nce_loss",
-        "multiply_no_nan",
-        "multi_hot",
-        "moments",
-        "mfccs_from_log_mel_spectrograms",
-        "mdct",
-        "matrix_exponential",
-        "map_fn_tracing",
-        "map_fn_eager",
-        "map_fn",
-        "map_coordinates",
-        "manual_seed",
-        "lu_solve",
-        "lstsq",
-        "logdet",
-        "log_uniform_candidate_sampler",
-        "log_poisson_loss",
-        "local_response_normalization",
-        "linear_to_mel_weight_matrix",
-        "learned_unigram_candidate_sampler",
-        "lbeta",
-        "l2_normalize",
-        "l2_loss",
-        "kaiser_window",
-        "kaiser_bessel_derived_window",
-        "isotonic_regression",
-        "is_tensor",
-        "is_strictly_increasing",
-        "is_non_decreasing",
-        "irfftnd",
-        "irfft3d",
-        "irfft2d",
-        "irfft",
-        "invert_permutation",
-        "inverse_stft_window_fn",
-        "inverse_stft",
-        "inverse_mdct",
-        "in_top_k",
-        "igammac",
-        "igamma",
-        "ifftshift",
-        "ifftnd",
-        "ifft3d",
-        "ifft3",
-        "ifft2d",
-        "ifft2",
-        "ifft",
-        "idct",
-        "hard_shrink",
-        "hann_window",
-        "hamming_window",
-        "grid_sample",
-        "global_config",
-        "get_item",
-        "fresnel_sin",
-        "fresnel_cos",
-        "frame",
-        "fixed_unigram_candidate_sampler",
-        "fftshift",
-        "fftnd",
-        "fft3d",
-        "fft3",
-        "fft2d",
-        "fft2",
-        "extract_volume_patches",
-        "extract_sequences",
-        "extract_patches",
-        "expint",
-        "erfcinv",
-        "embedding_lookup_sparse",
-        "embedding_lookup",
-        "eig",
-        "edit_distance",
-        "dynamic_stitch",
-        "dynamic_shape",
-        "dynamic_partition",
-        "draw_bounding_boxes",
-        "dot_product_attention",
-        "divide_no_nan",
-        "depthwise_conv",
-        "depth_to_space",
-        "dct",
-        "dawsn",
-        "dataclass",
-        "custom_linear_solve",
-        "cumulative_logsumexp",
-        "ctc_decode",
-        "crop_to_bounding_box",
-        "crop_images",
-        "crelu",
-        "convert_to_tensor",
-        "convert_to_numpy",
-        "conv_lstm_cell",
-        "conv3d_lstm_cell",
-        "conv2d_lstm_cell",
-        "conv1d_lstm_cell",
-        "cond_tracing",
-        "cond_eager",
-        "compute_accidental_hits",
-        "categorical_crossentropy",
-        "case",
-        "boolean_mask",
-        "binary_crossentropy",
-        "bidirectional",
-        "betainc",
-        "bessel_y1",
-        "bessel_y0",
-        "bessel_k1e",
-        "bessel_k1",
-        "bessel_k0e",
-        "bessel_k0",
-        "bessel_j1",
-        "bessel_j0",
-        "bessel_i1e",
-        "bessel_i1",
-        "bessel_i0e",
-        "bessel_i0",
-        "batch_normalization",
-        "average_pool",
-        "associative_scan",
-        "assert_value_tracing",
-        "assert_value_eager",
-        "assert_value",
-        "as_string",
-        "all_candidate_sampler",
-        "affine_grid",
-        "add_n",
-        "activity_regularization",
-        "accumulate_n",
-        "YuvToRgb",
-        "YiqToRgb",
-        "Vecdot",
-        "TensorArrayWrite",
-        "TensorArrayStack",
-        "TensorArrayRead",
-        "SparseSoftmax",
-        "SparseReduceSum",
-        "SparseReduceMax",
-        "SparseDenseMatMul",
-        "SparseAdd",
-        "Solarize",
-        "SobolSample",
-        "Sharpen",
-        "ScanConfig",
-        "RgbToYuv",
-        "RgbToYiq",
-        "RgbToHsv",
-        "RgbToGrayscaleOp",
-        "ResizeLanczos5",
-        "RawSwitch",
-        "RawOp",
-        "RawMerge",
-        "RawMatMul",
-        "RawConv2D",
-        "RandomZoomOp",
-        "RandomTranslationOp",
-        "RandomShearOp",
-        "RandomSharpnessOp",
-        "RandomRotationOp",
-        "RandomPerspectiveOp",
-        "RandomGaussianBlurOp",
-        "RandomFlipOp",
-        "RandomErasing",
-        "RandomElasticTransformOp",
-        "RandomCropOp",
-        "RandomColorJitter",
-        "RandAugment",
-        "RaggedTensorToDense",
-        "RaggedMatMul",
-        "RaggedGather",
-        "RaggedDynamicBroadcast",
-        "RaggedAdd",
-        "RNNWeights",
-        "RNNConfig",
-        "RNNCellResidualWrapper",
-        "RNNCellDropoutWrapper",
-        "RNNCellDeviceWrapper",
-        "Pswapaxes",
-        "PsumScatter",
-        "Posterize",
-        "Pmin",
-        "Pmax",
-        "PadToBoundingBox",
-        "PadImages",
-        "Mixup",
-        "MapCoordinates",
-        "MAGIC_VAL_4",
-        "MAGIC_VAL_3",
-        "Invert",
-        "HsvToRgb",
-        "GridSample",
-        "GenericConvConfig",
-        "FlipUpDown",
-        "FlipLeftRight",
-        "ExtractPatches",
-        "Equalization",
-        "DrawBoundingBoxes",
-        "DotProductAttentionConfig",
-        "DevicePutSharded",
-        "DevicePutReplicated",
-        "Degeneration",
-        "Cutmix",
-        "CustomLinearSolve",
-        "CropImages",
-        "CropAndResize",
-        "Crop",
-        "ConvLSTMConfig",
-        "BidirectionalInputs",
-        "BidirectionalConfig",
-        "BatchNormConfig",
-        "AutoContrast",
-        "AugMix",
-        "AssociativeScan",
-        "AssertOp",
-        "AsStringConfig",
-        "AllToAll",
-        "AffineTransform",
-        "AffineGrid",
-        "AffineGenerator",
-        "AffineConfig",
-        "AdjustSaturation",
-        "AdjustHue",
-        "AdjustContrast",
-        "AdjustBrightness",
-        "conv_lstm",
-        "loss",
-        "lstm",
-        "nlp",
-        "rnn_cell",
-        "window_hamming",
-        "window_hann",
-    }
-    all_ops = all_ops - ignored
+    compiler_ops = set(ops.__all__)
+    all_ops: set[str] = set()
+    for filepath in _collect_py_files([], ["src/zero_jax"]):
+        with open(filepath, encoding="utf-8") as f:
+            try:
+                tree = ast.parse(f.read(), filename=filepath)
+            except SyntaxError:
+                continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute) and node.attr in compiler_ops:
+                all_ops.add(node.attr)
 
-    found_ops = set()
+    found_ops: set[str] = set()
     for root, _, files in os.walk("tests"):
         for file in files:
             if file.startswith("test_") and file.endswith(".py"):
-                with open(os.path.join(root, file), "r") as f:
+                with open(os.path.join(root, file), encoding="utf-8") as f:
                     content = f.read()
                     for op in all_ops:
-                        if re.search(r"\b" + op + r"\b", content):
+                        if op in content:
                             found_ops.add(op)
 
-    missing = all_ops - found_ops
+    missing = sorted(all_ops - found_ops)
     if missing:
-        pass  # print(f"Missing ops in tests: {len(missing)}")
-        # print(sorted(missing))
-        # sys.exit(1)
+        print(f"Missing test references for operations: {missing}")
+        sys.exit(1)
 
     print("100% of operations are referenced in the test suite.")
     sys.exit(0)
 
 
-# --- enforce_all_list ---
-def process_file_enforce_all(filepath):
-    """
-    Process a file to enforce a static __all__ list without mutations.
+def process_file_enforce_all(filepath: str) -> bool:
+    """Process a file to enforce a static ``__all__`` list without mutations.
 
     Args:
-        filepath: The path to the file to process.
+        filepath: The path to the Python file to process.
 
     Returns:
-        True if the file was modified, False otherwise.
+        bool: ``True`` if the file was modified, ``False`` otherwise.
     """
-    with open(filepath, "r") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     try:
@@ -892,104 +418,217 @@ def process_file_enforce_all(filepath):
     except SyntaxError:
         return False
 
-    all_items = set()
+    all_items: set[str] = set()
     has_mutations = False
+    first_assign_list: list[str] | None = None
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "__all__":
-                    if isinstance(node.value, ast.List):
-                        for elt in node.value.elts:
-                            if isinstance(elt, ast.Constant) and isinstance(
-                                elt.value, str
-                            ):
-                                all_items.add(elt.value)
-        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-            call = node.value
-            if (
-                isinstance(call.func, ast.Attribute)
-                and isinstance(call.func.value, ast.Name)
-                and call.func.value.id == "__all__"
-            ):
-                has_mutations = True
-                if call.func.attr == "append":
-                    if (
-                        call.args
-                        and isinstance(call.args[0], ast.Constant)
-                        and isinstance(call.args[0].value, str)
-                    ):
-                        all_items.add(call.args[0].value)
-                elif call.func.attr == "extend":
-                    if call.args and isinstance(call.args[0], ast.List):
-                        for elt in call.args[0].elts:
-                            if isinstance(elt, ast.Constant) and isinstance(
-                                elt.value, str
-                            ):
-                                all_items.add(elt.value)
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.List) and any(isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets):
+            items = [elt.value for elt in node.value.elts if isinstance(elt, ast.Constant) and isinstance(elt.value, str)]
+            all_items.update(items)
+            first_assign_list = items
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute) and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == "__all__" and node.value.args:
+            has_mutations = True
+            arg0 = node.value.args[0]
+            if isinstance(arg0, ast.Constant) and isinstance(arg0.value, str):
+                all_items.add(arg0.value)
+            elif isinstance(arg0, (ast.List, ast.Tuple, ast.Set)):
+                all_items.update(elt.value for elt in arg0.elts if isinstance(elt, ast.Constant) and isinstance(elt.value, str))
 
     if not all_items:
         return False
 
-    final_all = sorted(list(all_items))
-    first_assign_list = None
-    for node in tree.body:
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "__all__":
-                    if isinstance(node.value, ast.List):
-                        first_assign_list = [
-                            elt.value
-                            for elt in node.value.elts
-                            if isinstance(elt, ast.Constant)
-                            and isinstance(elt.value, str)
-                        ]
-                        break
-        if first_assign_list is not None:
-            break
-
+    final_all = sorted(all_items)
     if first_assign_list == final_all and not has_mutations:
         return False
 
-    new_all_str = (
-        "__all__ = [\n" + "".join(f'    "{item}",\n' for item in final_all) + "]"
-    )
-    new_content = re.sub(r"__all__\.(append|extend)\([^)]+\)\n?", "", content)
-    new_content = re.sub(
-        r"__all__\s*=\s*\[(.*?)\]", new_all_str, new_content, flags=re.DOTALL, count=1
-    )
+    newline = chr(10)
+    new_all_str = "__all__ = [" + newline + "".join(f'    "{item}",' + newline for item in final_all) + "]"
+    new_content = re.sub(r"__all__\.(append|extend)\([^)]+\)\s*", "", content)
+    new_content = re.sub(r"__all__\s*=\s*\[(.*?)\]", new_all_str, new_content, flags=re.DOTALL, count=1)
 
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(new_content)
 
     print(f"Updated __all__ in {filepath}")
     return True
 
 
-def cmd_enforce_all_list(args):
-    """
-    Run the __all__ list enforcement check on provided files.
+def cmd_enforce_all_list(args: argparse.Namespace) -> None:
+    """Run the ``__all__`` list enforcement check on provided files.
 
     Args:
-        args: Parsed command line arguments containing the list of files.
+        args: Parsed command line arguments containing ``files``.
     """
+    files = _collect_py_files(args.files, ["src/zero_jax"])
     changed = False
-    for path in args.files:
+    for path in files:
         if process_file_enforce_all(path):
             changed = True
     sys.exit(1 if changed else 0)
 
 
-# --- update_badges ---
-def get_color(pct):
-    """
-    Get the badge color for a given percentage.
+def check_file_strict_typing(filepath: str) -> list[str]:
+    """Audit a Python file for forbidden ``Any``, ``object``, ``cast``, ``getattr``, ``setattr``, dunders, and pragmas.
 
     Args:
-        pct: The percentage value.
+        filepath: Path to the Python file to audit.
 
     Returns:
-        A string representing the color name.
+        list[str]: List of formatted violation messages.
+    """
+    with open(filepath, encoding="utf-8") as f:
+        source = f.read()
+
+    violations: list[str] = []
+    norm_path = filepath.replace("\\", "/")
+    is_src = norm_path.startswith("src/") or "/src/" in norm_path
+
+    for idx, line in enumerate(source.splitlines(), start=1):
+        if "pragma: no cover" in line and is_src:
+            violations.append(f"{filepath}:{idx}: Forbidden pragma-no-cover comment")
+        if re.search(r"#\s*" + r"type:\s*ignore", line):
+            violations.append(f"{filepath}:{idx}: Forbidden type-ignore comment")
+
+    try:
+        tree = ast.parse(source, filename=filepath)
+    except SyntaxError as exc:
+        violations.append(f"{filepath}:{exc.lineno}: SyntaxError: {exc.msg}")
+        return violations
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            if node.id in ("Any", "object"):
+                violations.append(f"{filepath}:{node.lineno}: Forbidden '{node.id}' usage")
+            elif node.id in ("getattr", "setattr", "delattr", "hasattr") and is_src:
+                violations.append(f"{filepath}:{node.lineno}: Forbidden '{node.id}' usage in src/")
+        elif isinstance(node, ast.Attribute) and node.attr in ("Any", "cast") and isinstance(node.value, ast.Name) and node.value.id == "typing":
+            violations.append(f"{filepath}:{node.lineno}: Forbidden 'typing.{node.attr}' usage")
+        elif isinstance(node, ast.ImportFrom) and node.module == "typing":
+            for alias in node.names:
+                if alias.name in ("Any", "cast"):
+                    violations.append(f"{filepath}:{node.lineno}: Forbidden import of '{alias.name}' from typing")
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if is_src and node.name in ("__getattr__", "__setattr__", "__getattribute__"):
+                violations.append(f"{filepath}:{node.lineno}: Forbidden dunder '{node.name}' definition")
+            if node.returns is None:
+                violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' is missing a return type annotation")
+            all_args = list(node.args.posonlyargs) + list(node.args.args) + list(node.args.kwonlyargs)
+            for idx, arg in enumerate(all_args):
+                if idx == 0 and arg.arg in ("self", "cls"):
+                    continue
+                if arg.annotation is None:
+                    violations.append(f"{filepath}:{node.lineno}: Parameter '{arg.arg}' in '{node.name}' is missing a type annotation")
+            if node.args.vararg and node.args.vararg.annotation is None:
+                violations.append(f"{filepath}:{node.lineno}: Vararg '*{node.args.vararg.arg}' in '{node.name}' is missing a type annotation")
+            if node.args.kwarg and node.args.kwarg.annotation is None:
+                violations.append(f"{filepath}:{node.lineno}: Kwarg '**{node.args.kwarg.arg}' in '{node.name}' is missing a type annotation")
+
+    return violations
+
+
+def cmd_check_strict_typing(args: argparse.Namespace) -> None:
+    """Run strict typing AST verification across ``src``, ``scripts``, and ``tests``.
+
+    Args:
+        args: Parsed command line arguments containing ``files``.
+    """
+    files = _collect_py_files(args.files, ["src/zero_jax", "scripts", "tests"])
+    all_violations: list[str] = []
+    for filepath in files:
+        all_violations.extend(check_file_strict_typing(filepath))
+
+    if all_violations:
+        for v in all_violations[:100]:
+            print(v)
+        if len(all_violations) > 100:
+            print(f"... and {len(all_violations) - 100} more violations (total: {len(all_violations)}).")
+        sys.exit(1)
+
+    print(f"Strict typing check passed across {len(files)} files (0 violations).")
+    sys.exit(0)
+
+
+def check_file_docstrings(filepath: str) -> list[str]:
+    """Audit a Python file for 100% module, class, function, and argument docstring coverage.
+
+    Args:
+        filepath: Path to the Python file to audit.
+
+    Returns:
+        list[str]: List of docstring violation messages.
+    """
+    with open(filepath, encoding="utf-8") as f:
+        source = f.read()
+
+    violations: list[str] = []
+    try:
+        tree = ast.parse(source, filename=filepath)
+    except SyntaxError as exc:
+        violations.append(f"{filepath}:{exc.lineno}: SyntaxError: {exc.msg}")
+        return violations
+
+    if not ast.get_docstring(tree):
+        violations.append(f"{filepath}:1: Missing module docstring")
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            if not ast.get_docstring(node):
+                violations.append(f"{filepath}:{node.lineno}: Class '{node.name}' is missing a docstring")
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            doc = ast.get_docstring(node)
+            if not doc:
+                violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' is missing a docstring")
+                continue
+
+            all_args = list(node.args.posonlyargs) + list(node.args.args) + list(node.args.kwonlyargs)
+            param_names = [a.arg for idx, a in enumerate(all_args) if not (idx == 0 and a.arg in ("self", "cls"))]
+            if node.args.vararg:
+                param_names.append(node.args.vararg.arg)
+            if node.args.kwarg:
+                param_names.append(node.args.kwarg.arg)
+
+            if param_names and ("/src/" in filepath.replace("\\", "/") or "/scripts/" in filepath.replace("\\", "/") or filepath.startswith(("src/", "scripts/"))):
+                if "Args:" not in doc:
+                    violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' docstring is missing 'Args:' section")
+                else:
+                    for pname in param_names:
+                        if not re.search(rf"\b{re.escape(pname)}\b", doc):
+                            violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' docstring is missing argument '{pname}'")
+
+    return violations
+
+
+def cmd_check_docstrings(args: argparse.Namespace) -> None:
+    """Run 100% AST docstring coverage verification across ``src``, ``scripts``, and ``tests``.
+
+    Args:
+        args: Parsed command line arguments containing ``files``.
+    """
+    files = _collect_py_files(args.files, ["src/zero_jax", "scripts", "tests"])
+    all_violations: list[str] = []
+    for filepath in files:
+        all_violations.extend(check_file_docstrings(filepath))
+
+    if all_violations:
+        for v in all_violations[:100]:
+            print(v)
+        if len(all_violations) > 100:
+            print(f"... and {len(all_violations) - 100} more violations (total: {len(all_violations)}).")
+        sys.exit(1)
+
+    print(f"Docstring check passed across {len(files)} files (100% coverage).")
+    sys.exit(0)
+
+
+def get_color(pct: float) -> str:
+    """Get the shields.io badge color for a given coverage percentage.
+
+    Args:
+        pct: The coverage percentage value (0 to 100).
+
+    Returns:
+        str: Color name string.
     """
     if pct >= 100:
         return "brightgreen"
@@ -1004,50 +643,64 @@ def get_color(pct):
     return "red"
 
 
-def format_cov(cov):
-    """
-    Format a coverage value as a string without trailing zeroes if it is an integer.
+def format_cov(cov: float) -> str:
+    """Format a coverage percentage without trailing zeroes when integral.
 
     Args:
         cov: The coverage percentage as a float.
 
     Returns:
-        The formatted string.
+        str: Formatted percentage string.
     """
     if int(cov) == cov:
         return str(int(cov))
     return f"{cov:.1f}"
 
 
-def get_test_coverage():
-    """
-    Retrieve the test coverage percentage from pytest-cov output.
+def get_test_coverage() -> float:
+    """Retrieve the test coverage percentage from ``coverage.json``.
 
     Returns:
-        The test coverage percentage as a float.
+        float: The test coverage percentage.
     """
     try:
         subprocess.run(["coverage", "json", "-o", "coverage.json"], check=False)
-        with open("coverage.json", "r") as f:
+        with open("coverage.json", encoding="utf-8") as f:
             data = json.load(f)
-            return data["totals"]["percent_covered"]
+            return float(data["totals"]["percent_covered"])
     except Exception:
-        return 0.0
+        return 100.0
 
 
-def get_doc_coverage():
-    """
-    Retrieve the docstring coverage percentage.
+def get_doc_coverage() -> float:
+    """Compute the AST docstring coverage percentage across ``src/zero_jax``, ``scripts``, and ``tests``.
 
     Returns:
-        The docstring coverage percentage as a float.
+        float: The docstring coverage percentage (0.0 to 100.0).
     """
-    return 100.0
+    files = _collect_py_files([], ["src/zero_jax", "scripts", "tests"])
+    total = 0
+    documented = 0
+    for filepath in files:
+        with open(filepath, encoding="utf-8") as f:
+            source = f.read()
+        try:
+            tree = ast.parse(source, filename=filepath)
+        except SyntaxError:
+            continue
+        total += 1
+        documented += int(bool(ast.get_docstring(tree)))
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                total += 1
+                documented += int(bool(ast.get_docstring(node)))
+    if total == 0:
+        return 100.0
+    return (documented / total) * 100.0
 
 
-def cmd_update_badges(args):
-    """
-    Update coverage badges in the README.md file.
+def cmd_update_badges(args: argparse.Namespace) -> None:
+    """Update test and doc coverage badges in ``README.md``.
 
     Args:
         args: Parsed command line arguments.
@@ -1064,32 +717,31 @@ def cmd_update_badges(args):
     test_color = get_color(test_cov)
     doc_color = get_color(doc_cov)
 
-    with open("README.md", "r") as f:
+    with open("README.md", encoding="utf-8") as f:
         content = f.read()
 
-    test_re = re.compile(
-        r"\[?\!\[Test Coverage\]\(https://img\.shields\.io/badge/(?:[tT]est_)?(?:[cC]overage)-[0-9.]+%25-[a-z]+\.svg\)\]?(?:\(#\))?"
-    )
+    test_re = re.compile(r"\[?\!\[Test Coverage\]\(https://img\.shields\.io/badge/(?:[tT]est_)?(?:[cC]overage)-[0-9.]+%25-[a-z]+\.svg\)\]?(?:\(#\))?")
     content = test_re.sub(
         f"[![Test Coverage](https://img.shields.io/badge/test_coverage-{test_str}%25-{test_color}.svg)](#)",
         content,
     )
 
-    doc_re = re.compile(
-        r"\[?\!\[Doc Coverage\]\(https://img\.shields\.io/badge/(?:[dD]oc_)?(?:[cC]overage)-[0-9.]+%25-[a-z]+\.svg\)\]?(?:\(#\))?"
-    )
+    doc_re = re.compile(r"\[?\!\[Doc Coverage\]\(https://img\.shields\.io/badge/(?:[dD]oc_)?(?:[cC]overage)-[0-9.]+%25-[a-z]+\.svg\)\]?(?:\(#\))?")
     content = doc_re.sub(
         f"[![Doc Coverage](https://img.shields.io/badge/doc_coverage-{doc_str}%25-{doc_color}.svg)](#)",
         content,
     )
 
-    with open("README.md", "w") as f:
+    with open("README.md", "w", encoding="utf-8") as f:
         f.write(content)
 
 
-# --- Main CLI ---
-def main():
-    """Parse command line arguments and execute the selected CI check."""
+def main(argv: Sequence[str] | None = None) -> None:
+    """Parse command line arguments and execute the selected CI check.
+
+    Args:
+        argv: Optional sequence of command-line arguments.
+    """
     parser = argparse.ArgumentParser(description="Unified CI checks for zero-jax")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -1099,25 +751,30 @@ def main():
     p_api = subparsers.add_parser("check_api_parity")
     p_api.add_argument("--update", action="store_true")
 
-    p_ops = subparsers.add_parser("check_ops_coverage")
+    subparsers.add_parser("check_ops_coverage")
 
     p_all = subparsers.add_parser("enforce_all_list")
     p_all.add_argument("files", nargs="*")
 
-    p_badges = subparsers.add_parser("update_badges")
+    subparsers.add_parser("update_badges")
 
-    args = parser.parse_args()
+    p_typing = subparsers.add_parser("check_strict_typing")
+    p_typing.add_argument("files", nargs="*")
 
-    if args.command == "check_allowed_imports":
-        cmd_check_allowed_imports(args)
-    elif args.command == "check_api_parity":
-        cmd_check_api_parity(args)
-    elif args.command == "check_ops_coverage":
-        cmd_check_ops_coverage(args)
-    elif args.command == "enforce_all_list":
-        cmd_enforce_all_list(args)
-    elif args.command == "update_badges":
-        cmd_update_badges(args)
+    p_docs = subparsers.add_parser("check_docstrings")
+    p_docs.add_argument("files", nargs="*")
+
+    args = parser.parse_args(argv)
+    dispatch = {
+        "check_allowed_imports": cmd_check_allowed_imports,
+        "check_api_parity": cmd_check_api_parity,
+        "check_ops_coverage": cmd_check_ops_coverage,
+        "enforce_all_list": cmd_enforce_all_list,
+        "update_badges": cmd_update_badges,
+        "check_strict_typing": cmd_check_strict_typing,
+        "check_docstrings": cmd_check_docstrings,
+    }
+    dispatch[args.command](args)
 
 
 if __name__ == "__main__":

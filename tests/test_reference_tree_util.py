@@ -1,10 +1,15 @@
+"""Tests for tests/test_reference_tree_util.py."""
+
+from __future__ import annotations
+
 import jax.tree_util as tree_ref
-import pytest
 
 import zero_jax.tree_util as tree_zero
+from zero_jax._types import ArrayLikeSpec
 
 
-def test_tree_flatten(check_allclose):
+def test_tree_flatten(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_tree_flatten``."""
     tree = {"a": 1, "b": [2, 3]}
     leaves_z, treedef_z = tree_zero.tree_flatten(tree)
     leaves_r, treedef_r = tree_ref.tree_flatten(tree)
@@ -17,7 +22,8 @@ def test_tree_flatten(check_allclose):
     )
 
 
-def test_tree_unflatten(check_allclose):
+def test_tree_unflatten(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_tree_unflatten``."""
     tree = [1, (2, 3)]
     leaves_r, treedef_r = tree_ref.tree_flatten(tree)
     leaves_z, treedef_z = tree_zero.tree_flatten(tree)
@@ -28,21 +34,24 @@ def test_tree_unflatten(check_allclose):
     )
 
 
-def test_tree_map(check_allclose):
+def test_tree_map(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_tree_map``."""
     tree = {"a": 1, "b": [2, 3]}
     res_z = tree_zero.tree_map(lambda x: x * 2, tree)
     res_r = tree_ref.tree_map(lambda x: x * 2, tree)
     check_allclose(res_z, res_r)
 
 
-def test_tree_leaves(check_allclose):
+def test_tree_leaves(check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_tree_leaves``."""
     tree = {"a": 1, "b": [2, 3]}
     res_z = tree_zero.tree_leaves(tree)
     res_r = tree_ref.tree_leaves(tree)
     check_allclose(res_z, res_r)
 
 
-def test_tree_structure():
+def test_tree_structure() -> None:
+    """Execute ``test_tree_structure``."""
     tree = {"a": 1, "b": [2, 3]}
     struct_z = tree_zero.tree_structure(tree)
     struct_r = tree_ref.tree_structure(tree)
@@ -51,7 +60,8 @@ def test_tree_structure():
     assert struct_z.num_nodes == struct_r.num_nodes
 
 
-def test_tree_all_skip():
+def test_tree_all_skip() -> None:
+    """Execute ``test_tree_all_skip``."""
     tree = {"a": True, "b": [True, False]}
     # jax.tree_util.tree_all evaluates to boolean scalar
     assert tree_zero.tree_all(tree) == tree_ref.tree_all(tree)

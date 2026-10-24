@@ -1,15 +1,32 @@
 """Frontend API routing for jax.scipy.stats.multinomial."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
-def logpmf(*args: Any, **kwargs: Any) -> Any:
-    """Multinomial log probability mass function."""
+def logpmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Multinomial log probability mass function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.logpmf(*args, **kwargs)
 
 
-def pmf(*args: Any, **kwargs: Any) -> Any:
-    """Multinomial probability mass function."""
+def pmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Multinomial probability mass function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return _ops.pmf(*args, **kwargs)

@@ -1,4 +1,10 @@
-def test_to_dtype_coverage():
+"""Tests for tests/test_new_coverage_dtype.py."""
+
+from __future__ import annotations
+
+
+def test_to_dtype_coverage() -> None:
+    """Execute ``test_to_dtype_coverage``."""
     import pytest
     from ml_switcheroo_compiler.core.dtype import DType
 
@@ -9,6 +15,8 @@ def test_to_dtype_coverage():
         to_dtype(DType.Float32)
 
         class Dummy1:
+            """Test class ``Dummy1``."""
+
             name = "float32"
 
         to_dtype(Dummy1())
@@ -19,7 +27,7 @@ def test_to_dtype_coverage():
         to_dtype(bool)
 
         class Dummy2:
-            pass
+            """Test class ``Dummy2``."""
 
         with pytest.raises(ValueError):
             to_dtype(Dummy2)
@@ -28,14 +36,16 @@ def test_to_dtype_coverage():
             to_dtype(123)
 
 
-def test_pytree_coverage():
+def test_pytree_coverage() -> None:
+    """Execute ``test_pytree_coverage``."""
     from zero_jax.tree_util.pytree import tree_leaves, tree_map
 
     tree_leaves({"a": 1})
     tree_map(lambda x: x, {"a": 1})
 
 
-def test_pytree_rest_coverage():
+def test_pytree_rest_coverage() -> None:
+    """Execute ``test_pytree_rest_coverage``."""
     from zero_jax.tree_util.pytree import tree_map
 
     tree_map(lambda x, y: x + y, {"a": 1}, {"a": 2})

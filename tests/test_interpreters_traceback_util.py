@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.interpreters.traceback_util as mod
 
@@ -14,9 +14,7 @@ def test_Callable() -> None:
 
 def test_SimplifiedTraceback() -> None:
     """Test SimplifiedTraceback."""
-    obj = mod.SimplifiedTraceback(
-        id=1, name="test_SimplifiedTraceback", value="test_value"
-    )
+    obj = mod.SimplifiedTraceback(id=1, name="test_SimplifiedTraceback", value="test_value")
     assert obj is not None
     assert obj.id == 1
     assert obj.name == "test_SimplifiedTraceback"
@@ -34,9 +32,7 @@ def test_TypeVar() -> None:
 
 def test_UnfilteredStackTrace() -> None:
     """Test UnfilteredStackTrace."""
-    obj = mod.UnfilteredStackTrace(
-        id=1, name="test_UnfilteredStackTrace", value="test_value"
-    )
+    obj = mod.UnfilteredStackTrace(id=1, name="test_UnfilteredStackTrace", value="test_value")
     assert obj is not None
     assert obj.id == 1
     assert obj.name == "test_UnfilteredStackTrace"
@@ -66,9 +62,7 @@ def test_filter_traceback() -> None:
 
 def test_format_exception_only() -> None:
     """Test format_exception_only."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.format_exception_only", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.format_exception_only", create=True) as mock_op:
         mod.format_exception_only()
         mock_op.assert_called_once_with()
 
@@ -82,8 +76,6 @@ def test_include_frame() -> None:
 
 def test_register_exclusion() -> None:
     """Test register_exclusion."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.register_exclusion", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.register_exclusion", create=True) as mock_op:
         mod.register_exclusion()
         mock_op.assert_called_once_with()

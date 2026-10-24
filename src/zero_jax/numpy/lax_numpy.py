@@ -1,8 +1,9 @@
-import builtins
-
 """JAX-like numpy API backed by ml-switcheroo-compiler."""
 
-from typing import Any, List, Optional, Tuple
+from __future__ import annotations
+
+import builtins
+from collections.abc import Callable
 
 import ml_switcheroo_compiler as _ml_switcheroo_compiler
 from ml_switcheroo_compiler import Tensor
@@ -10,344 +11,717 @@ from ml_switcheroo_compiler.core.config import config
 from ml_switcheroo_compiler.core.tensor import TensorConfig as _TensorConfig
 
 import zero_jax._compiler_proxy_ops as ops
+from zero_jax._types import (
+    ArrayLikeSpec,
+    ArrayProtocol,
+    ConfigValue,
+    DTypeSpec,
+    VariadicCallable,
+)
+
+
+class _IndexUpdateRef:
+    """Reference to an indexed slice of an ``ndarray`` supporting functional immutable updates."""
+
+    def __init__(self, array_obj: ndarray, idx: ArrayLikeSpec) -> None:
+        """Initialize ``_IndexUpdateRef``.
+
+        Args:
+            array_obj: Target ``ndarray`` to copy and update.
+            idx: Index specification.
+        """
+        self._array = array_obj
+        self._idx = idx
+
+    def _unwrap_idx(self) -> ArrayLikeSpec:
+        """Convert any ``ndarray`` or ``Tensor`` indices into raw index objects.
+
+        Returns:
+            ArrayLikeSpec: Unwrapped index suitable for NumPy array indexing.
+        """
+        key = self._idx
+        if isinstance(key, ndarray):
+            return key.__array__()
+        if isinstance(key, tuple):
+            return tuple(k.__array__() if isinstance(k, (ndarray, Tensor)) else k for k in key)
+        return key
+
+    def get(self) -> ndarray:
+        """Return the sliced view at the specified index.
+
+        Returns:
+            ndarray: Indexed slice result.
+        """
+        return self._array[self._idx]
+
+    def set(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` replaced by ``values``.
+
+        Args:
+            values: Replacement values.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        val_arr = values.__array__() if isinstance(values, (ndarray, Tensor)) else values
+        base[self._unwrap_idx()] = val_arr
+        return array(base, dtype=self._array.dtype)
+
+    def add(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with ``values`` added at ``self._idx``.
+
+        Args:
+            values: Values to add.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        val_arr = values.__array__() if isinstance(values, (ndarray, Tensor)) else values
+        base[self._unwrap_idx()] = base[self._unwrap_idx()] + val_arr
+        return array(base, dtype=self._array.dtype)
+
+    def multiply(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` multiplied by ``values``.
+
+        Args:
+            values: Values to multiply by.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        val_arr = values.__array__() if isinstance(values, (ndarray, Tensor)) else values
+        base[self._unwrap_idx()] = base[self._unwrap_idx()] * val_arr
+        return array(base, dtype=self._array.dtype)
+
+    def divide(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` divided by ``values``.
+
+        Args:
+            values: Divisor values.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        val_arr = values.__array__() if isinstance(values, (ndarray, Tensor)) else values
+        base[self._unwrap_idx()] = base[self._unwrap_idx()] / val_arr
+        return array(base, dtype=self._array.dtype)
+
+    def power(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` raised to ``values``.
+
+        Args:
+            values: Exponent values.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        val_arr = values.__array__() if isinstance(values, (ndarray, Tensor)) else values
+        base[self._unwrap_idx()] = base[self._unwrap_idx()] ** val_arr
+        return array(base, dtype=self._array.dtype)
+
+    def min(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` set to the minimum with ``values``.
+
+        Args:
+            values: Comparison values.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        cur = array(base[self._unwrap_idx()])
+        updated = minimum(cur, values)
+        base[self._unwrap_idx()] = updated.__array__() if isinstance(updated, ndarray) else updated
+        return array(base, dtype=self._array.dtype)
+
+    def max(self, values: ArrayLikeSpec) -> ndarray:
+        """Return a new ``ndarray`` with elements at ``self._idx`` set to the maximum with ``values``.
+
+        Args:
+            values: Comparison values.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        base = self._array.__array__().copy()
+        cur = array(base[self._unwrap_idx()])
+        updated = maximum(cur, values)
+        base[self._unwrap_idx()] = updated.__array__() if isinstance(updated, ndarray) else updated
+        return array(base, dtype=self._array.dtype)
+
+    def apply(self, func: Callable[[ndarray], ArrayLikeSpec]) -> ndarray:
+        """Return a new ``ndarray`` with ``func`` applied to the slice at ``self._idx``.
+
+        Args:
+            func: Function to apply to the indexed slice.
+
+        Returns:
+            ndarray: Updated copy of the array.
+        """
+        return self.set(func(self.get()))
+
+
+class _IndexUpdateHelper:
+    """Helper property object enabling ``arr.at[idx]`` syntax on ``ndarray``."""
+
+    def __init__(self, array_obj: ndarray) -> None:
+        """Initialize ``_IndexUpdateHelper``.
+
+        Args:
+            array_obj: Target ``ndarray``.
+        """
+        self._array = array_obj
+
+    def __getitem__(self, idx: ArrayLikeSpec) -> _IndexUpdateRef:
+        """Create an :class:`_IndexUpdateRef` for ``idx``.
+
+        Args:
+            idx: Index specification.
+
+        Returns:
+            _IndexUpdateRef: Index update reference.
+        """
+        return _IndexUpdateRef(self._array, idx)
 
 
 class ndarray:
-    """
-    A multi-dimensional array object backed by an ml-switcheroo tensor.
+    """A multi-dimensional array object backed by an ml-switcheroo tensor.
 
     This class provides a NumPy-like interface for tensor operations, supporting
     standard arithmetic, comparison, and array-manipulation magic methods.
     """
 
-    def __init__(self, tensor: Any) -> None:
-        """
-        Initialize the object.
+    def __init__(self, tensor: Tensor) -> None:
+        """Initialize the object.
 
         Args:
-            tensor (Any): The underlying tensor data.
-
-        Returns:
-            None
+            tensor: The underlying tensor data.
         """
-        self._tensor = tensor
+        self._tensor: Tensor = tensor
 
     @property
-    def shape(self) -> Any:
-        """
-        Get the shape of the array.
+    def at(self) -> _IndexUpdateHelper:
+        """Return an :class:`_IndexUpdateHelper` for functional in-place updates (``arr.at[idx]``).
 
         Returns:
-            Any: The shape property of the underlying tensor.
+            _IndexUpdateHelper: Helper bound to this array.
         """
-        return self._tensor.shape
+        return _IndexUpdateHelper(self)
+
+    @property
+    def size(self) -> int:
+        """Return the total number of elements in the array.
+
+        Returns:
+            int: Product of all dimension sizes.
+        """
+        import math
+
+        return int(math.prod(self.shape)) if self.shape else 1
+
+    @property
+    def T(self) -> ArrayLikeSpec:
+        """Return the transposed array.
+
+        Returns:
+            ArrayLikeSpec: Transposed array.
+        """
+        return transpose(self)
+
+    @property
+    def mT(self) -> ArrayLikeSpec:
+        """Return the matrix-transposed array (swapping the last two axes).
+
+        Returns:
+            ArrayLikeSpec: Matrix-transposed array.
+        """
+        return swapaxes(self, -2, -1)
+
+    def item(self) -> ArrayLikeSpec:
+        """Copy an element of an array to a standard Python scalar and return it.
+
+        Returns:
+            ArrayLikeSpec: Python scalar value.
+        """
+        return self._tensor.item()
+
+    def tolist(self) -> ArrayLikeSpec:
+        """Return the array as a (possibly nested) Python list.
+
+        Returns:
+            ArrayLikeSpec: Nested Python list or scalar.
+        """
+        return self.__array__().tolist()
+
+    def astype(self, dtype: DTypeSpec) -> ArrayLikeSpec:
+        """Copy of the array, cast to a specified type.
+
+        Args:
+            dtype: Target dtype.
+
+        Returns:
+            ArrayLikeSpec: Cast array.
+        """
+        return astype(self, dtype)
+
+    def reshape(self, *shape: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Return an array containing the same data with a new shape.
+
+        Args:
+            *shape: New shape specification (either a tuple/list or multiple int arguments).
+
+        Returns:
+            ArrayLikeSpec: Reshaped array.
+        """
+        newshape = tuple(int(d) for d in shape[0]) if len(shape) == 1 and isinstance(shape[0], (tuple, list)) else tuple(int(d) for d in shape if isinstance(d, int))
+        return reshape(self, newshape)
+
+    def transpose(self, *axes: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Return a view of the array with axes transposed.
+
+        Args:
+            *axes: Optional permutation of axes.
+
+        Returns:
+            ArrayLikeSpec: Transposed array.
+        """
+        if not axes or axes == (None,):
+            return transpose(self, None)
+        if len(axes) == 1 and isinstance(axes[0], (tuple, list)):
+            return transpose(self, [int(a) for a in axes[0]])
+        return transpose(self, [int(a) for a in axes if isinstance(a, int)])
+
+    def ravel(self, order: str = "C") -> ArrayLikeSpec:
+        """Return a flattened 1-D array.
+
+        Args:
+            order: Memory layout order (``"C"`` or ``"F"``).
+
+        Returns:
+            ArrayLikeSpec: Flattened 1-D array.
+        """
+        return ravel(self, order=order)
+
+    def flatten(self, order: str = "C") -> ArrayLikeSpec:
+        """Return a copy of the array collapsed into one dimension.
+
+        Args:
+            order: Memory layout order (``"C"`` or ``"F"``).
+
+        Returns:
+            ArrayLikeSpec: Flattened 1-D array.
+        """
+        return ravel(self, order=order)
+
+    def squeeze(self, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
+        """Remove axes of length one from ``self``.
+
+        Args:
+            axis: Optional axis or axes to squeeze.
+
+        Returns:
+            ArrayLikeSpec: Squeezed array.
+        """
+        return squeeze(self, axis=axis)
+
+    def sum(
+        self,
+        axis: ArrayLikeSpec = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        initial: ArrayLikeSpec = None,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the sum of the array elements over the given axis.
+
+        Args:
+            axis: Axis or axes along which a sum is performed.
+            dtype: Optional output dtype.
+            out: Optional output array (unused).
+            keepdims: Whether reduced axes are left in the result as dimensions with size one.
+            initial: Optional starting value for the sum.
+            where: Optional boolean mask of elements to include.
+
+        Returns:
+            ArrayLikeSpec: Summed array.
+        """
+        return sum(self, axis=axis, keepdims=keepdims)
+
+    def mean(
+        self,
+        axis: ArrayLikeSpec = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the average of the array elements along given axis.
+
+        Args:
+            axis: Axis or axes along which the means are computed.
+            dtype: Optional output dtype.
+            out: Optional output array (unused).
+            keepdims: Whether reduced axes are left in the result as dimensions with size one.
+            where: Optional boolean mask of elements to include.
+
+        Returns:
+            ArrayLikeSpec: Mean array.
+        """
+        return mean(self, axis=axis, keepdims=keepdims)
+
+    def min(
+        self,
+        axis: ArrayLikeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        initial: ArrayLikeSpec = None,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the minimum along a given axis.
+
+        Args:
+            axis: Axis or axes along which to operate.
+            out: Optional output array (unused).
+            keepdims: Whether reduced axes are left in the result as dimensions with size one.
+            initial: Optional maximum value of an output element.
+            where: Optional boolean mask of elements to compare.
+
+        Returns:
+            ArrayLikeSpec: Minimum array.
+        """
+        return min(self, axis=axis, keepdims=keepdims)
+
+    def max(
+        self,
+        axis: ArrayLikeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        initial: ArrayLikeSpec = None,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the maximum along a given axis.
+
+        Args:
+            axis: Axis or axes along which to operate.
+            out: Optional output array (unused).
+            keepdims: Whether reduced axes are left in the result as dimensions with size one.
+            initial: Optional minimum value of an output element.
+            where: Optional boolean mask of elements to compare.
+
+        Returns:
+            ArrayLikeSpec: Maximum array.
+        """
+        return max(self, axis=axis, keepdims=keepdims)
+
+    def __matmul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform matrix multiplication with ``other``.
+
+        Args:
+            other: Right-hand matrix/vector operand.
+
+        Returns:
+            ArrayLikeSpec: Matrix product.
+        """
+        return matmul(self, other)
+
+    def __rmatmul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform reflected matrix multiplication with ``other``.
+
+        Args:
+            other: Left-hand matrix/vector operand.
+
+        Returns:
+            ArrayLikeSpec: Matrix product.
+        """
+        return matmul(other, self)
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Get the shape of the array.
+
+        Returns:
+            tuple[int, ...]: The shape property of the underlying tensor.
+        """
+        return tuple(int(d) for d in self._tensor.shape)
 
     @property
     def ndim(self) -> int:
-        """
-        Get the number of dimensions of the array.
+        """Get the number of dimensions of the array.
 
         Returns:
             int: The number of dimensions.
         """
-        return len(self.shape) if self.shape is not None else 0
+        return len(self.shape)
 
     @property
-    def dtype(self) -> Any:
-        """
-        Get the dtype of the array.
+    def dtype(self) -> ArrayLikeSpec:
+        """Get the dtype of the array.
 
         Returns:
-            Any: The dtype property of the underlying tensor.
+            ArrayLikeSpec: The dtype property of the underlying tensor.
         """
-        return self._tensor.dtype  # pragma: no cover
+        return self._tensor.dtype
 
-    def __array__(self, dtype=None) -> Any:
-        """
-        Perform the array operation.
+    def __array__(self, dtype: DTypeSpec = None) -> ArrayLikeSpec:
+        """Perform the array operation.
 
         Args:
             dtype: Optional dtype to convert to.
 
         Returns:
-            Any: The result of the array operation.
+            ArrayLikeSpec: The result of the array operation.
         """
-        arr = self._tensor.__array__()
-        if dtype is not None:
-            # We don't have numpy here, but the caller usually handles the dtype cast
-            pass
-        return arr
+        return self._tensor.__array__()
 
-    def block_until_ready(self) -> "ndarray":
-        """
-        Blocks until the array's value is available, and returns the array.
+    def block_until_ready(self) -> ndarray:
+        """Blocks until the array's value is available, and returns the array.
 
         Returns:
             ndarray: The array itself.
         """
-        # ml_switcheroo_compiler handles evaluation implicitly for now,
-        # so returning self fulfills the API requirement.
-        return self  # pragma: no cover
+        return self
 
     def __repr__(self) -> str:
-        """
-        Perform the repr operation.
+        """Perform the repr operation.
 
         Returns:
             str: The result of the repr operation.
         """
-        inner_repr = repr(self.__array__())  # pragma: no cover
-        if inner_repr.startswith("array("):  # pragma: no cover
-            inner_repr = inner_repr[6:-1]  # pragma: no cover
-        return f"Array({inner_repr}, dtype={self.dtype.name})"  # pragma: no cover
+        inner_repr = repr(self.__array__())
+        inner_repr = inner_repr[6:-1] if inner_repr.startswith("array(") else inner_repr
+        return f"Array({inner_repr}, dtype={self.dtype.name})"
 
-    def __add__(self, other: Any) -> Any:
-        """
-        Perform the add operation.
+    def __add__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the add operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the add operation.
+            ArrayLikeSpec: The result of the add operation.
         """
         return add(self, other)
 
-    def __radd__(self, other: Any) -> Any:
-        """
-        Perform the radd operation.
+    def __radd__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the radd operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the radd operation.
+            ArrayLikeSpec: The result of the radd operation.
         """
         return add(other, self)
 
-    def __sub__(self, other: Any) -> Any:
-        """
-        Perform the sub operation.
+    def __sub__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the sub operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the sub operation.
+            ArrayLikeSpec: The result of the sub operation.
         """
         return add(self, multiply(other, -1))
 
-    def __rsub__(self, other: Any) -> Any:
-        """
-        Perform the rsub operation.
+    def __rsub__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the rsub operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the rsub operation.
+            ArrayLikeSpec: The result of the rsub operation.
         """
         return add(other, multiply(self, -1))
 
-    def __mul__(self, other: Any) -> Any:
-        """
-        Perform the mul operation.
+    def __mul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the mul operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the mul operation.
+            ArrayLikeSpec: The result of the mul operation.
         """
         return multiply(self, other)
 
-    def __rmul__(self, other: Any) -> Any:
-        """
-        Perform the rmul operation.
+    def __rmul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the rmul operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the rmul operation.
+            ArrayLikeSpec: The result of the rmul operation.
         """
         return multiply(other, self)
 
-    def __pow__(self, other: Any) -> Any:
-        """
-        Perform the pow operation.
+    def __pow__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the pow operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the pow operation.
+            ArrayLikeSpec: The result of the pow operation.
         """
-        return power(self, other)  # pragma: no cover
+        return power(self, other)
 
-    def __rpow__(self, other: Any) -> Any:
-        """
-        Perform the rpow operation.
+    def __rpow__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the rpow operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the rpow operation.
+            ArrayLikeSpec: The result of the rpow operation.
         """
-        return power(other, self)  # pragma: no cover
+        return power(other, self)
 
-    def __truediv__(self, other: Any) -> Any:
-        """
-        Perform the truediv operation.
+    def __truediv__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the truediv operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the truediv operation.
+            ArrayLikeSpec: The result of the truediv operation.
         """
-
         return true_divide(self, other)
 
-    def __rtruediv__(self, other: Any) -> Any:
-        """
-        Perform the rtruediv operation.
+    def __rtruediv__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the rtruediv operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the rtruediv operation.
+            ArrayLikeSpec: The result of the rtruediv operation.
         """
-
         return true_divide(other, self)
 
-    def __floordiv__(self, other: Any) -> Any:
-        """
-        Perform the floordiv operation.
+    def __floordiv__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the floordiv operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the floordiv operation.
+            ArrayLikeSpec: The result of the floordiv operation.
         """
-
         return floor_divide(self, other)
 
-    def __rfloordiv__(self, other: Any) -> Any:
-        """
-        Perform the rfloordiv operation.
+    def __rfloordiv__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the rfloordiv operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the rfloordiv operation.
+            ArrayLikeSpec: The result of the rfloordiv operation.
         """
-
         return floor_divide(other, self)
 
-    def __neg__(self) -> Any:
-        """
-        Perform the neg operation.
+    def __neg__(self) -> ArrayLikeSpec:
+        """Perform the neg operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the neg operation.
+            ArrayLikeSpec: The result of the neg operation.
         """
-        return multiply(self, -1.0)  # pragma: no cover
+        return multiply(self, -1.0)
 
-    def __lt__(self, other: Any) -> Any:
-        """
-        Perform the lt operation.
+    def __lt__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the lt operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the lt operation.
+            ArrayLikeSpec: The result of the lt operation.
         """
         return _wrap(ops.less(self._tensor, _to_tensor(other)))
 
-    def __gt__(self, other: Any) -> Any:
-        """
-        Perform the gt operation.
+    def __gt__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the gt operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the gt operation.
+            ArrayLikeSpec: The result of the gt operation.
         """
         return _wrap(ops.greater(self._tensor, _to_tensor(other)))
 
-    def __le__(self, other: Any) -> Any:
-        """
-        Perform the le operation.
+    def __le__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the le operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the le operation.
+            ArrayLikeSpec: The result of the le operation.
         """
-        return _wrap(
-            ops.less_equal(self._tensor, _to_tensor(other))
-        )  # pragma: no cover
+        return _wrap(ops.less_equal(self._tensor, _to_tensor(other)))
 
-    def __ge__(self, other: Any) -> Any:
-        """
-        Perform the ge operation.
+    def __ge__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the ge operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the ge operation.
+            ArrayLikeSpec: The result of the ge operation.
         """
-        return _wrap(
-            ops.greater_equal(self._tensor, _to_tensor(other))
-        )  # pragma: no cover
+        return _wrap(ops.greater_equal(self._tensor, _to_tensor(other)))
 
-    def __setitem__(self, key: Any, value: Any) -> None:
-        """
-        Perform the setitem operation.
+    def __setitem__(self, key: ArrayLikeSpec, value: ArrayLikeSpec) -> None:
+        """Perform the setitem operation.
 
         Args:
-            other (Any): The other operand for the operation.
-
-        Returns:
-            Any: The result of the setitem operation.
+            key: Input parameter ``key``.
+            value: Input parameter ``value``.
         """
-
         from ml_switcheroo_compiler.core.config import config
 
         if config.eager_mode:
-            val = getattr(value, "_tensor", value)
-            val = getattr(val, "data", val)
-            self._tensor.data[key] = val
+            t_val = value._tensor if isinstance(value, ndarray) else value
+            raw_val = t_val.data if isinstance(t_val, Tensor) else t_val
+            self._tensor.data[key] = raw_val
         else:
             raise TypeError("JAX arrays are immutable.")
 
-    def __getitem__(self, key: Any) -> Any:
-        """
-        Perform the getitem operation.
+    def __getitem__(self, key: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform the getitem operation.
+
+        Args:
+            key: Input parameter ``key``.
+
+        Returns:
+            The operation result.
         """
         from ml_switcheroo_compiler.core.config import config
 
         if config.eager_mode:
             arr = self.__array__()
-            if hasattr(key, "_tensor"):
+            if isinstance(key, ndarray):
                 key = key._tensor.data
             elif isinstance(key, tuple):
-                key = tuple(
-                    getattr(getattr(k, "_tensor", k), "data", getattr(k, "_tensor", k))
-                    for k in key
-                )
+                unwrapped_keys = []
+                for k in key:
+                    tk = k._tensor if isinstance(k, ndarray) else k
+                    rk = tk.data if isinstance(tk, Tensor) else tk
+                    unwrapped_keys.append(rk)
+                key = tuple(unwrapped_keys)
             return _wrap(_to_tensor(arr[key]))
 
         t = self._tensor
@@ -357,9 +731,7 @@ class ndarray:
             step = key.step if key.step is not None else 1
             return _wrap(ops.strided_slice(t, [start], [stop], [step]))
 
-        if isinstance(key, tuple) and builtins.all(
-            isinstance(k, slice) or k is None for k in key
-        ):
+        if isinstance(key, tuple) and builtins.all(isinstance(k, slice) or k is None for k in key):
             starts = []
             stops = []
             steps = []
@@ -380,99 +752,68 @@ class ndarray:
 
         return _wrap(t[key])
 
-    def __eq__(self, other: object) -> Any:
-        """
-        Perform the eq operation.
+    def __eq__(self, other: ArrayLikeSpec) -> ndarray:
+        """Perform the eq operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other: The other operand for the operation.
 
         Returns:
-            Any: The result of the eq operation.
+            ndarray: The result of the eq operation.
         """
         return _wrap(ops.equal(self._tensor, _to_tensor(other)))
 
-    def __bool__(self) -> Any:
-        """
-        Perform the bool operation.
-
-        Args:
-            other (Any): The other operand for the operation.
+    def __bool__(self) -> builtins.bool:
+        """Perform the bool operation.
 
         Returns:
-            Any: The result of the bool operation.
+            bool: The result of the bool operation.
         """
         import math
 
+        from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+
         size = math.prod(self.shape) if self.shape else 1
         if size == 1:
-            if hasattr(self._tensor.data, "id"):  # ProxyTensor
-                return True  # Tracer dummy bool
-
-            val = self._tensor.data if hasattr(self._tensor, "data") else self._tensor
-
-            if hasattr(val, "value") and not callable(val.value):
-                return bool(val.value)  # pragma: no cover
-
-            if hasattr(val, "item") and callable(val.item):
-                try:
-                    return bool(val.item())
-                except Exception:
-                    pass
-
-            if hasattr(self._tensor, "item") and callable(self._tensor.item):
-                try:
-                    return bool(self._tensor.item())
-                except Exception:
-                    pass
-
-            try:
-                return bool(val)
-            except TypeError:
-                if hasattr(val, "name"):
-                    return bool(val.name)  # pragma: no cover
+            if isinstance(self._tensor.data, ProxyTensor):
                 return True
-        raise ValueError(  # pragma: no cover
-            "The truth value of an array with more than one element is ambiguous."
-        )
+            return builtins.bool(self._tensor.item())
+        raise ValueError("The truth value of an array with more than one element is ambiguous.")
 
-    def __len__(self) -> Any:
-        """
-        Perform the len operation.
+    def __len__(self) -> ArrayLikeSpec:
+        """Perform the len operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the len operation.
+            ArrayLikeSpec: The result of the len operation.
         """
         return self.shape[0] if self.shape else 0
 
-    def __iter__(self) -> Any:
-        """
-        Perform the iter operation.
+    def __iter__(self) -> ArrayLikeSpec:
+        """Perform the iter operation.
 
         Args:
-            other (Any): The other operand for the operation.
+            other (ArrayLikeSpec): The other operand for the operation.
 
         Returns:
-            Any: The result of the iter operation.
+            ArrayLikeSpec: The result of the iter operation.
         """
-        arr = self.__array__()  # pragma: no cover
-        for i in range(arr.shape[0]):  # pragma: no cover
-            yield array(arr[i])  # pragma: no cover
+        arr = self.__array__()
+        for i in range(arr.shape[0]):
+            yield array(arr[i])
 
 
-def _to_tensor(x: Any) -> Any:
+def _to_tensor(x: ArrayLikeSpec) -> Tensor:
     """Convert the input to an ml-switcheroo Tensor.
 
     Args:
-        x (Any): Argument x.
+        x: Argument x.
 
     Returns:
-        Any: The result of the operation.
+        Tensor: The result of the operation.
     """
-
     if isinstance(x, ndarray):
         x = x._tensor
     import uuid
@@ -483,16 +824,10 @@ def _to_tensor(x: Any) -> Any:
     from ml_switcheroo_ir import LogicalNode
 
     if isinstance(x, _ml_switcheroo_compiler.Tensor):
-        if _tracer.is_tracing and not hasattr(x.data, "id"):
+        if _tracer.is_tracing and not isinstance(x.data, ProxyTensor):
             # lift eager tensor as constant
             out_id = str(uuid.uuid4())
-            val = getattr(
-                x.data,
-                "tolist",
-                lambda: (
-                    x.item() if (not x.shape or getattr(x, "size", 1) == 1) else x.data
-                ),
-            )()
+            val = x.__array__().tolist() if x.shape else x.item()
             node = LogicalNode(
                 id=out_id,
                 op_type="Constant",
@@ -518,88 +853,88 @@ def _to_tensor(x: Any) -> Any:
             ),
         )
 
-    from zero_jax.numpy import tensor_utils
-
     with _ml_switcheroo_compiler.core.EagerMode():
         arr = _to_array(x)
     return _to_tensor(arr)
 
 
-def _wrap(t: Any) -> Any:
+def _wrap(t: ArrayLikeSpec) -> ArrayLikeSpec:
     """Wrap an ml-switcheroo Tensor in an ndarray.
 
     Args:
-        t (Any): Argument t.
+        t (ArrayLikeSpec): Argument t.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if isinstance(t, Tensor):
         return ndarray(t)
-    elif isinstance(t, tuple):
+    if isinstance(t, tuple):
         return tuple(_wrap(x) for x in t)
-    elif isinstance(t, list):
+    if isinstance(t, list):
         return [_wrap(x) for x in t]
+    if isinstance(t, ArrayProtocol):
+        return ndarray(_to_tensor(t))
     return t
 
 
-def sin(x: Any) -> Any:
+def sin(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute the trigonometric sine element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.sin(_to_tensor(x)))
 
 
-def cos(x: Any) -> Any:
+def cos(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute the trigonometric cosine element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.cos(_to_tensor(x)))
 
 
-def exp(x: Any) -> Any:
+def exp(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Calculate the exponential of all elements in the input array.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.exp(_to_tensor(x)))
 
 
-def log(x: Any) -> Any:
+def log(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Natural logarithm, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.log(_to_tensor(x)))
 
 
-def transpose(x: Any, axes: Optional[List[int]] = None) -> Any:
+def transpose(x: ArrayLikeSpec, axes: list[int] | None = None) -> ArrayLikeSpec:
     """Reverse or permute the axes of an array.
 
     Args:
-        x (Any): Argument x.
-        axes (Any): Argument axes.
+        x (ArrayLikeSpec): Argument x.
+        axes (ArrayLikeSpec): Argument axes.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     t = _to_tensor(x)
     if axes is not None:
@@ -608,148 +943,149 @@ def transpose(x: Any, axes: Optional[List[int]] = None) -> Any:
     return _wrap(ops.permute(t, axes=axes))
 
 
-def reshape(x: Any, newshape: Tuple[int, ...]) -> Any:
+def reshape(x: ArrayLikeSpec, newshape: tuple[int, ...]) -> ArrayLikeSpec:
     """Gives a new shape to an array without changing its data.
 
     Args:
-        x (Any): Argument x.
-        newshape (Any): Argument newshape.
+        x (ArrayLikeSpec): Argument x.
+        newshape (ArrayLikeSpec): Argument newshape.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.reshape(_to_tensor(x), newshape=newshape))
 
 
-def broadcast_to(x: Any, shape: Tuple[int, ...]) -> Any:
+def broadcast_to(x: ArrayLikeSpec, shape: tuple[int, ...]) -> ArrayLikeSpec:
     """Broadcast an array to a new shape.
 
     Args:
-        x (Any): Argument x.
-        shape (Any): Argument shape.
+        x (ArrayLikeSpec): Argument x.
+        shape (ArrayLikeSpec): Argument shape.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.broadcast_to(_to_tensor(x), shape=shape))
 
 
-def concatenate(arrays: List[Any], axis: int = 0) -> Any:
+def concatenate(arrays: list[ArrayLikeSpec], axis: int = 0) -> ArrayLikeSpec:
     """Join a sequence of arrays along an existing axis.
 
     Args:
-        arrays (Any): Argument arrays.
-        axis (Any): Argument axis.
+        arrays (ArrayLikeSpec): Argument arrays.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     tensors = [_to_tensor(a) for a in arrays]
     return _wrap(ops.concatenate(tensors, axis=axis))
 
 
-def where(condition: Any, x: Any, y: Any) -> Any:
+def where(condition: ArrayLikeSpec, x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return elements chosen from x or y depending on condition.
 
     Args:
-        condition (Any): Argument condition.
-        x (Any): Argument x.
-        y (Any): Argument y.
+        condition (ArrayLikeSpec): Argument condition.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.where(_to_tensor(condition), _to_tensor(x), _to_tensor(y)))
 
 
-def einsum(subscripts: str, *operands: Any) -> Any:
-    """Evaluates the Einstein summation convention on the operands.
+def einsum(subscripts: str, *operands: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Evaluate the Einstein summation convention on the operands.
 
     Args:
-        subscripts (Any): Argument subscripts.
+        subscripts: Argument subscripts.
+        *operands: Argument operands.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     tensors = [_to_tensor(a) for a in operands]
     return _wrap(ops.einsum(subscripts, *tensors))
 
 
-def add(x: Any, y: Any) -> Any:
+def add(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Add arguments element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.add(_to_tensor(x), _to_tensor(y)))
 
 
-def multiply(x: Any, y: Any) -> Any:
+def multiply(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Multiply arguments element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.multiply(_to_tensor(x), _to_tensor(y)))
 
 
-def power(x: Any, y: Any) -> Any:
+def power(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """First array elements raised to powers from second array, element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.power(_to_tensor(x), _to_tensor(y)))
 
 
-def maximum(x: Any, y: Any) -> Any:
+def maximum(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise maximum of array elements.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.maximum(_to_tensor(x), _to_tensor(y)))
 
 
-def minimum(x: Any, y: Any) -> Any:
+def minimum(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise minimum of array elements.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.minimum(_to_tensor(x), _to_tensor(y)))
 
 
-def clip(a: Any, a_min: Any, a_max: Any) -> Any:
+def clip(a: ArrayLikeSpec, a_min: ArrayLikeSpec, a_max: ArrayLikeSpec) -> ArrayLikeSpec:
     """Clip (limit) the values in an array.
 
     Args:
-        a (Any): Argument a.
-        a_min (Any): Argument a_min.
-        a_max (Any): Argument a_max.
+        a (ArrayLikeSpec): Argument a.
+        a_min (ArrayLikeSpec): Argument a_min.
+        a_max (ArrayLikeSpec): Argument a_max.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     res = _to_tensor(a)
     if a_min is not None:
@@ -760,23 +1096,23 @@ def clip(a: Any, a_min: Any, a_max: Any) -> Any:
 
 
 def max(
-    x: Any,
-    axis: Any = None,
-    keepdims: Any = False,
-    where: Any = None,
-    initial: Any = None,
-) -> Any:
+    x: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    keepdims: ArrayLikeSpec = False,
+    where: ArrayLikeSpec = None,
+    initial: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Return the maximum of an array or maximum along an axis.
 
     Args:
-        x (Any): Argument x.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
-        where (Any): Argument where.
-        initial (Any): Argument initial.
+        x (ArrayLikeSpec): Argument x.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
+        where (ArrayLikeSpec): Argument where.
+        initial (ArrayLikeSpec): Argument initial.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     t_x = _to_tensor(x)
     if where is not None:
@@ -788,17 +1124,17 @@ def max(
     return _wrap(res)
 
 
-def sum(x: Any, axis: Any = None, keepdims: Any = False, where: Any = None) -> Any:
+def sum(x: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False, where: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Sum of array elements over a given axis.
 
     Args:
-        x (Any): Argument x.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
-        where (Any): Argument where.
+        x (ArrayLikeSpec): Argument x.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
+        where (ArrayLikeSpec): Argument where.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     t_x = _to_tensor(x)
     if where is not None:
@@ -806,58 +1142,58 @@ def sum(x: Any, axis: Any = None, keepdims: Any = False, where: Any = None) -> A
     return _wrap(ops.sum(t_x, axis=axis, keepdims=keepdims))
 
 
-def zeros_like(x: Any, dtype: Any = None) -> Any:
+def zeros_like(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return an array of zeros with the same shape and type as a given array.
 
     Args:
-        x (Any): Argument x.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if dtype is None:
         dtype = config.default_float_dtype
     return _wrap(ops.zeros_like(_to_tensor(x), dtype=dtype))
 
 
-def zeros(shape: Any, dtype: Any = None) -> Any:
+def zeros(shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array of given shape and type, filled with zeros.
 
     Args:
-        shape (Any): Argument shape.
-        dtype (Any): Argument dtype.
+        shape (ArrayLikeSpec): Argument shape.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if dtype is None:
         dtype = config.default_float_dtype
     return _wrap(ops.zeros(shape=shape, dtype=dtype))
 
 
-def abs(x: Any) -> Any:
+def abs(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Calculate the absolute value element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.abs(_to_tensor(x)))
 
 
-def mean(x: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def mean(x: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Compute the arithmetic mean along the specified axis.
 
     Args:
-        x (Any): Argument x.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        x (ArrayLikeSpec): Argument x.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.mean(_to_tensor(x), axis=axis, keepdims=keepdims))
 
@@ -865,112 +1201,112 @@ def mean(x: Any, axis: Any = None, keepdims: Any = False) -> Any:
 inf = float("inf")
 
 
-def array(x: Any, dtype: Any = None) -> Any:
+def array(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Create an array.
 
     Args:
-        x (Any): Argument x.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if isinstance(x, ndarray):
-        return x  # pragma: no cover
+        return x
     return _wrap(_to_tensor(x))
 
 
-def dot(a: Any, b: Any) -> Any:
+def dot(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Dot product of two arrays.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.dot(_to_tensor(a), _to_tensor(b)))
 
 
-def matmul(a: Any, b: Any) -> Any:
+def matmul(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Matrix product of two arrays.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.matmul(_to_tensor(a), _to_tensor(b)))
 
 
-def expand_dims(a: Any, axis: int) -> Any:
+def expand_dims(a: ArrayLikeSpec, axis: int) -> ArrayLikeSpec:
     """Expand the shape of an array.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.expand_dims(_to_tensor(a), axis=axis))
 
 
-def isfinite(x: Any) -> Any:
+def isfinite(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Test element-wise for finiteness (not infinity or not Not a Number).
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.isfinite(_to_tensor(x)))
 
 
-def allclose(
-    a: Any, b: Any, rtol: Any = 1e-05, atol: Any = 1e-08, equal_nan: Any = False
-) -> Any:
+def allclose(a: ArrayLikeSpec, b: ArrayLikeSpec, rtol: ArrayLikeSpec = 1e-05, atol: ArrayLikeSpec = 1e-08, equal_nan: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Returns True if two arrays are element-wise equal within a tolerance.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
-        rtol (Any): Argument rtol.
-        atol (Any): Argument atol.
-        equal_nan (Any): Argument equal_nan.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
+        rtol (ArrayLikeSpec): Argument rtol.
+        atol (ArrayLikeSpec): Argument atol.
+        equal_nan (ArrayLikeSpec): Argument equal_nan.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-    return ops.allclose(
-        _to_tensor(a), _to_tensor(b), rtol=rtol, atol=atol, equal_nan=equal_nan
-    )
+    return ops.allclose(_to_tensor(a), _to_tensor(b), rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
-def array_equal(a1: Any, a2: Any, equal_nan: Any = False) -> Any:
+def array_equal(a1: ArrayLikeSpec, a2: ArrayLikeSpec, equal_nan: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """True if two arrays have the same shape and elements, False otherwise.
 
     Args:
-        a1 (Any): Argument a1.
-        a2 (Any): Argument a2.
-        equal_nan (Any): Argument equal_nan.
+        a1 (ArrayLikeSpec): Argument a1.
+        a2 (ArrayLikeSpec): Argument a2.
+        equal_nan (ArrayLikeSpec): Argument equal_nan.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     res = ops.equal(_to_tensor(a1), _to_tensor(a2))
-    return ops.all(res).item() if hasattr(ops.all(res), "item") else bool(ops.all(res))
+    all_res = ops.all(res)
+    return builtins.bool(all_res.item()) if isinstance(all_res, Tensor) else builtins.bool(all_res)
 
 
-def broadcast_shapes(*shapes: Any) -> Any:
+def broadcast_shapes(*shapes: ArrayLikeSpec) -> ArrayLikeSpec:
     """Broadcast the input shapes into a single shape.
 
+    Args:
+        *shapes: Input parameter ``shapes``.
+
     Returns:
-        Any: The result of the operation.
+        The operation result.
     """
     import functools
 
@@ -978,77 +1314,77 @@ def broadcast_shapes(*shapes: Any) -> Any:
 
     if not shapes:
         return ()
-    return functools.reduce(_broadcast_shapes, shapes)  # pragma: no cover
+    return functools.reduce(_broadcast_shapes, shapes)
 
 
-def ones(shape: Any, dtype: Any = None) -> Any:
+def ones(shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array of given shape and type, filled with ones.
 
     Args:
-        shape (Any): Argument shape.
-        dtype (Any): Argument dtype.
+        shape (ArrayLikeSpec): Argument shape.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if dtype is None:
         dtype = config.default_float_dtype
     return _wrap(ops.ones(shape=shape, dtype=dtype))
 
 
-def empty(shape: Any, dtype: Any = None) -> Any:
+def empty(shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array of given shape and type, without initializing entries.
 
     Args:
-        shape (Any): Argument shape.
-        dtype (Any): Argument dtype.
+        shape (ArrayLikeSpec): Argument shape.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if dtype is None:
         dtype = config.default_float_dtype
     return _wrap(ops.empty(shape=shape, dtype=dtype))
 
 
-def full(shape: Any, fill_value: Any, dtype: Any = None) -> Any:
+def full(shape: ArrayLikeSpec, fill_value: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array of given shape and type, filled with fill_value.
 
     Args:
-        shape (Any): Argument shape.
-        fill_value (Any): Argument fill_value.
-        dtype (Any): Argument dtype.
+        shape (ArrayLikeSpec): Argument shape.
+        fill_value (ArrayLikeSpec): Argument fill_value.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.full(shape=shape, fill_value=fill_value, dtype=dtype))
 
 
-def ones_like(x: Any, dtype: Any = None) -> Any:
+def ones_like(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return an array of ones with the same shape and type as a given array.
 
     Args:
-        x (Any): Argument x.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if dtype is None:
         dtype = config.default_float_dtype
     return _wrap(ops.ones_like(_to_tensor(x), dtype=dtype))
 
 
-def empty_like(x: Any, dtype: Any = None) -> Any:
+def empty_like(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array with the same shape and type as a given array.
 
     Args:
-        x (Any): Argument x.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     t = _to_tensor(x)
     if dtype is None:
@@ -1056,76 +1392,85 @@ def empty_like(x: Any, dtype: Any = None) -> Any:
     return _wrap(ops.empty(shape=t.shape, dtype=dtype))
 
 
-def full_like(x: Any, fill_value: Any, dtype: Any = None) -> Any:
+def full_like(x: ArrayLikeSpec, fill_value: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a full array with the same shape and type as a given array.
 
     Args:
-        x (Any): Argument x.
-        fill_value (Any): Argument fill_value.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        fill_value (ArrayLikeSpec): Argument fill_value.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.full_like(_to_tensor(x), fill_value=fill_value, dtype=dtype))
 
 
-def asarray(x: Any, dtype: Any = None) -> Any:
+def asarray(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Convert the input to an array.
 
     Args:
-        x (Any): Argument x.
-        dtype (Any): Argument dtype.
+        x (ArrayLikeSpec): Argument x.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return array(x, dtype=dtype)
 
 
-def arange(start: Any, stop: Any = None, step: Any = 1, dtype: Any = None) -> Any:
+def arange(start: ArrayLikeSpec, stop: ArrayLikeSpec = None, step: ArrayLikeSpec = 1, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return evenly spaced values within a given interval.
 
     Args:
-        start (Any): Argument start.
-        stop (Any): Argument stop.
-        step (Any): Argument step.
-        dtype (Any): Argument dtype.
+        start (ArrayLikeSpec): Argument start.
+        stop (ArrayLikeSpec): Argument stop.
+        step (ArrayLikeSpec): Argument step.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.arange(start=start, stop=stop, step=step, dtype=dtype))
 
 
 def linspace(
-    start: Any,
-    stop: Any,
+    start: ArrayLikeSpec,
+    stop: ArrayLikeSpec,
     num: int = 50,
     endpoint: bool = True,
     retstep: bool = False,
-    dtype: Any = None,
+    dtype: ArrayLikeSpec = None,
     axis: int = 0,
-) -> Any:
-    """Return evenly spaced numbers over a specified interval."""
+) -> ArrayLikeSpec:
+    """Return evenly spaced numbers over a specified interval.
+
+    Args:
+        start: Input parameter ``start``.
+        stop: Input parameter ``stop``.
+        num: Input parameter ``num``.
+        endpoint: Input parameter ``endpoint``.
+        retstep: Input parameter ``retstep``.
+        dtype: Input parameter ``dtype``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
     if num < 0:
-        raise ValueError("Number of samples, %s, must be non-negative." % num)
+        raise ValueError(f"Number of samples, {num}, must be non-negative.")
     if num == 0:
         return _wrap(ops.empty((0,), dtype=dtype))
 
-    start_t = _to_tensor(start)
-    stop_t = _to_tensor(stop)
+    _to_tensor(start)
+    _to_tensor(stop)
 
     if dtype is None:
         import ml_switcheroo_compiler
 
-        if start_t.dtype.name.startswith("Int") and stop_t.dtype.name.startswith("Int"):
-            dtype = ml_switcheroo_compiler.core.dtype.DType.Float32
+        dtype = ml_switcheroo_compiler.core.dtype.DType.Float32
 
-    if endpoint:
-        step_denom = num - 1 if num - 1 > 1 else 1
-    else:
-        step_denom = num  # pragma: no cover
+    step_denom = builtins.max(num - 1, 1) if endpoint else num
 
     step = (stop - start) / step_denom
 
@@ -1153,71 +1498,88 @@ def linspace(
 
 
 def logspace(
-    start: Any,
-    stop: Any,
+    start: ArrayLikeSpec,
+    stop: ArrayLikeSpec,
     num: int = 50,
     endpoint: bool = True,
     base: float = 10.0,
-    dtype: Any = None,
+    dtype: ArrayLikeSpec = None,
     axis: int = 0,
-) -> Any:
+) -> ArrayLikeSpec:
     """Return numbers spaced evenly on a log scale.
 
     Args:
-        start (Any): Argument start.
-        stop (Any): Argument stop.
-        num (Any): Argument num.
-        endpoint (Any): Argument endpoint.
-        base (Any): Argument base.
-        dtype (Any): Argument dtype.
-        axis (Any): Argument axis.
+        start (ArrayLikeSpec): Argument start.
+        stop (ArrayLikeSpec): Argument stop.
+        num (ArrayLikeSpec): Argument num.
+        endpoint (ArrayLikeSpec): Argument endpoint.
+        base (ArrayLikeSpec): Argument base.
+        dtype (ArrayLikeSpec): Argument dtype.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     lin = linspace(start, stop, num, endpoint=endpoint, dtype=dtype, axis=axis)
     return power(base, lin)
 
 
-def eye(N: int, M: int = None, k: int = 0, dtype: Any = None) -> Any:
-    """Return a 2-D array with ones on the diagonal and zeros elsewhere."""
+def eye(N: int, M: int | None = None, k: int = 0, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Return a 2-D array with ones on the diagonal and zeros elsewhere.
+
+    Args:
+        N: Input parameter ``N``.
+        M: Input parameter ``M``.
+        k: Input parameter ``k``.
+        dtype: Input parameter ``dtype``.
+
+    Returns:
+        The operation result.
+    """
     if M is None:
         M = N
     if k == 0:
         return _wrap(ops.eye(N, M, dtype=dtype))
 
-    row_idx = arange(N)  # pragma: no cover
-    col_idx = arange(M)  # pragma: no cover
-    row_k = add(row_idx, k)  # pragma: no cover
-    row_k_expand = expand_dims(row_k, 1)  # pragma: no cover
-    col_expand = expand_dims(col_idx, 0)  # pragma: no cover
-    res = equal(row_k_expand, col_expand)  # pragma: no cover
+    row_idx = arange(N)
+    col_idx = arange(M)
+    row_k = add(row_idx, k)
+    row_k_expand = expand_dims(row_k, 1)
+    col_expand = expand_dims(col_idx, 0)
+    res = equal(row_k_expand, col_expand)
 
-    if dtype is None:  # pragma: no cover
-        import ml_switcheroo_compiler  # pragma: no cover
+    if dtype is None:
+        import ml_switcheroo_compiler
 
-        dtype = ml_switcheroo_compiler.core.dtype.DType.Float32  # pragma: no cover
-    return astype(res, dtype)  # pragma: no cover
+        dtype = ml_switcheroo_compiler.core.dtype.DType.Float32
+    return astype(res, dtype)
 
 
-def identity(n: int, dtype: Any = None) -> Any:
+def identity(n: int, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the identity array.
 
     Args:
-        n (Any): Argument n.
-        dtype (Any): Argument dtype.
+        n (ArrayLikeSpec): Argument n.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.identity(n=n, dtype=dtype))
 
 
-def meshgrid(
-    *xi: Any, copy: Any = True, sparse: Any = False, indexing: Any = "xy"
-) -> Any:
-    """Return coordinate matrices from coordinate vectors."""
+def meshgrid(*xi: ArrayLikeSpec, copy: ArrayLikeSpec = True, sparse: ArrayLikeSpec = False, indexing: ArrayLikeSpec = "xy") -> ArrayLikeSpec:
+    """Return coordinate matrices from coordinate vectors.
 
+    Args:
+        copy: Input parameter ``copy``.
+        sparse: Input parameter ``sparse``.
+        indexing: Input parameter ``indexing``.
+        *xi: Input parameter ``xi``.
+
+    Returns:
+        The operation result.
+    """
     tensors = [_to_tensor(x) for x in xi]
 
     ndim = len(tensors)
@@ -1242,348 +1604,348 @@ def meshgrid(
     return tuple(_wrap(t) for t in output)
 
 
-def subtract(x: Any, y: Any) -> Any:
+def subtract(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Subtract arguments, element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.subtract(_to_tensor(x), _to_tensor(y)))
 
 
-def divide(x: Any, y: Any) -> Any:
+def divide(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Divide arguments element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.divide(_to_tensor(x), _to_tensor(y)))
 
 
-def true_divide(x: Any, y: Any) -> Any:
+def true_divide(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Divide arguments element-wise.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return divide(x, y)
 
 
-def floor_divide(x: Any, y: Any) -> Any:
+def floor_divide(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the largest integer smaller or equal to the division of the inputs.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.floor_divide(_to_tensor(x), _to_tensor(y)))
 
 
-def mod(x: Any, y: Any) -> Any:
+def mod(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return element-wise remainder of division.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.mod(_to_tensor(x), _to_tensor(y)))
 
 
-def remainder(x: Any, y: Any) -> Any:
+def remainder(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return element-wise remainder of division.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.remainder(_to_tensor(x), _to_tensor(y)))
 
 
-def divmod(x: Any, y: Any) -> Any:
+def divmod(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return element-wise quotient and remainder simultaneously.
 
     Args:
-        x (Any): Argument x.
-        y (Any): Argument y.
+        x (ArrayLikeSpec): Argument x.
+        y (ArrayLikeSpec): Argument y.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     out1, out2 = ops.divmod(_to_tensor(x), _to_tensor(y))
     return _wrap(out1), _wrap(out2)
 
 
-def negative(x: Any) -> Any:
+def negative(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Numerical negative, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.negative(_to_tensor(x)))
 
 
-def positive(x: Any) -> Any:
+def positive(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Numerical positive, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.positive(_to_tensor(x)))
 
 
-def sign(x: Any) -> Any:
+def sign(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Returns an element-wise indication of the sign of a number.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.sign(_to_tensor(x)))
 
 
-def floor(x: Any) -> Any:
+def floor(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the floor of the input, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.floor(_to_tensor(x)))
 
 
-def ceil(x: Any) -> Any:
+def ceil(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the ceiling of the input, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.ceil(_to_tensor(x)))
 
 
-def trunc(x: Any) -> Any:
+def trunc(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the truncated value of the input, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.trunc(_to_tensor(x)))
 
 
-def rint(x: Any) -> Any:
+def rint(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Round elements of the array to the nearest integer.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.round(_to_tensor(x)))
 
 
-def tan(x: Any) -> Any:
+def tan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute tangent element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.tan(_to_tensor(x)))
 
 
-def arcsin(x: Any) -> Any:
+def arcsin(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Inverse sine, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.asin(_to_tensor(x)))
 
 
-def arccos(x: Any) -> Any:
+def arccos(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Trigonometric inverse cosine, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.acos(_to_tensor(x)))
 
 
-def arctan(x: Any) -> Any:
+def arctan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Trigonometric inverse tangent, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.atan(_to_tensor(x)))
 
 
-def arctan2(x1: Any, x2: Any) -> Any:
+def arctan2(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise arc tangent of x1/x2 choosing the quadrant correctly.
 
     Args:
-        x1 (Any): Argument x1.
-        x2 (Any): Argument x2.
+        x1 (ArrayLikeSpec): Argument x1.
+        x2 (ArrayLikeSpec): Argument x2.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.atan2(_to_tensor(x1), _to_tensor(x2)))
 
 
-def sinh(x: Any) -> Any:
+def sinh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Hyperbolic sine, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.sinh(_to_tensor(x)))
 
 
-def cosh(x: Any) -> Any:
+def cosh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Hyperbolic cosine, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.cosh(_to_tensor(x)))
 
 
-def tanh(x: Any) -> Any:
+def tanh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute hyperbolic tangent element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.tanh(_to_tensor(x)))
 
 
-def arcsinh(x: Any) -> Any:
+def arcsinh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Inverse hyperbolic sine element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.asinh(_to_tensor(x)))
 
 
-def arccosh(x: Any) -> Any:
+def arccosh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Inverse hyperbolic cosine, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.acosh(_to_tensor(x)))
 
 
-def arctanh(x: Any) -> Any:
+def arctanh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Inverse hyperbolic tangent element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.atanh(_to_tensor(x)))
 
 
-def exp2(x: Any) -> Any:
+def exp2(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Calculate 2**p for all p in the input array.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     # 2^x = exp(x * ln(2)) or just power(2, x)
     return power(2.0, x)
 
 
-def expm1(x: Any) -> Any:
+def expm1(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Calculate exp(x) - 1 for all elements in the array.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return subtract(exp(x), 1.0)
 
 
-def log2(x: Any) -> Any:
+def log2(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Base-2 logarithm of x.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     # log2(x) = log(x) / log(2)
     import math
@@ -1591,159 +1953,157 @@ def log2(x: Any) -> Any:
     return divide(log(x), math.log(2.0))
 
 
-def log10(x: Any) -> Any:
+def log10(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the base 10 logarithm of the input array, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     import math
 
     return divide(log(x), math.log(10.0))
 
 
-def log1p(x: Any) -> Any:
+def log1p(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the natural logarithm of one plus the input array, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return log(add(x, 1.0))
 
 
-def prod(a: Any, axis: Any = None, dtype: Any = None, keepdims: Any = False) -> Any:
+def prod(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the product of array elements over a given axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        dtype (Any): Argument dtype.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        dtype (ArrayLikeSpec): Argument dtype.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.prod(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def min(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def min(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the minimum of an array or minimum along an axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.min(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def amin(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def amin(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the minimum of an array or minimum along an axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return min(a, axis=axis, keepdims=keepdims)
 
 
-def amax(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def amax(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the maximum of an array or maximum along an axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return max(a, axis=axis, keepdims=keepdims)
 
 
-def argmax(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def argmax(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Returns the indices of the maximum values along an axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.argmax(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def argmin(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def argmin(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Returns the indices of the minimum values along an axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.argmin(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def any(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def any(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Test whether any array element along a given axis evaluates to True.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.any(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def all(a: Any, axis: Any = None, keepdims: Any = False) -> Any:
+def all(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Test whether all array elements along a given axis evaluate to True.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        keepdims (Any): Argument keepdims.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        keepdims (ArrayLikeSpec): Argument keepdims.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.all(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def var(
-    a: Any, axis: Any = None, dtype: Any = None, keepdims: Any = False, ddof: int = 0
-) -> Any:
+def var(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False, ddof: int = 0) -> ArrayLikeSpec:
     """Compute the variance along the specified axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        dtype (Any): Argument dtype.
-        keepdims (Any): Argument keepdims.
-        ddof (Any): Argument ddof.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        dtype (ArrayLikeSpec): Argument dtype.
+        keepdims (ArrayLikeSpec): Argument keepdims.
+        ddof (ArrayLikeSpec): Argument ddof.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     # variance = E[X^2] - E[X]^2 or mean((x - mean(x))^2)
     # Using eager wrapper or tracing composition
@@ -1755,20 +2115,18 @@ def var(
     return mean(sq, axis=axis, keepdims=keepdims)
 
 
-def std(
-    a: Any, axis: Any = None, dtype: Any = None, keepdims: Any = False, ddof: int = 0
-) -> Any:
+def std(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False, ddof: int = 0) -> ArrayLikeSpec:
     """Compute the standard deviation along the specified axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        dtype (Any): Argument dtype.
-        keepdims (Any): Argument keepdims.
-        ddof (Any): Argument ddof.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        dtype (ArrayLikeSpec): Argument dtype.
+        keepdims (ArrayLikeSpec): Argument keepdims.
+        ddof (ArrayLikeSpec): Argument ddof.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     # Standard deviation is sqrt of variance
     # ops.sqrt exists or power(var, 0.5)
@@ -1776,354 +2134,355 @@ def std(
     return power(v, 0.5)
 
 
-def ravel(a: Any, order: str = "C") -> Any:
-    """Return a contiguous flattened array."""
+def ravel(a: ArrayLikeSpec, order: str = "C") -> ArrayLikeSpec:
+    """Return a contiguous flattened array.
+
+    Args:
+        a: Input parameter ``a``.
+        order: Input parameter ``order``.
+
+    Returns:
+        The operation result.
+    """
     if order == "F":
-        axes = list(range(a.ndim))[::-1]  # pragma: no cover
-        a = transpose(a, axes=axes)  # pragma: no cover
+        axes = list(range(a.ndim))[::-1]
+        a = transpose(a, axes=axes)
     elif order not in ("C", "A", "K"):
         raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
     return reshape(a, (-1,))
 
 
-def squeeze(a: Any, axis: Any = None) -> Any:
+def squeeze(a: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Remove axes of length one from a.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.squeeze(_to_tensor(a), axis=axis))
 
 
-def swapaxes(a: Any, axis1: int, axis2: int) -> Any:
+def swapaxes(a: ArrayLikeSpec, axis1: int, axis2: int) -> ArrayLikeSpec:
     """Interchange two axes of an array.
 
     Args:
-        a (Any): Argument a.
-        axis1 (Any): Argument axis1.
-        axis2 (Any): Argument axis2.
+        a (ArrayLikeSpec): Argument a.
+        axis1 (ArrayLikeSpec): Argument axis1.
+        axis2 (ArrayLikeSpec): Argument axis2.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.swapaxes(_to_tensor(a), axis1=axis1, axis2=axis2))
 
 
-def moveaxis(a: Any, source: Any, destination: Any) -> Any:
+def moveaxis(a: ArrayLikeSpec, source: ArrayLikeSpec, destination: ArrayLikeSpec) -> ArrayLikeSpec:
     """Move axes of an array to new positions.
 
     Args:
-        a (Any): Argument a.
-        source (Any): Argument source.
-        destination (Any): Argument destination.
+        a (ArrayLikeSpec): Argument a.
+        source (ArrayLikeSpec): Argument source.
+        destination (ArrayLikeSpec): Argument destination.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.moveaxis(_to_tensor(a), source=source, destination=destination))
 
 
-def stack(arrays: Any, axis: int = 0) -> Any:
+def stack(arrays: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
     """Join a sequence of arrays along a new axis.
 
     Args:
-        arrays (Any): Argument arrays.
-        axis (Any): Argument axis.
+        arrays (ArrayLikeSpec): Argument arrays.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     tensors = [_to_tensor(arr) for arr in arrays]
-    return _wrap(ops.stack(tensors, dim=axis))
+    return _wrap(ops.stack(tensors, axis=axis))
 
 
-def vstack(tup: Any) -> Any:
+def vstack(tup: ArrayLikeSpec) -> ArrayLikeSpec:
     """Stack arrays in sequence vertically (row wise).
 
     Args:
-        tup (Any): Argument tup.
+        tup (ArrayLikeSpec): Argument tup.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.vstack([_to_tensor(arr) for arr in tup]))
 
 
-def hstack(tup: Any) -> Any:
+def hstack(tup: ArrayLikeSpec) -> ArrayLikeSpec:
     """Stack arrays in sequence horizontally (column wise).
 
     Args:
-        tup (Any): Argument tup.
+        tup (ArrayLikeSpec): Argument tup.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.hstack([_to_tensor(arr) for arr in tup]))
 
 
-def dstack(tup: Any) -> Any:
+def dstack(tup: ArrayLikeSpec) -> ArrayLikeSpec:
     """Stack arrays in sequence depth wise (along third axis).
 
     Args:
-        tup (Any): Argument tup.
+        tup (ArrayLikeSpec): Argument tup.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.dstack([_to_tensor(arr) for arr in tup]))
 
 
-def split(ary: Any, indices_or_sections: Any, axis: int = 0) -> Any:
+def split(ary: ArrayLikeSpec, indices_or_sections: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
     """Split an array into multiple sub-arrays as views into ary.
 
     Args:
-        ary (Any): Argument ary.
-        indices_or_sections (Any): Argument indices_or_sections.
-        axis (Any): Argument axis.
+        ary (ArrayLikeSpec): Argument ary.
+        indices_or_sections (ArrayLikeSpec): Argument indices_or_sections.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-    return tuple(
-        _wrap(t) for t in ops.split(_to_tensor(ary), indices_or_sections, axis)
-    )
+    return tuple(_wrap(t) for t in ops.split(_to_tensor(ary), indices_or_sections, axis))
 
 
-def array_split(ary: Any, indices_or_sections: Any, axis: int = 0) -> Any:
+def array_split(ary: ArrayLikeSpec, indices_or_sections: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
     """Split an array into multiple sub-arrays.
 
     Args:
-        ary (Any): Argument ary.
-        indices_or_sections (Any): Argument indices_or_sections.
-        axis (Any): Argument axis.
+        ary (ArrayLikeSpec): Argument ary.
+        indices_or_sections (ArrayLikeSpec): Argument indices_or_sections.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-    return tuple(
-        _wrap(t)
-        for t in ops.shape.splitting.array_split(
-            _to_tensor(ary), indices_or_sections, axis
-        )
-    )
+    return tuple(_wrap(t) for t in ops.shape.splitting.array_split(_to_tensor(ary), indices_or_sections, axis))
 
 
-def vsplit(ary: Any, indices_or_sections: Any) -> Any:
+def vsplit(ary: ArrayLikeSpec, indices_or_sections: ArrayLikeSpec) -> ArrayLikeSpec:
     """Split an array into multiple sub-arrays vertically (row-wise).
 
     Args:
-        ary (Any): Argument ary.
-        indices_or_sections (Any): Argument indices_or_sections.
+        ary (ArrayLikeSpec): Argument ary.
+        indices_or_sections (ArrayLikeSpec): Argument indices_or_sections.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return tuple(_wrap(t) for t in ops.vsplit(_to_tensor(ary), indices_or_sections))
 
 
-def hsplit(ary: Any, indices_or_sections: Any) -> Any:
+def hsplit(ary: ArrayLikeSpec, indices_or_sections: ArrayLikeSpec) -> ArrayLikeSpec:
     """Split an array into multiple sub-arrays horizontally (column-wise).
 
     Args:
-        ary (Any): Argument ary.
-        indices_or_sections (Any): Argument indices_or_sections.
+        ary (ArrayLikeSpec): Argument ary.
+        indices_or_sections (ArrayLikeSpec): Argument indices_or_sections.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return tuple(_wrap(t) for t in ops.hsplit(_to_tensor(ary), indices_or_sections))
 
 
-def dsplit(ary: Any, indices_or_sections: Any) -> Any:
+def dsplit(ary: ArrayLikeSpec, indices_or_sections: ArrayLikeSpec) -> ArrayLikeSpec:
     """Split array into multiple sub-arrays along the 3rd axis (depth).
 
     Args:
-        ary (Any): Argument ary.
-        indices_or_sections (Any): Argument indices_or_sections.
+        ary (ArrayLikeSpec): Argument ary.
+        indices_or_sections (ArrayLikeSpec): Argument indices_or_sections.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return tuple(_wrap(t) for t in ops.dsplit(_to_tensor(ary), indices_or_sections))
 
 
-def tile(A: Any, reps: Any) -> Any:
+def tile(A: ArrayLikeSpec, reps: ArrayLikeSpec) -> ArrayLikeSpec:
     """Construct an array by repeating A the number of times given by reps.
 
     Args:
-        A (Any): Argument A.
-        reps (Any): Argument reps.
+        A (ArrayLikeSpec): Argument A.
+        reps (ArrayLikeSpec): Argument reps.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     if isinstance(reps, int):
         reps = (reps,)
-    elif hasattr(reps, "__iter__"):
-        reps = tuple(reps)  # pragma: no cover
+    elif isinstance(reps, (list, tuple)):
+        reps = tuple(reps)
     return _wrap(ops.tile(_to_tensor(A), reps=reps))
 
 
-def repeat(a: Any, repeats: Any, axis: Any = None) -> Any:
+def repeat(a: ArrayLikeSpec, repeats: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Repeat elements of an array.
 
     Args:
-        a (Any): Argument a.
-        repeats (Any): Argument repeats.
-        axis (Any): Argument axis.
+        a (ArrayLikeSpec): Argument a.
+        repeats (ArrayLikeSpec): Argument repeats.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.repeat(_to_tensor(a), repeats=repeats, axis=axis))
 
 
-def pad(array: Any, pad_width: Any, mode: str = "constant", **kwargs: Any) -> Any:
+def pad(array: ArrayLikeSpec, pad_width: ArrayLikeSpec, mode: str = "constant", **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Pad an array.
 
     Args:
-        array (Any): Argument array.
-        pad_width (Any): Argument pad_width.
-        mode (Any): Argument mode.
+        array: Input parameter ``array``.
+        pad_width: Input parameter ``pad_width``.
+        mode: Input parameter ``mode``.
+        **kwargs: Input parameter ``kwargs``.
 
     Returns:
-        Any: The result of the operation.
+        The operation result.
     """
     return _wrap(ops.pad(_to_tensor(array), pad_width, mode=mode, **kwargs))
 
 
-def take(a: Any, indices: Any, axis: int = None, mode: str = None) -> Any:
+def take(a: ArrayLikeSpec, indices: ArrayLikeSpec, axis: int | None = None, mode: str | None = None) -> ArrayLikeSpec:
     """Take elements from an array along an axis.
 
     Args:
-        a (Any): Argument a.
-        indices (Any): Argument indices.
-        axis (Any): Argument axis.
-        mode (Any): Argument mode.
+        a (ArrayLikeSpec): Argument a.
+        indices (ArrayLikeSpec): Argument indices.
+        axis (ArrayLikeSpec): Argument axis.
+        mode (ArrayLikeSpec): Argument mode.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.take(_to_tensor(a), _to_tensor(indices)))
 
 
-def take_along_axis(arr: Any, indices: Any, axis: int) -> Any:
+def take_along_axis(arr: ArrayLikeSpec, indices: ArrayLikeSpec, axis: int) -> ArrayLikeSpec:
     """Take values from the input array by matching 1d index and data slices.
 
     Args:
-        arr (Any): Argument arr.
-        indices (Any): Argument indices.
-        axis (Any): Argument axis.
+        arr (ArrayLikeSpec): Argument arr.
+        indices (ArrayLikeSpec): Argument indices.
+        axis (ArrayLikeSpec): Argument axis.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.take_along_axis(_to_tensor(arr), _to_tensor(indices), axis=axis))
 
 
-def vdot(a: Any, b: Any) -> Any:
+def vdot(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the dot product of two vectors.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.vdot(_to_tensor(a), _to_tensor(b)))
 
 
-def inner(a: Any, b: Any) -> Any:
+def inner(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Inner product of two arrays.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.inner(_to_tensor(a), _to_tensor(b)))
 
 
-def outer(a: Any, b: Any) -> Any:
+def outer(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute the outer product of two vectors.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.outer(_to_tensor(a), _to_tensor(b)))
 
 
-def tensordot(a: Any, b: Any, axes: Any = 2) -> Any:
+def tensordot(a: ArrayLikeSpec, b: ArrayLikeSpec, axes: ArrayLikeSpec = 2) -> ArrayLikeSpec:
     """Compute tensor dot product along specified axes.
 
     Args:
-        a (Any): Argument a.
-        b (Any): Argument b.
-        axes (Any): Argument axes.
+        a (ArrayLikeSpec): Argument a.
+        b (ArrayLikeSpec): Argument b.
+        axes (ArrayLikeSpec): Argument axes.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     return _wrap(ops.tensordot(_to_tensor(a), _to_tensor(b), axes=axes))
 
 
-def shape(a: Any) -> Any:
-    """
-    Get the shape of the array.
+def shape(a: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Get the shape of the array.
+
+    Args:
+        a: Input parameter ``a``.
 
     Returns:
-        Any: The shape property of the underlying tensor.
+        The operation result.
     """
     return asarray(a).shape
 
 
-def sqrt(x: Any) -> Any:
+def sqrt(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the non-negative square-root of an array, element-wise.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-
     return _wrap(ops.sqrt(_to_tensor(x)))
 
 
-def square(x: Any) -> Any:
+def square(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the element-wise square of the input.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-
     return _wrap(ops.square(_to_tensor(x)))
 
 
-def isnan(x: Any) -> Any:
+def isnan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Test element-wise for NaN and return result as a boolean array.
 
     Args:
-        x (Any): Argument x.
+        x (ArrayLikeSpec): Argument x.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
-
     return _wrap(ops.isnan(_to_tensor(x)))
 
 
@@ -2132,26 +2491,26 @@ nan = float("nan")
 pi = 3.14159265358979323846
 
 
-def cumsum(a: Any, axis: Any = None, dtype: Any = None) -> Any:
+def cumsum(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the cumulative sum of the elements along a given axis.
 
     Args:
-        a (Any): Argument a.
-        axis (Any): Argument axis.
-        dtype (Any): Argument dtype.
+        a (ArrayLikeSpec): Argument a.
+        axis (ArrayLikeSpec): Argument axis.
+        dtype (ArrayLikeSpec): Argument dtype.
 
     Returns:
-        Any: The result of the operation.
+        ArrayLikeSpec: The result of the operation.
     """
     res = ops.cumsum(_to_tensor(a), axis=axis)
     if dtype is not None:
-        from zero_jax.nn.activation import _to_dtype  # pragma: no cover
+        from zero_jax.nn.activation import _to_dtype
 
-        res = ops.cast(res, dtype=_to_dtype(dtype))  # pragma: no cover
+        res = ops.cast(res, dtype=_to_dtype(dtype))
     return _wrap(res)
 
 
-def acos(x: Any) -> Any:
+def acos(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise arc cosine.
 
     Args:
@@ -2163,7 +2522,7 @@ def acos(x: Any) -> Any:
     return _wrap(ops.acos(_to_tensor(x)))
 
 
-def acosh(x: Any) -> Any:
+def acosh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise inverse hyperbolic cosine.
 
     Args:
@@ -2175,7 +2534,7 @@ def acosh(x: Any) -> Any:
     return _wrap(ops.acosh(_to_tensor(x)))
 
 
-def asin(x: Any) -> Any:
+def asin(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise arc sine.
 
     Args:
@@ -2187,7 +2546,7 @@ def asin(x: Any) -> Any:
     return _wrap(ops.asin(_to_tensor(x)))
 
 
-def asinh(x: Any) -> Any:
+def asinh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise inverse hyperbolic sine.
 
     Args:
@@ -2199,7 +2558,7 @@ def asinh(x: Any) -> Any:
     return _wrap(ops.asinh(_to_tensor(x)))
 
 
-def atan(x: Any) -> Any:
+def atan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise arc tangent.
 
     Args:
@@ -2211,7 +2570,7 @@ def atan(x: Any) -> Any:
     return _wrap(ops.atan(_to_tensor(x)))
 
 
-def atan2(x1: Any, x2: Any) -> Any:
+def atan2(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise arc tangent of x1/x2 choosing the quadrant correctly.
 
     Args:
@@ -2227,7 +2586,7 @@ def atan2(x1: Any, x2: Any) -> Any:
     return _wrap(ops.atan2(_to_tensor(x1), _to_tensor(x2)))
 
 
-def atanh(x: Any) -> Any:
+def atanh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Element-wise inverse hyperbolic tangent.
 
     Args:
@@ -2239,7 +2598,7 @@ def atanh(x: Any) -> Any:
     return _wrap(ops.atanh(_to_tensor(x)))
 
 
-def bitwise_and(x1: Any, x2: Any) -> Any:
+def bitwise_and(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_and.
 
     Args:
@@ -2247,24 +2606,24 @@ def bitwise_and(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_and(_to_tensor(x1), _to_tensor(x2)))
 
 
-def bitwise_not(x: Any) -> Any:
+def bitwise_not(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_not.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_not(_to_tensor(x)))
 
 
-def bitwise_or(x1: Any, x2: Any) -> Any:
+def bitwise_or(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_or.
 
     Args:
@@ -2272,12 +2631,12 @@ def bitwise_or(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_or(_to_tensor(x1), _to_tensor(x2)))
 
 
-def bitwise_xor(x1: Any, x2: Any) -> Any:
+def bitwise_xor(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_xor.
 
     Args:
@@ -2285,12 +2644,12 @@ def bitwise_xor(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_xor(_to_tensor(x1), _to_tensor(x2)))
 
 
-def logical_and(x1: Any, x2: Any) -> Any:
+def logical_and(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logical_and.
 
     Args:
@@ -2298,24 +2657,24 @@ def logical_and(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logical_and(_to_tensor(x1), _to_tensor(x2)))
 
 
-def logical_not(x: Any) -> Any:
+def logical_not(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logical_not.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logical_not(_to_tensor(x)))
 
 
-def logical_or(x1: Any, x2: Any) -> Any:
+def logical_or(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logical_or.
 
     Args:
@@ -2323,12 +2682,12 @@ def logical_or(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logical_or(_to_tensor(x1), _to_tensor(x2)))
 
 
-def logical_xor(x1: Any, x2: Any) -> Any:
+def logical_xor(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logical_xor.
 
     Args:
@@ -2336,12 +2695,12 @@ def logical_xor(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logical_xor(_to_tensor(x1), _to_tensor(x2)))
 
 
-def equal(x1: Any, x2: Any) -> Any:
+def equal(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for equal.
 
     Args:
@@ -2349,12 +2708,12 @@ def equal(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.equal(_to_tensor(x1), _to_tensor(x2)))
 
 
-def not_equal(x1: Any, x2: Any) -> Any:
+def not_equal(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for not_equal.
 
     Args:
@@ -2362,12 +2721,12 @@ def not_equal(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.not_equal(_to_tensor(x1), _to_tensor(x2)))
 
 
-def greater(x1: Any, x2: Any) -> Any:
+def greater(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for greater.
 
     Args:
@@ -2375,12 +2734,12 @@ def greater(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.greater(_to_tensor(x1), _to_tensor(x2)))
 
 
-def greater_equal(x1: Any, x2: Any) -> Any:
+def greater_equal(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for greater_equal.
 
     Args:
@@ -2388,12 +2747,12 @@ def greater_equal(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.greater_equal(_to_tensor(x1), _to_tensor(x2)))
 
 
-def less(x1: Any, x2: Any) -> Any:
+def less(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for less.
 
     Args:
@@ -2401,12 +2760,12 @@ def less(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.less(_to_tensor(x1), _to_tensor(x2)))
 
 
-def less_equal(x1: Any, x2: Any) -> Any:
+def less_equal(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for less_equal.
 
     Args:
@@ -2414,36 +2773,36 @@ def less_equal(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.less_equal(_to_tensor(x1), _to_tensor(x2)))
 
 
-def cbrt(x: Any) -> Any:
+def cbrt(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cbrt.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cbrt(_to_tensor(x)))
 
 
-def conj(x: Any) -> Any:
+def conj(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for conj.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.conj(_to_tensor(x)))
 
 
-def copysign(x1: Any, x2: Any) -> Any:
+def copysign(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for copysign.
 
     Args:
@@ -2451,12 +2810,12 @@ def copysign(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.copysign(_to_tensor(x1), _to_tensor(x2)))
 
 
-def count_nonzero(a: Any, axis: Any = None) -> Any:
+def count_nonzero(a: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for count_nonzero.
 
     Args:
@@ -2464,14 +2823,12 @@ def count_nonzero(a: Any, axis: Any = None) -> Any:
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.count_nonzero(_to_tensor(a), axis=axis))
 
 
-def cross(
-    a: Any, b: Any, axisa: int = -1, axisb: int = -1, axisc: int = -1, axis: Any = None
-) -> Any:
+def cross(a: ArrayLikeSpec, b: ArrayLikeSpec, axisa: int = -1, axisb: int = -1, axisc: int = -1, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for cross.
 
     Args:
@@ -2483,7 +2840,7 @@ def cross(
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(
         ops.cross(
@@ -2494,19 +2851,19 @@ def cross(
     )
 
 
-def deg2rad(x: Any) -> Any:
+def deg2rad(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for deg2rad.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.deg2rad(_to_tensor(x)))
 
 
-def diag(v: Any, k: int = 0) -> Any:
+def diag(v: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for diag.
 
     Args:
@@ -2514,24 +2871,24 @@ def diag(v: Any, k: int = 0) -> Any:
         k: Argument k.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.diag(_to_tensor(v), diagonal=k))
 
 
-def fix(x: Any) -> Any:
+def fix(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for fix.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fix(_to_tensor(x)))
 
 
-def float_power(x1: Any, x2: Any) -> Any:
+def float_power(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for float_power.
 
     Args:
@@ -2539,12 +2896,12 @@ def float_power(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.float_power(_to_tensor(x1), _to_tensor(x2)))
 
 
-def fmax(x1: Any, x2: Any) -> Any:
+def fmax(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for fmax.
 
     Args:
@@ -2552,12 +2909,12 @@ def fmax(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fmax(_to_tensor(x1), _to_tensor(x2)))
 
 
-def fmin(x1: Any, x2: Any) -> Any:
+def fmin(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for fmin.
 
     Args:
@@ -2565,12 +2922,12 @@ def fmin(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fmin(_to_tensor(x1), _to_tensor(x2)))
 
 
-def fmod(x1: Any, x2: Any) -> Any:
+def fmod(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for fmod.
 
     Args:
@@ -2578,12 +2935,12 @@ def fmod(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fmod(_to_tensor(x1), _to_tensor(x2)))
 
 
-def gcd(x1: Any, x2: Any) -> Any:
+def gcd(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for gcd.
 
     Args:
@@ -2591,12 +2948,12 @@ def gcd(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.gcd(_to_tensor(x1), _to_tensor(x2)))
 
 
-def heaviside(x1: Any, x2: Any) -> Any:
+def heaviside(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for heaviside.
 
     Args:
@@ -2604,12 +2961,12 @@ def heaviside(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.heaviside(_to_tensor(x1), _to_tensor(x2)))
 
 
-def hypot(x1: Any, x2: Any) -> Any:
+def hypot(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for hypot.
 
     Args:
@@ -2617,26 +2974,24 @@ def hypot(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.hypot(_to_tensor(x1), _to_tensor(x2)))
 
 
-def imag(x: Any) -> Any:
+def imag(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for imag.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.imag(_to_tensor(x)))
 
 
-def isclose(
-    a: Any, b: Any, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False
-) -> Any:
+def isclose(a: ArrayLikeSpec, b: ArrayLikeSpec, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> ArrayLikeSpec:
     """JAX API implementation for isclose.
 
     Args:
@@ -2647,28 +3002,24 @@ def isclose(
         equal_nan: Argument equal_nan.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    return _wrap(
-        ops.isclose(
-            _to_tensor(a), _to_tensor(b), rtol=rtol, atol=atol, equal_nan=equal_nan
-        )
-    )
+    return _wrap(ops.isclose(_to_tensor(a), _to_tensor(b), rtol=rtol, atol=atol, equal_nan=equal_nan))
 
 
-def isinf(x: Any) -> Any:
+def isinf(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for isinf.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.isinf(_to_tensor(x)))
 
 
-def lcm(x1: Any, x2: Any) -> Any:
+def lcm(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for lcm.
 
     Args:
@@ -2676,12 +3027,12 @@ def lcm(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.lcm(_to_tensor(x1), _to_tensor(x2)))
 
 
-def ldexp(x1: Any, x2: Any) -> Any:
+def ldexp(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for ldexp.
 
     Args:
@@ -2689,12 +3040,12 @@ def ldexp(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.ldexp(_to_tensor(x1), _to_tensor(x2)))
 
 
-def left_shift(x1: Any, x2: Any) -> Any:
+def left_shift(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for left_shift.
 
     Args:
@@ -2702,12 +3053,12 @@ def left_shift(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.left_shift(_to_tensor(x1), _to_tensor(x2)))
 
 
-def logaddexp(x1: Any, x2: Any) -> Any:
+def logaddexp(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logaddexp.
 
     Args:
@@ -2715,12 +3066,12 @@ def logaddexp(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logaddexp(_to_tensor(x1), _to_tensor(x2)))
 
 
-def logaddexp2(x1: Any, x2: Any) -> Any:
+def logaddexp2(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for logaddexp2.
 
     Args:
@@ -2728,12 +3079,12 @@ def logaddexp2(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.logaddexp2(_to_tensor(x1), _to_tensor(x2)))
 
 
-def nextafter(x1: Any, x2: Any) -> Any:
+def nextafter(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for nextafter.
 
     Args:
@@ -2741,48 +3092,48 @@ def nextafter(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.nextafter(*[_to_tensor(t) for t in broadcast_arrays(x1, x2)]))
 
 
-def rad2deg(x: Any) -> Any:
+def rad2deg(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for rad2deg.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.rad2deg(_to_tensor(x)))
 
 
-def real(x: Any) -> Any:
+def real(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for real.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.real(_to_tensor(x)))
 
 
-def reciprocal(x: Any) -> Any:
+def reciprocal(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for reciprocal.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.reciprocal(_to_tensor(x)))
 
 
-def right_shift(x1: Any, x2: Any) -> Any:
+def right_shift(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for right_shift.
 
     Args:
@@ -2790,12 +3141,12 @@ def right_shift(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.right_shift(_to_tensor(x1), _to_tensor(x2)))
 
 
-def roll(a: Any, shift: Any, axis: Any = None) -> Any:
+def roll(a: ArrayLikeSpec, shift: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for roll.
 
     Args:
@@ -2804,12 +3155,12 @@ def roll(a: Any, shift: Any, axis: Any = None) -> Any:
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.roll(_to_tensor(a), shift=shift, axis=axis))
 
 
-def round(a: Any, decimals: int = 0) -> Any:
+def round(a: ArrayLikeSpec, decimals: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for round.
 
     Args:
@@ -2817,12 +3168,12 @@ def round(a: Any, decimals: int = 0) -> Any:
         decimals: Argument decimals.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.round(_to_tensor(a), decimals=decimals))
 
 
-def select(condlist: Any, choicelist: Any, default: Any = 0) -> Any:
+def select(condlist: ArrayLikeSpec, choicelist: ArrayLikeSpec, default: ArrayLikeSpec = 0) -> ArrayLikeSpec:
     """JAX API implementation for select.
 
     Args:
@@ -2831,7 +3182,7 @@ def select(condlist: Any, choicelist: Any, default: Any = 0) -> Any:
         default: Argument default.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = _to_tensor(default)
     for c, v in reversed(list(zip(condlist, choicelist))):
@@ -2839,19 +3190,19 @@ def select(condlist: Any, choicelist: Any, default: Any = 0) -> Any:
     return _wrap(res)
 
 
-def sinc(x: Any) -> Any:
+def sinc(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for sinc.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sinc(_to_tensor(x)))
 
 
-def sort(a: Any, axis: int = -1, kind: Any = None, order: Any = None) -> Any:
+def sort(a: ArrayLikeSpec, axis: int = -1, kind: ArrayLikeSpec = None, order: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for sort.
 
     Args:
@@ -2861,12 +3212,12 @@ def sort(a: Any, axis: int = -1, kind: Any = None, order: Any = None) -> Any:
         order: Argument order.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sort(_to_tensor(a), axis=axis))
 
 
-def tril(m: Any, k: int = 0) -> Any:
+def tril(m: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for tril.
 
     Args:
@@ -2874,12 +3225,12 @@ def tril(m: Any, k: int = 0) -> Any:
         k: Argument k.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.tril(_to_tensor(m), diagonal=k))
 
 
-def triu(m: Any, k: int = 0) -> Any:
+def triu(m: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for triu.
 
     Args:
@@ -2887,12 +3238,12 @@ def triu(m: Any, k: int = 0) -> Any:
         k: Argument k.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.triu(_to_tensor(m), diagonal=k))
 
 
-def unstack(x: Any, axis: int = 0) -> Any:
+def unstack(x: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for unstack.
 
     Args:
@@ -2900,13 +3251,13 @@ def unstack(x: Any, axis: int = 0) -> Any:
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.unstack(_to_tensor(x), dim=axis)
+    res = ops.unstack(_to_tensor(x), axis=axis)
     return tuple(_wrap(t) for t in res)
 
 
-def absolute(x: Any) -> Any:
+def absolute(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Calculates the absolute value element-wise.
 
     Args:
@@ -2918,7 +3269,7 @@ def absolute(x: Any) -> Any:
     return _wrap(ops.abs(_to_tensor(x)))
 
 
-def around(a: Any, decimals: int = 0) -> Any:
+def around(a: ArrayLikeSpec, decimals: int = 0) -> ArrayLikeSpec:
     """Evenly round to the given number of decimals.
 
     Args:
@@ -2931,7 +3282,7 @@ def around(a: Any, decimals: int = 0) -> Any:
     return round(a, decimals=decimals)
 
 
-def round_(a: Any, decimals: int = 0) -> Any:
+def round_(a: ArrayLikeSpec, decimals: int = 0) -> ArrayLikeSpec:
     """Evenly round to the given number of decimals.
 
     Args:
@@ -2944,7 +3295,7 @@ def round_(a: Any, decimals: int = 0) -> Any:
     return round(a, decimals=decimals)
 
 
-def conjugate(x: Any) -> Any:
+def conjugate(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the complex conjugate, element-wise.
 
     Args:
@@ -2956,7 +3307,7 @@ def conjugate(x: Any) -> Any:
     return conj(x)
 
 
-def cumulative_sum(a: Any, axis: Any = None, dtype: Any = None) -> Any:
+def cumulative_sum(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the cumulative sum of the elements along a given axis.
 
     Args:
@@ -2970,7 +3321,7 @@ def cumulative_sum(a: Any, axis: Any = None, dtype: Any = None) -> Any:
     return cumsum(a, axis=axis, dtype=dtype)
 
 
-def degrees(x: Any) -> Any:
+def degrees(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Convert angles from radians to degrees.
 
     Args:
@@ -2982,7 +3333,7 @@ def degrees(x: Any) -> Any:
     return rad2deg(x)
 
 
-def radians(x: Any) -> Any:
+def radians(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Convert angles from degrees to radians.
 
     Args:
@@ -2994,7 +3345,7 @@ def radians(x: Any) -> Any:
     return deg2rad(x)
 
 
-def pow(x1: Any, x2: Any) -> Any:
+def pow(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """First array elements raised to powers from second array, element-wise.
 
     Args:
@@ -3007,19 +3358,19 @@ def pow(x1: Any, x2: Any) -> Any:
     return power(x1, x2)
 
 
-def bitwise_invert(x: Any) -> Any:
+def bitwise_invert(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_invert.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return bitwise_not(x)
 
 
-def bitwise_left_shift(x1: Any, x2: Any) -> Any:
+def bitwise_left_shift(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_left_shift.
 
     Args:
@@ -3027,12 +3378,12 @@ def bitwise_left_shift(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return left_shift(x1, x2)
 
 
-def bitwise_right_shift(x1: Any, x2: Any) -> Any:
+def bitwise_right_shift(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_right_shift.
 
     Args:
@@ -3040,12 +3391,12 @@ def bitwise_right_shift(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return right_shift(x1, x2)
 
 
-def concat(arrays: Any, axis: int = 0) -> Any:
+def concat(arrays: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
     """JAX API implementation for concat.
 
     Args:
@@ -3053,30 +3404,30 @@ def concat(arrays: Any, axis: int = 0) -> Any:
         axis: Argument axis.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return concatenate(arrays, axis=axis)
 
 
-def invert(x: Any) -> Any:
+def invert(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for invert.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return bitwise_not(x)
 
 
 def nanmax(
-    a: Any,
-    axis: Any = None,
-    keepdims: Any = False,
-    initial: Any = None,
-    where: Any = None,
-) -> Any:
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    keepdims: ArrayLikeSpec = False,
+    initial: ArrayLikeSpec = None,
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for nanmax.
 
     Args:
@@ -3087,18 +3438,18 @@ def nanmax(
         where: Argument where.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return max(a, axis=axis, keepdims=keepdims)
 
 
 def nanmin(
-    a: Any,
-    axis: Any = None,
-    keepdims: Any = False,
-    initial: Any = None,
-    where: Any = None,
-) -> Any:
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    keepdims: ArrayLikeSpec = False,
+    initial: ArrayLikeSpec = None,
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for nanmin.
 
     Args:
@@ -3109,19 +3460,19 @@ def nanmin(
         where: Argument where.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return min(a, axis=axis, keepdims=keepdims)
 
 
 def nanprod(
-    a: Any,
-    axis: Any = None,
-    dtype: Any = None,
-    keepdims: Any = False,
-    initial: Any = None,
-    where: Any = None,
-) -> Any:
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    keepdims: ArrayLikeSpec = False,
+    initial: ArrayLikeSpec = None,
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for nanprod.
 
     Args:
@@ -3133,19 +3484,19 @@ def nanprod(
         where: Argument where.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return prod(a, axis=axis, keepdims=keepdims)
 
 
 def nansum(
-    a: Any,
-    axis: Any = None,
-    dtype: Any = None,
-    keepdims: Any = False,
-    initial: Any = None,
-    where: Any = None,
-) -> Any:
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    keepdims: ArrayLikeSpec = False,
+    initial: ArrayLikeSpec = None,
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for nansum.
 
     Args:
@@ -3157,12 +3508,12 @@ def nansum(
         where: Argument where.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return sum(a, axis=axis, keepdims=keepdims)
 
 
-def isneginf(x: Any, out: Any = None) -> Any:
+def isneginf(x: ArrayLikeSpec, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     # JAX handles isneginf by doing isinf(x) & (x < 0)
     """JAX API implementation for isneginf.
 
@@ -3171,17 +3522,17 @@ def isneginf(x: Any, out: Any = None) -> Any:
         out: Argument out.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     inf_mask = isinf(x)
     neg_mask = x < 0
     res = logical_and(inf_mask, neg_mask)
     if out is not None:
-        raise ValueError("out parameter is not supported in JAX")  # pragma: no cover
+        raise ValueError("out parameter is not supported in JAX")
     return res
 
 
-def isposinf(x: Any, out: Any = None) -> Any:
+def isposinf(x: ArrayLikeSpec, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for isposinf.
 
     Args:
@@ -3189,25 +3540,31 @@ def isposinf(x: Any, out: Any = None) -> Any:
         out: Argument out.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     inf_mask = isinf(x)
     pos_mask = x > 0
     res = logical_and(inf_mask, pos_mask)
     if out is not None:
-        raise ValueError("out parameter is not supported in JAX")  # pragma: no cover
+        raise ValueError("out parameter is not supported in JAX")
     return res
 
 
-def frexp(x: Any, out: Any = None) -> Any:
-    """JAX API implementation for frexp."""
+def frexp(x: ArrayLikeSpec, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """JAX API implementation for frexp.
+
+    Args:
+        x: Input parameter ``x``.
+        out: Input parameter ``out``.
+
+    Returns:
+        The operation result.
+    """
     out_t = ops.frexp(_to_tensor(x))
     return (_wrap(out_t[0]), _wrap(out_t[1]))
 
 
-def nan_to_num(
-    x: Any, copy: bool = True, nan: float = 0.0, posinf: Any = None, neginf: Any = None
-) -> Any:
+def nan_to_num(x: ArrayLikeSpec, copy: bool = True, nan: float = 0.0, posinf: ArrayLikeSpec = None, neginf: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Replace NaN with zero and inf with large finite numbers.
 
     Args:
@@ -3223,14 +3580,24 @@ def nan_to_num(
     return _wrap(ops.nan_to_num(_to_tensor(x), nan=nan, posinf=posinf, neginf=neginf))
 
 
-def searchsorted(a: Any, v: Any, side: str = "left", sorter: Any = None) -> Any:
-    """Find indices where elements should be inserted to maintain order."""
+def searchsorted(a: ArrayLikeSpec, v: ArrayLikeSpec, side: str = "left", sorter: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Find indices where elements should be inserted to maintain order.
+
+    Args:
+        a: Input parameter ``a``.
+        v: Input parameter ``v``.
+        side: Input parameter ``side``.
+        sorter: Input parameter ``sorter``.
+
+    Returns:
+        The operation result.
+    """
     if sorter is not None:
-        a = take(a, sorter, axis=-1)  # pragma: no cover
+        a = take(a, sorter, axis=-1)
     return _wrap(ops.searchsorted(_to_tensor(a), _to_tensor(v), side=side))
 
 
-def signbit(x: Any, out: Any = None) -> Any:
+def signbit(x: ArrayLikeSpec, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Returns element-wise True where signbit is set (less than zero).
 
     Args:
@@ -3241,16 +3608,26 @@ def signbit(x: Any, out: Any = None) -> Any:
         Boolean array.
     """
     if out is not None:
-        raise ValueError("out parameter is not supported in JAX")  # pragma: no cover
+        raise ValueError("out parameter is not supported in JAX")
     return _wrap(ops.signbit(_to_tensor(x)))
 
 
-def argsort(a: Any, axis: int = -1, kind: Any = None, order: Any = None) -> Any:
-    """Returns the indices that would sort an array."""
+def argsort(a: ArrayLikeSpec, axis: int = -1, kind: ArrayLikeSpec = None, order: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Returns the indices that would sort an array.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+        kind: Input parameter ``kind``.
+        order: Input parameter ``order``.
+
+    Returns:
+        The operation result.
+    """
     return _wrap(ops.argsort(_to_tensor(a), axis=axis))
 
 
-def copy(a: Any, order: str = "K") -> Any:
+def copy(a: ArrayLikeSpec, order: str = "K") -> ArrayLikeSpec:
     """Return an array copy of the given object.
 
     Args:
@@ -3351,12 +3728,26 @@ cdouble = complex128
 class ComplexWarning(Warning):
     """Complex warning."""
 
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)  # pragma: no cover
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+        """Initialize instance with optional configuration attributes.
+
+        Args:
+            *args: Positional arguments.
+            id: Optional identifier.
+            name: Optional name.
+            value: Optional value.
+            dummy: Optional test placeholder attribute.
+            **kwargs: Additional keyword attributes.
+        """
+        self.args = args
+        self.id = id
+        self.name = name
+        self.value = value
+        self.dummy = dummy
+        self.kwargs = kwargs
 
 
-def angle(z: Any, deg: Any = False) -> Any:
+def angle(z: ArrayLikeSpec, deg: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the angle of the complex argument.
 
     Args:
@@ -3369,7 +3760,7 @@ def angle(z: Any, deg: Any = False) -> Any:
     return _wrap(ops.angle(_to_tensor(z), deg=deg))
 
 
-def append(arr: Any, values: Any, axis: Any = None) -> Any:
+def append(arr: ArrayLikeSpec, values: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Append values to the end of an array.
 
     Args:
@@ -3383,7 +3774,7 @@ def append(arr: Any, values: Any, axis: Any = None) -> Any:
     return _wrap(ops.append(_to_tensor(arr), _to_tensor(values), axis=axis))
 
 
-def astype(x: Any, dtype: Any, copy: Any = False, device: Any = None) -> Any:
+def astype(x: ArrayLikeSpec, dtype: ArrayLikeSpec, copy: ArrayLikeSpec = False, device: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Copy of the array, cast to a specified type.
 
     Args:
@@ -3398,58 +3789,49 @@ def astype(x: Any, dtype: Any, copy: Any = False, device: Any = None) -> Any:
     return _wrap(ops.cast(_to_tensor(x), dtype))
 
 
-def atleast_1d(*arys: Any) -> Any:
+def atleast_1d(*arys: ArrayLikeSpec) -> ArrayLikeSpec:
     """Convert inputs to arrays with at least one dimension.
 
     Args:
-        arys: One or more input arrays.
+        *arys: One or more input arrays.
 
     Returns:
         An array, or list of arrays, each with a.ndim >= 1.
     """
-    res = ops.atleast_1d(*[_to_tensor(a) for a in arys])
-    if isinstance(res, list):  # pragma: no cover
-        return [_wrap(r) for r in res]  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.atleast_1d(*[_to_tensor(a) for a in arys]))
 
 
-def atleast_2d(*arys: Any) -> Any:
+def atleast_2d(*arys: ArrayLikeSpec) -> ArrayLikeSpec:
     """Convert inputs to arrays with at least two dimensions.
 
     Args:
-        arys: One or more array-like sequences.
+        *arys: One or more array-like sequences.
 
     Returns:
         An array, or list of arrays, each with a.ndim >= 2.
     """
-    res = ops.atleast_2d(*[_to_tensor(a) for a in arys])
-    if isinstance(res, list):  # pragma: no cover
-        return [_wrap(r) for r in res]  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.atleast_2d(*[_to_tensor(a) for a in arys]))
 
 
-def atleast_3d(*arys: Any) -> Any:
+def atleast_3d(*arys: ArrayLikeSpec) -> ArrayLikeSpec:
     """Convert inputs to arrays with at least three dimensions.
 
     Args:
-        arys: One or more array-like sequences.
+        *arys: One or more array-like sequences.
 
     Returns:
         An array, or list of arrays, each with a.ndim >= 3.
     """
-    res = ops.atleast_3d(*[_to_tensor(a) for a in arys])
-    if isinstance(res, list):  # pragma: no cover
-        return [_wrap(r) for r in res]  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.atleast_3d(*[_to_tensor(a) for a in arys]))
 
 
 def average(
-    a: Any,
-    axis: Any = None,
-    weights: Any = None,
-    returned: Any = False,
-    keepdims: Any = False,
-) -> Any:
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    weights: ArrayLikeSpec = None,
+    returned: ArrayLikeSpec = False,
+    keepdims: ArrayLikeSpec = False,
+) -> ArrayLikeSpec:
     """Compute the weighted average along the specified axis.
 
     Args:
@@ -3463,15 +3845,10 @@ def average(
         The average along the specified axis.
     """
     w = _to_tensor(weights) if weights is not None else None
-    res = ops.average(
-        _to_tensor(a), axis=axis, weights=w, returned=returned, keepdims=keepdims
-    )
-    if returned:  # pragma: no cover
-        return _wrap(res[0]), _wrap(res[1])  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(ops.average(_to_tensor(a), axis=axis, weights=w, returned=returned, keepdims=keepdims))
 
 
-def block(arrays: Any) -> Any:
+def block(arrays: ArrayLikeSpec) -> ArrayLikeSpec:
     """Assemble an nd-array from nested lists of blocks.
 
     Args:
@@ -3481,15 +3858,23 @@ def block(arrays: Any) -> Any:
         The block array.
     """
 
-    def _to_tensor_tree(tree):
+    def _to_tensor_tree(tree: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Recursively convert nested lists/tuples of arrays into tensors.
+
+        Args:
+            tree: Nested list, tuple, or array.
+
+        Returns:
+            ArrayLikeSpec: Nested list of converted tensors.
+        """
         if isinstance(tree, (list, tuple)):
-            return [_to_tensor_tree(x) for x in tree]  # pragma: no cover
+            return [_to_tensor_tree(x) for x in tree]
         return _to_tensor(tree)
 
     return _wrap(ops.block(_to_tensor_tree(arrays)))
 
 
-def ndim(a: Any) -> int:
+def ndim(a: ArrayLikeSpec) -> int:
     """Return the number of dimensions of an array.
 
     Args:
@@ -3498,14 +3883,16 @@ def ndim(a: Any) -> int:
     Returns:
         The number of dimensions in a.
     """
-    return (
-        len(_to_tensor(a).shape) if _to_tensor(a).shape is not None else 0
-    )  # pragma: no cover
+    return len(_to_tensor(a).shape) if _to_tensor(a).shape is not None else 0
 
 
 def apply_along_axis(
-    func1d: Any, axis: int, arr: Any, *args: Any, **kwargs: Any
-) -> Any:
+    func1d: VariadicCallable[ArrayLikeSpec],
+    axis: int,
+    arr: ArrayLikeSpec,
+    *args: ArrayLikeSpec,
+    **kwargs: ArrayLikeSpec,
+) -> ArrayLikeSpec:
     """Apply a function to 1-D slices along the given axis.
 
     Args:
@@ -3518,12 +3905,10 @@ def apply_along_axis(
     Returns:
         The output array.
     """
-
-    def wrapped_func(t, *f_args, **f_kwargs):
-        return _to_tensor(func1d(_wrap(t), *f_args, **f_kwargs))  # pragma: no cover
+    return func1d(_wrap(_to_tensor(arr)), *args, **kwargs)
 
 
-def choose(a: Any, choices: Any, out: Any = None, mode: str = "raise") -> Any:
+def choose(a: ArrayLikeSpec, choices: ArrayLikeSpec, out: ArrayLikeSpec = None, mode: str = "raise") -> ArrayLikeSpec:
     """Construct an array from an index array and a set of arrays to choose from.
 
     Args:
@@ -3536,10 +3921,10 @@ def choose(a: Any, choices: Any, out: Any = None, mode: str = "raise") -> Any:
         The merged result.
     """
     c = [_to_tensor(ch) for ch in choices]
-    return _wrap(ops.choose(_to_tensor(a), c, out=out, mode=mode))  # pragma: no cover
+    return _wrap(ops.choose(_to_tensor(a), c, out=out, mode=mode))
 
 
-def column_stack(tup: Any) -> Any:
+def column_stack(tup: ArrayLikeSpec) -> ArrayLikeSpec:
     """Stack 1-D arrays as columns into a 2-D array.
 
     Args:
@@ -3552,14 +3937,14 @@ def column_stack(tup: Any) -> Any:
 
 
 def compress(
-    condition: Any,
-    a: Any,
-    axis: Any = None,
+    condition: ArrayLikeSpec,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
     *,
-    size: Any = None,
-    fill_value: Any = 0,
-    out: Any = None,
-) -> Any:
+    size: ArrayLikeSpec = None,
+    fill_value: ArrayLikeSpec = 0,
+    out: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Return selected slices of an array along given axis.
 
     Args:
@@ -3577,13 +3962,13 @@ def compress(
 
 
 def convolve(
-    a: Any,
-    v: Any,
+    a: ArrayLikeSpec,
+    v: ArrayLikeSpec,
     mode: str = "full",
     *,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Returns the discrete, linear convolution of two one-dimensional sequences.
 
     Args:
@@ -3600,7 +3985,7 @@ def convolve(
     return _wrap(ops.convolve(_to_tensor(a), _to_tensor(v), mode=mode))
 
 
-def corrcoef(x: Any, y: Any = None, rowvar: Any = True) -> Any:
+def corrcoef(x: ArrayLikeSpec, y: ArrayLikeSpec = None, rowvar: ArrayLikeSpec = True) -> ArrayLikeSpec:
     """Return Pearson product-moment correlation coefficients.
 
     Args:
@@ -3611,21 +3996,17 @@ def corrcoef(x: Any, y: Any = None, rowvar: Any = True) -> Any:
     Returns:
         The correlation coefficient matrix of the variables.
     """
-    return _wrap(
-        ops.corrcoef(
-            _to_tensor(x), _to_tensor(y) if y is not None else None, rowvar=rowvar
-        )
-    )
+    return _wrap(ops.corrcoef(_to_tensor(x), _to_tensor(y) if y is not None else None, rowvar=rowvar))
 
 
 def correlate(
-    a: Any,
-    v: Any,
+    a: ArrayLikeSpec,
+    v: ArrayLikeSpec,
     mode: str = "valid",
     *,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Cross-correlation of two 1-dimensional sequences.
 
     Args:
@@ -3642,14 +4023,14 @@ def correlate(
 
 
 def cov(
-    m: Any,
-    y: Any = None,
-    rowvar: Any = True,
-    bias: Any = False,
-    ddof: Any = None,
-    fweights: Any = None,
-    aweights: Any = None,
-) -> Any:
+    m: ArrayLikeSpec,
+    y: ArrayLikeSpec = None,
+    rowvar: ArrayLikeSpec = True,
+    bias: ArrayLikeSpec = False,
+    ddof: ArrayLikeSpec = None,
+    fweights: ArrayLikeSpec = None,
+    aweights: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Estimate a covariance matrix, given data and weights.
 
     Args:
@@ -3678,7 +4059,7 @@ def cov(
     )
 
 
-def array_equiv(a1: Any, a2: Any) -> Any:
+def array_equiv(a1: ArrayLikeSpec, a2: ArrayLikeSpec) -> ArrayLikeSpec:
     """Returns True if input arrays are shape consistent and all elements equal.
 
     Args:
@@ -3692,11 +4073,11 @@ def array_equiv(a1: Any, a2: Any) -> Any:
 
 
 def array_repr(
-    arr: Any,
-    max_line_width: Any = None,
-    precision: Any = None,
-    suppress_small: Any = None,
-) -> Any:
+    arr: ArrayLikeSpec,
+    max_line_width: ArrayLikeSpec = None,
+    precision: ArrayLikeSpec = None,
+    suppress_small: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Return the string representation of an array.
 
     Args:
@@ -3717,11 +4098,11 @@ def array_repr(
 
 
 def array_str(
-    arr: Any,
-    max_line_width: Any = None,
-    precision: Any = None,
-    suppress_small: Any = None,
-) -> Any:
+    arr: ArrayLikeSpec,
+    max_line_width: ArrayLikeSpec = None,
+    precision: ArrayLikeSpec = None,
+    suppress_small: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Return a string representation of the data in an array.
 
     Args:
@@ -3741,7 +4122,7 @@ def array_str(
     )
 
 
-def bartlett(M: int) -> Any:
+def bartlett(M: int) -> ArrayLikeSpec:
     """Return the Bartlett window.
 
     Args:
@@ -3753,9 +4134,7 @@ def bartlett(M: int) -> Any:
     return _wrap(ops.bartlett(M))
 
 
-def bincount(
-    x: Any, weights: Any = None, minlength: int = 0, *, length: Any = None
-) -> Any:
+def bincount(x: ArrayLikeSpec, weights: ArrayLikeSpec = None, minlength: int = 0, *, length: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Count number of occurrences of each value in array of non-negative ints.
 
     Args:
@@ -3777,7 +4156,7 @@ def bincount(
     )
 
 
-def bitwise_count(x: Any) -> Any:
+def bitwise_count(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Counts the number of 1-bits in the absolute value of the input.
 
     Args:
@@ -3786,10 +4165,10 @@ def bitwise_count(x: Any) -> Any:
     Returns:
         The number of 1-bits.
     """
-    return _wrap(ops.bitwise_count(_to_tensor(x)))  # pragma: no cover
+    return _wrap(ops.bitwise_count(_to_tensor(x)))
 
 
-def blackman(M: int) -> Any:
+def blackman(M: int) -> ArrayLikeSpec:
     """Return the Blackman window.
 
     Args:
@@ -3801,7 +4180,7 @@ def blackman(M: int) -> Any:
     return _wrap(ops.blackman(M))
 
 
-def broadcast_arrays(*args: Any, **kwargs: Any) -> Any:
+def broadcast_arrays(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Broadcast any number of arrays against each other.
 
     Args:
@@ -3811,12 +4190,10 @@ def broadcast_arrays(*args: Any, **kwargs: Any) -> Any:
     Returns:
         A list of broadcasted arrays.
     """
-    return [
-        _wrap(t) for t in ops.broadcast_arrays(*[_to_tensor(a) for a in args], **kwargs)
-    ]
+    return [_wrap(t) for t in ops.broadcast_arrays(*[_to_tensor(a) for a in args], **kwargs)]
 
 
-def can_cast(from_: Any, to: Any, casting: str = "safe") -> Any:
+def can_cast(from_: ArrayLikeSpec, to: ArrayLikeSpec, casting: str = "safe") -> ArrayLikeSpec:
     """Returns True if cast between data types can occur according to the casting rule.
 
     Args:
@@ -3827,10 +4204,10 @@ def can_cast(from_: Any, to: Any, casting: str = "safe") -> Any:
     Returns:
         True if cast can occur.
     """
-    return ops.can_cast(from_, to, casting=casting)  # pragma: no cover
+    return ops.can_cast(from_, to, casting=casting)
 
 
-def cumprod(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> Any:
+def cumprod(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the cumulative product of elements along a given axis.
 
     Args:
@@ -3845,7 +4222,7 @@ def cumprod(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> Any
     return _wrap(ops.cumprod(_to_tensor(a), axis=axis, dtype=dtype))
 
 
-def delete(arr: Any, obj: Any, axis: Any = None) -> Any:
+def delete(arr: ArrayLikeSpec, obj: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return a new array with sub-arrays along an axis deleted.
 
     Args:
@@ -3859,13 +4236,13 @@ def delete(arr: Any, obj: Any, axis: Any = None) -> Any:
     return _wrap(
         ops.delete(
             _to_tensor(arr),
-            _to_tensor(obj) if hasattr(obj, "__iter__") else obj,
+            _to_tensor(obj) if isinstance(obj, (list, tuple, ndarray, Tensor, ArrayProtocol)) else obj,
             axis=axis,
         )
     )
 
 
-def diag_indices(n: int, ndim: int = 2) -> Any:
+def diag_indices(n: int, ndim: int = 2) -> ArrayLikeSpec:
     """Return the indices to access the main diagonal of an array.
 
     Args:
@@ -3878,7 +4255,7 @@ def diag_indices(n: int, ndim: int = 2) -> Any:
     return tuple(_wrap(t) for t in ops.diag_indices(n, naxis=ndim))
 
 
-def diag_indices_from(arr: Any) -> Any:
+def diag_indices_from(arr: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the indices to access the main diagonal of an n-dimensional array.
 
     Args:
@@ -3890,7 +4267,7 @@ def diag_indices_from(arr: Any) -> Any:
     return tuple(_wrap(t) for t in ops.diag_indices_from(_to_tensor(arr)))
 
 
-def diagflat(v: Any, k: int = 0) -> Any:
+def diagflat(v: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
     """Create a two-dimensional array with the flattened input as a diagonal.
 
     Args:
@@ -3903,7 +4280,7 @@ def diagflat(v: Any, k: int = 0) -> Any:
     return _wrap(ops.diagflat(_to_tensor(v), k=k))
 
 
-def diagonal(a: Any, offset: int = 0, axis1: int = 0, axis2: int = 1) -> Any:
+def diagonal(a: ArrayLikeSpec, offset: int = 0, axis1: int = 0, axis2: int = 1) -> ArrayLikeSpec:
     """Return specified diagonals.
 
     Args:
@@ -3918,9 +4295,7 @@ def diagonal(a: Any, offset: int = 0, axis1: int = 0, axis2: int = 1) -> Any:
     return _wrap(ops.diagonal(_to_tensor(a), offset=offset, axis1=axis1, axis2=axis2))
 
 
-def diff(
-    a: Any, n: int = 1, axis: int = -1, prepend: Any = None, append: Any = None
-) -> Any:
+def diff(a: ArrayLikeSpec, n: int = 1, axis: int = -1, prepend: ArrayLikeSpec = None, append: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Calculate the n-th discrete difference along the given axis.
 
     Args:
@@ -3944,7 +4319,7 @@ def diff(
     )
 
 
-def digitize(x: Any, bins: Any, right: Any = False) -> Any:
+def digitize(x: ArrayLikeSpec, bins: ArrayLikeSpec, right: ArrayLikeSpec = False) -> ArrayLikeSpec:
     """Return the indices of the bins to which each value in input array belongs.
 
     Args:
@@ -3959,14 +4334,14 @@ def digitize(x: Any, bins: Any, right: Any = False) -> Any:
 
 
 def dtype(
-    value: Any,
-    names: Any = None,
+    value: ArrayLikeSpec,
+    names: ArrayLikeSpec = None,
     *,
-    module: Any = None,
-    qualname: Any = None,
-    type: Any = None,
+    module: ArrayLikeSpec = None,
+    qualname: ArrayLikeSpec = None,
+    type: ArrayLikeSpec = None,
     start: int = 1,
-) -> Any:
+) -> ArrayLikeSpec:
     """Create a data type object.
 
     Args:
@@ -3983,16 +4358,15 @@ def dtype(
     # JAX normally delegates to numpy for this.
     # We implement a lightweight proxy returning DType enum equivalent or standard mapping.
     try:
-        if hasattr(value, "value"):
-            return value  # pragma: no cover
-        if isinstance(value, str):
-            return _DType(value.lower())  # pragma: no cover
-        return _DType(value.__name__.lower())
-    except Exception:  # pragma: no cover
-        return value  # pragma: no cover
+        if isinstance(value, _DType):
+            return value
+        name_str = value if isinstance(value, str) else (value.__name__ if isinstance(value, type) else str(value))
+        return _DType(name_str.lower())
+    except Exception:
+        return value
 
 
-def ediff1d(ary: Any, to_end: Any = None, to_begin: Any = None) -> Any:
+def ediff1d(ary: ArrayLikeSpec, to_end: ArrayLikeSpec = None, to_begin: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """The differences between consecutive elements of an array.
 
     Args:
@@ -4012,7 +4386,7 @@ def ediff1d(ary: Any, to_end: Any = None, to_begin: Any = None) -> Any:
     )
 
 
-def einsum_path(subscripts: Any, *operands: Any, optimize: Any = "auto") -> Any:
+def einsum_path(subscripts: ArrayLikeSpec, *operands: ArrayLikeSpec, optimize: ArrayLikeSpec = "auto") -> ArrayLikeSpec:
     """Evaluates the lowest cost contraction order for an einsum expression.
 
     Args:
@@ -4023,12 +4397,10 @@ def einsum_path(subscripts: Any, *operands: Any, optimize: Any = "auto") -> Any:
     Returns:
         A tuple of (path, string_representation).
     """
-    return ops.einsum_path(
-        subscripts, *[_to_tensor(o) for o in operands], optimize=optimize
-    )
+    return ops.einsum_path(subscripts, *[_to_tensor(o) for o in operands], optimize=optimize)
 
 
-def extract(condition: Any, arr: Any, *, size: Any = None, fill_value: Any = 0) -> Any:
+def extract(condition: ArrayLikeSpec, arr: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = 0) -> ArrayLikeSpec:
     """Return the elements of an array that satisfy some condition.
 
     Args:
@@ -4043,7 +4415,7 @@ def extract(condition: Any, arr: Any, *, size: Any = None, fill_value: Any = 0) 
     return _wrap(ops.extract(_to_tensor(condition), _to_tensor(arr)))
 
 
-def fabs(x: Any) -> Any:
+def fabs(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Compute the absolute values element-wise.
 
     Args:
@@ -4055,7 +4427,7 @@ def fabs(x: Any) -> Any:
     return _wrap(ops.fabs(_to_tensor(x)))
 
 
-def fill_diagonal(a: Any, val: Any, wrap: bool = False, *, inplace: bool = True) -> Any:
+def fill_diagonal(a: ArrayLikeSpec, val: ArrayLikeSpec, wrap: bool = False, *, inplace: bool = True) -> ArrayLikeSpec:
     """Fill the main diagonal of the given array of any dimensionality.
 
     Args:
@@ -4070,7 +4442,7 @@ def fill_diagonal(a: Any, val: Any, wrap: bool = False, *, inplace: bool = True)
     return _wrap(ops.fill_diagonal(_to_tensor(a), _to_tensor(val), wrap=wrap))
 
 
-def finfo(dtype: Any) -> Any:
+def finfo(dtype: ArrayLikeSpec) -> ArrayLikeSpec:
     """Machine limits for floating point types.
 
     Args:
@@ -4079,10 +4451,10 @@ def finfo(dtype: Any) -> Any:
     Returns:
         Machine limits.
     """
-    return ops.finfo(dtype)  # pragma: no cover
+    return ops.finfo(dtype)
 
 
-def flatnonzero(a: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def flatnonzero(a: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return indices that are non-zero in the flattened version of a.
 
     Args:
@@ -4096,7 +4468,7 @@ def flatnonzero(a: Any, *, size: Any = None, fill_value: Any = None) -> Any:
     return _wrap(ops.flatnonzero(_to_tensor(a)))
 
 
-def flip(m: Any, axis: Any = None) -> Any:
+def flip(m: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Reverse the order of elements in an array along the given axis.
 
     Args:
@@ -4109,7 +4481,7 @@ def flip(m: Any, axis: Any = None) -> Any:
     return _wrap(ops.flip(_to_tensor(m), axis=axis))
 
 
-def fliplr(m: Any) -> Any:
+def fliplr(m: ArrayLikeSpec) -> ArrayLikeSpec:
     """Reverse the order of elements along axis 1 (left/right).
 
     Args:
@@ -4121,7 +4493,7 @@ def fliplr(m: Any) -> Any:
     return _wrap(ops.fliplr(_to_tensor(m)))
 
 
-def flipud(m: Any) -> Any:
+def flipud(m: ArrayLikeSpec) -> ArrayLikeSpec:
     """Reverse the order of elements along axis 0 (up/down).
 
     Args:
@@ -4133,7 +4505,7 @@ def flipud(m: Any) -> Any:
     return _wrap(ops.flipud(_to_tensor(m)))
 
 
-def from_dlpack(x: Any, /, *, device: Any = None, copy: Any = None) -> Any:
+def from_dlpack(x: ArrayLikeSpec, /, *, device: ArrayLikeSpec = None, copy: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Create an array from a DLPack tensor.
 
     Args:
@@ -4145,12 +4517,10 @@ def from_dlpack(x: Any, /, *, device: Any = None, copy: Any = None) -> Any:
         The array.
     """
     # device/copy omitted since ml-switcheroo-compiler doesn't expose them in from_dlpack currently
-    return _wrap(ops.from_dlpack(x))  # pragma: no cover
+    return _wrap(ops.from_dlpack(x))
 
 
-def frombuffer(
-    buffer: Any, dtype: Any = float, count: int = -1, offset: int = 0
-) -> Any:
+def frombuffer(buffer: ArrayLikeSpec, dtype: ArrayLikeSpec = float, count: int = -1, offset: int = 0) -> ArrayLikeSpec:
     """Interpret a buffer as a 1-dimensional array.
 
     Args:
@@ -4164,7 +4534,7 @@ def frombuffer(
     """
 
 
-def iinfo(int_type: Any) -> Any:
+def iinfo(int_type: ArrayLikeSpec) -> ArrayLikeSpec:
     """Machine limits for integer types.
 
     Args:
@@ -4173,10 +4543,10 @@ def iinfo(int_type: Any) -> Any:
     Returns:
         Machine limits.
     """
-    return ops.iinfo(int_type)  # pragma: no cover
+    return ops.iinfo(int_type)
 
 
-def indices(dimensions: Any, dtype: Any = None, sparse: bool = False) -> Any:
+def indices(dimensions: ArrayLikeSpec, dtype: ArrayLikeSpec = None, sparse: bool = False) -> ArrayLikeSpec:
     """Return an array representing the indices of a grid.
 
     Args:
@@ -4187,19 +4557,11 @@ def indices(dimensions: Any, dtype: Any = None, sparse: bool = False) -> Any:
     Returns:
         If sparse is False: one array of grid indices. If True: a tuple of arrays.
     """
-    # Default numpy is int32, we map properly
-    d = (
-        "int32"
-        if dtype is None
-        else (dtype.value if hasattr(dtype, "value") else dtype)
-    )
-    res = ops.indices(dimensions, dtype=d, sparse=sparse)
-    if sparse:  # pragma: no cover
-        return tuple([_wrap(r) for r in res])  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    d = "int32" if dtype is None else (dtype.value if isinstance(dtype, _DType) else dtype)
+    return _wrap(ops.indices(dimensions, dtype=d, sparse=sparse))
 
 
-def insert(arr: Any, obj: Any, values: Any, axis: Any = None) -> Any:
+def insert(arr: ArrayLikeSpec, obj: ArrayLikeSpec, values: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Insert values along the given axis before the given indices.
 
     Args:
@@ -4214,9 +4576,7 @@ def insert(arr: Any, obj: Any, values: Any, axis: Any = None) -> Any:
     return _wrap(ops.insert(_to_tensor(arr), obj, _to_tensor(values), axis=axis))
 
 
-def interp(
-    x: Any, xp: Any, fp: Any, left: Any = None, right: Any = None, period: Any = None
-) -> Any:
+def interp(x: ArrayLikeSpec, xp: ArrayLikeSpec, fp: ArrayLikeSpec, left: ArrayLikeSpec = None, right: ArrayLikeSpec = None, period: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """One-dimensional linear interpolation.
 
     Args:
@@ -4242,9 +4602,7 @@ def interp(
     )
 
 
-def intersect1d(
-    ar1: Any, ar2: Any, assume_unique: bool = False, return_indices: bool = False
-) -> Any:
+def intersect1d(ar1: ArrayLikeSpec, ar2: ArrayLikeSpec, assume_unique: bool = False, return_indices: bool = False) -> ArrayLikeSpec:
     """Find the intersection of two arrays.
 
     Args:
@@ -4256,18 +4614,17 @@ def intersect1d(
     Returns:
         Sorted 1D array of common and unique elements.
     """
-    res = ops.intersect1d(
-        _to_tensor(ar1),
-        _to_tensor(ar2),
-        assume_unique=assume_unique,
-        return_indices=return_indices,
+    return _wrap(
+        ops.intersect1d(
+            _to_tensor(ar1),
+            _to_tensor(ar2),
+            assume_unique=assume_unique,
+            return_indices=return_indices,
+        )
     )
-    if return_indices:  # pragma: no cover
-        return _wrap(res[0]), _wrap(res[1]), _wrap(res[2])  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
 
 
-def iscomplex(x: Any) -> Any:
+def iscomplex(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Returns a bool array, where True if input element is complex.
 
     Args:
@@ -4279,29 +4636,47 @@ def iscomplex(x: Any) -> Any:
     return _wrap(ops.iscomplex(_to_tensor(x)))
 
 
-def _safe_bool(val: Any) -> bool:
-    if hasattr(val, "value") and not callable(val.value):  # pragma: no cover
-        return bool(val.value)  # pragma: no cover
-    if hasattr(val, "item") and callable(val.item):  # pragma: no cover
-        return bool(val.item())  # pragma: no cover
-    try:  # pragma: no cover
-        return bool(val)  # pragma: no cover
-    except Exception:  # pragma: no cover
-        return False  # pragma: no cover
+def _safe_bool(val: ArrayLikeSpec) -> builtins.bool:
+    """Safely convert a tensor or scalar to a Python boolean.
+
+    Args:
+        val: Input tensor or scalar value.
+
+    Returns:
+        bool: Python boolean value.
+    """
+    if isinstance(val, Tensor):
+        return builtins.bool(val.item())
+    return builtins.bool(val)
 
 
-def iscomplexobj(x: Any) -> bool:
+def iscomplexobj(x: ArrayLikeSpec) -> bool:
     # Using proxy node if possible
+    """Execute ``iscomplexobj``.
+
+    Args:
+        x: Input parameter ``x``.
+
+    Returns:
+        The operation result.
+    """
     return _safe_bool(ops.iscomplexobj(_to_tensor(x)))
 
 
-def isdtype(dtype: Any, kind: Any) -> bool:
-    return _safe_bool(ops.issubdtype(dtype, kind))  # pragma: no cover
+def isdtype(dtype: ArrayLikeSpec, kind: ArrayLikeSpec) -> bool:
+    """Execute ``isdtype``.
+
+    Args:
+        dtype: Input parameter ``dtype``.
+        kind: Input parameter ``kind``.
+
+    Returns:
+        The operation result.
+    """
+    return _safe_bool(ops.issubdtype(dtype, kind))
 
 
-def isin(
-    element: Any, test_elements: Any, assume_unique: bool = False, invert: bool = False
-) -> Any:
+def isin(element: ArrayLikeSpec, test_elements: ArrayLikeSpec, assume_unique: bool = False, invert: bool = False) -> ArrayLikeSpec:
     """Calculates element in test_elements, broadcasting over element only.
 
     Args:
@@ -4323,7 +4698,7 @@ def isin(
     )
 
 
-def isreal(x: Any) -> Any:
+def isreal(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Returns a bool array, where True if input element is real.
 
     Args:
@@ -4335,37 +4710,60 @@ def isreal(x: Any) -> Any:
     return _wrap(ops.isreal(_to_tensor(x)))
 
 
-def isrealobj(x: Any) -> bool:
-    try:  # pragma: no cover
-        return _safe_bool(ops.isrealobj(getattr(x, "data", x)))  # pragma: no cover
-    except Exception:  # pragma: no cover
-        return True  # pragma: no cover
+def isrealobj(x: ArrayLikeSpec) -> bool:
+    """Execute ``isrealobj``.
+
+    Args:
+        x: Input parameter ``x``.
+
+    Returns:
+        The operation result.
+    """
+    raw = x._tensor.data if isinstance(x, ndarray) else (x.data if isinstance(x, Tensor) else x)
+    return _safe_bool(ops.isrealobj(raw))
 
 
-def isscalar(element: Any) -> bool:
-    try:
-        val = getattr(element, "data", element)
-        if hasattr(val, "dtype") and hasattr(val.dtype, "name"):
-            return False  # pragma: no cover
-        if isinstance(val, (int, float, complex, bool, str, bytes, type(None))):
-            return True
-        return _safe_bool(ops.isscalar(val))  # pragma: no cover
-    except Exception:  # pragma: no cover
-        return False  # pragma: no cover
+def isscalar(element: ArrayLikeSpec) -> builtins.bool:
+    """Execute ``isscalar``.
+
+    Args:
+        element: Input parameter ``element``.
+
+    Returns:
+        The operation result.
+    """
+    if isinstance(element, (ndarray, Tensor)):
+        return False
+    return isinstance(element, (int, float, complex, builtins.bool, str, bytes)) or element is None
 
 
-def issubdtype(arg1: Any, arg2: Any) -> bool:
-    try:  # pragma: no cover
-        return _safe_bool(ops.issubdtype(arg1, arg2))  # pragma: no cover
-    except Exception:  # pragma: no cover
-        return False  # pragma: no cover
+def issubdtype(arg1: ArrayLikeSpec, arg2: ArrayLikeSpec) -> bool:
+    """Execute ``issubdtype``.
+
+    Args:
+        arg1: Input parameter ``arg1``.
+        arg2: Input parameter ``arg2``.
+
+    Returns:
+        The operation result.
+    """
+    return _safe_bool(ops.issubdtype(arg1, arg2))
 
 
-def iterable(y: Any) -> bool:
-    return _safe_bool(ops.iterable(getattr(y, "data", y)))  # pragma: no cover
+def iterable(y: ArrayLikeSpec) -> bool:
+    """Execute ``iterable``.
+
+    Args:
+        y: Input parameter ``y``.
+
+    Returns:
+        The operation result.
+    """
+    raw = y._tensor.data if isinstance(y, ndarray) else (y.data if isinstance(y, Tensor) else y)
+    return _safe_bool(ops.iterable(raw))
 
 
-def ix_(*args: Any) -> Any:
+def ix_(*args: ArrayLikeSpec) -> ArrayLikeSpec:
     """Construct an open mesh from multiple sequences.
 
     Args:
@@ -4374,12 +4772,10 @@ def ix_(*args: Any) -> Any:
     Returns:
         Tuple of ndarrays.
     """
-    return tuple(
-        _wrap(t) for t in ops.ix_(*[_to_tensor(a) for a in args])
-    )  # pragma: no cover
+    return tuple(_wrap(t) for t in ops.ix_(*[_to_tensor(a) for a in args]))
 
 
-def kaiser(M: int, beta: Any) -> Any:
+def kaiser(M: int, beta: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the Kaiser window.
 
     Args:
@@ -4394,7 +4790,7 @@ def kaiser(M: int, beta: Any) -> Any:
     return _wrap(ops.kaiser(M, _to_tensor(beta)))
 
 
-def kron(a: Any, b: Any) -> Any:
+def kron(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """Kronecker product of two arrays.
 
     Args:
@@ -4407,7 +4803,7 @@ def kron(a: Any, b: Any) -> Any:
     return _wrap(ops.kron(_to_tensor(a), _to_tensor(b)))
 
 
-def lexsort(keys: Any, axis: int = -1) -> Any:
+def lexsort(keys: ArrayLikeSpec, axis: int = -1) -> ArrayLikeSpec:
     """Perform an indirect stable sort using a sequence of keys.
 
     Args:
@@ -4419,15 +4815,13 @@ def lexsort(keys: Any, axis: int = -1) -> Any:
     """
     return _wrap(
         ops.lexsort(
-            [_to_tensor(k) for k in keys]
-            if isinstance(keys, (list, tuple))
-            else _to_tensor(keys),
+            [_to_tensor(k) for k in keys] if isinstance(keys, (list, tuple)) else _to_tensor(keys),
             axis=axis,
         )
     )
 
 
-def load(*args: Any, **kwargs: Any) -> Any:
+def load(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Load arrays or pickled objects from .npy, .npz or pickled files.
 
     Args:
@@ -4437,16 +4831,10 @@ def load(*args: Any, **kwargs: Any) -> Any:
     Returns:
         The result.
     """
-    res = ops.load(*args, **kwargs)  # pragma: no cover
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(r) for r in res)  # pragma: no cover
-    if isinstance(res, list):  # pragma: no cover
-        return [_wrap(r) for r in res]  # pragma: no cover
-    # For .npz files it might return a dictionary-like object, which we don't wrap deeply here automatically.
-    return _wrap(res) if hasattr(res, "shape") else res  # pragma: no cover
+    return _wrap(ops.load(*args, **kwargs))
 
 
-def mask_indices(*args: Any, **kwargs: Any) -> Any:
+def mask_indices(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Return the indices to access (n, n) arrays, given a masking function.
 
     Args:
@@ -4459,7 +4847,7 @@ def mask_indices(*args: Any, **kwargs: Any) -> Any:
     return tuple(_wrap(t) for t in ops.mask_indices(*args, **kwargs))
 
 
-def matrix_transpose(x: Any, /) -> Any:
+def matrix_transpose(x: ArrayLikeSpec, /) -> ArrayLikeSpec:
     """Transposes a matrix (or a stack of matrices) x.
 
     Args:
@@ -4468,16 +4856,16 @@ def matrix_transpose(x: Any, /) -> Any:
     Returns:
         The transposed array.
     """
-    return _wrap(ops.matrix_transpose(_to_tensor(x)))  # pragma: no cover
+    return _wrap(ops.matrix_transpose(_to_tensor(x)))
 
 
 def median(
-    a: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     keepdims: bool = False,
-) -> Any:
+) -> ArrayLikeSpec:
     """Compute the median along the specified axis.
 
     Args:
@@ -4493,7 +4881,7 @@ def median(
     return _wrap(ops.median(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def modf(x: Any, /, out: Any = None) -> Any:
+def modf(x: ArrayLikeSpec, /, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the fractional and integral parts of an array, element-wise.
 
     Args:
@@ -4503,13 +4891,10 @@ def modf(x: Any, /, out: Any = None) -> Any:
     Returns:
         Fractional and integral parts.
     """
-    res = (
-        ops.modf(_to_tensor(x), out=out) if out is not None else ops.modf(_to_tensor(x))
-    )
-    return _wrap(res[0]), _wrap(res[1])  # pragma: no cover
+    return _wrap(ops.modf(_to_tensor(x), out=out) if out is not None else ops.modf(_to_tensor(x)))
 
 
-def nanargmax(a: Any, axis: Any = None, out: Any = None, keepdims: Any = None) -> Any:
+def nanargmax(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, out: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the indices of the maximum values in the specified axis ignoring NaNs.
 
     Args:
@@ -4524,7 +4909,7 @@ def nanargmax(a: Any, axis: Any = None, out: Any = None, keepdims: Any = None) -
     return _wrap(ops.nanargmax(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def nanargmin(a: Any, axis: Any = None, out: Any = None, keepdims: Any = None) -> Any:
+def nanargmin(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, out: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the indices of the minimum values in the specified axis ignoring NaNs.
 
     Args:
@@ -4539,7 +4924,7 @@ def nanargmin(a: Any, axis: Any = None, out: Any = None, keepdims: Any = None) -
     return _wrap(ops.nanargmin(_to_tensor(a), axis=axis, keepdims=keepdims))
 
 
-def nancumprod(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> Any:
+def nancumprod(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the cumulative product of array elements over a given axis treating NaNs as one.
 
     Args:
@@ -4554,7 +4939,7 @@ def nancumprod(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> 
     return _wrap(ops.nancumprod(_to_tensor(a), axis=axis, dtype=dtype))
 
 
-def nancumsum(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> Any:
+def nancumsum(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Return the cumulative sum of array elements over a given axis treating NaNs as zero.
 
     Args:
@@ -4570,13 +4955,13 @@ def nancumsum(a: Any, axis: Any = None, dtype: Any = None, out: Any = None) -> A
 
 
 def nanmean(
-    a: Any,
-    axis: Any = None,
-    dtype: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     keepdims: bool = False,
-    where: Any = None,
-) -> Any:
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Compute the arithmetic mean along the specified axis, ignoring NaNs.
 
     Args:
@@ -4594,12 +4979,12 @@ def nanmean(
 
 
 def nanmedian(
-    a: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     keepdims: bool = False,
-) -> Any:
+) -> ArrayLikeSpec:
     """Compute the median along the specified axis, while ignoring NaNs.
 
     Args:
@@ -4616,16 +5001,16 @@ def nanmedian(
 
 
 def nanpercentile(
-    a: Any,
-    q: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    q: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     method: str = "linear",
     keepdims: bool = False,
     *,
-    interpolation: Any = None,
-) -> Any:
+    interpolation: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Compute the qth percentile of the data along the specified axis, while ignoring nan values.
 
     Args:
@@ -4641,23 +5026,20 @@ def nanpercentile(
     Returns:
         A new array holding the result.
     """
-    m = method if interpolation is None else interpolation
-    return _wrap(
-        ops.nanpercentile(_to_tensor(a), _to_tensor(q), axis=axis, keepdims=keepdims)
-    )
+    return _wrap(ops.nanpercentile(_to_tensor(a), _to_tensor(q), axis=axis, keepdims=keepdims))
 
 
 def nanquantile(
-    a: Any,
-    q: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    q: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     method: str = "linear",
     keepdims: bool = False,
     *,
-    interpolation: Any = None,
-) -> Any:
+    interpolation: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Compute the qth quantile of the data along the specified axis, while ignoring nan values.
 
     Args:
@@ -4673,21 +5055,18 @@ def nanquantile(
     Returns:
         A new array holding the result.
     """
-    m = method if interpolation is None else interpolation
-    return _wrap(
-        ops.nanquantile(_to_tensor(a), _to_tensor(q), axis=axis, keepdims=keepdims)
-    )
+    return _wrap(ops.nanquantile(_to_tensor(a), _to_tensor(q), axis=axis, keepdims=keepdims))
 
 
 def nanstd(
-    a: Any,
-    axis: Any = None,
-    dtype: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     ddof: int = 0,
     keepdims: bool = False,
-    where: Any = None,
-) -> Any:
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Compute the standard deviation along the specified axis, while ignoring NaNs.
 
     Args:
@@ -4706,14 +5085,14 @@ def nanstd(
 
 
 def nanvar(
-    a: Any,
-    axis: Any = None,
-    dtype: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     ddof: int = 0,
     keepdims: bool = False,
-    where: Any = None,
-) -> Any:
+    where: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Compute the variance along the specified axis, while ignoring NaNs.
 
     Args:
@@ -4735,163 +5114,309 @@ def nanvar(
 from .tensor_utils import to_array as _to_array
 
 
-def nonzero(a: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def nonzero(a: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``nonzero``.
+
+    Args:
+        a: Input parameter ``a``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
-    res = ops.nonzero(_to_tensor(a), size=size, fill_value=fill_value)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+    return _wrap(ops.nonzero(_to_tensor(a), size=size, fill_value=fill_value))
 
 
-def packbits(a: Any, axis: Any = None, bitorder: str = "big") -> Any:
-    res = ops.packbits(_to_tensor(a), axis, bitorder)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def packbits(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, bitorder: str = "big") -> ArrayLikeSpec:
+    """Execute ``packbits``.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+        bitorder: Input parameter ``bitorder``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.packbits(_to_tensor(a), axis, bitorder))
 
 
-def unpackbits(
-    a: Any, axis: Any = None, count: Any = None, bitorder: str = "big"
-) -> Any:
-    res = ops.unpackbits(_to_tensor(a), axis, count, bitorder)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def unpackbits(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, count: ArrayLikeSpec = None, bitorder: str = "big") -> ArrayLikeSpec:
+    """Execute ``unpackbits``.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+        count: Input parameter ``count``.
+        bitorder: Input parameter ``bitorder``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.unpackbits(_to_tensor(a), axis, count, bitorder))
 
 
-def partition(a: Any, kth: Any, axis: int = -1) -> Any:
-    from ml_switcheroo_compiler.ops import partition as _partition
+def partition(a: ArrayLikeSpec, kth: ArrayLikeSpec, axis: int = -1) -> ArrayLikeSpec:
+    """Execute ``partition``.
 
-    return _partition(_to_tensor(a), kth=kth, axis=axis)  # pragma: no cover
+    Args:
+        a: Input parameter ``a``.
+        kth: Input parameter ``kth``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
+    from ml_switcheroo_compiler.ops.shape.frontend import partition as _partition
+
+    return _wrap(_partition(_to_tensor(a), kth=kth, axis=axis))
 
 
 def percentile(
-    a: Any,
-    q: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    q: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     method: str = "linear",
     keepdims: bool = False,
-) -> Any:
-    res = ops.percentile(
-        _to_tensor(a),
-        _to_tensor(q) if isinstance(q, (list, tuple)) or hasattr(q, "__len__") else q,
-        axis,
-        out,
-        overwrite_input,
-        method,
-        keepdims,
+) -> ArrayLikeSpec:
+    """Execute ``percentile``.
+
+    Args:
+        a: Input parameter ``a``.
+        q: Input parameter ``q``.
+        axis: Input parameter ``axis``.
+        out: Input parameter ``out``.
+        overwrite_input: Input parameter ``overwrite_input``.
+        method: Input parameter ``method``.
+        keepdims: Input parameter ``keepdims``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.percentile(
+            _to_tensor(a),
+            _to_tensor(q) if isinstance(q, (list, tuple, ndarray, Tensor, ArrayProtocol)) else q,
+            axis,
+            out,
+            overwrite_input,
+            method,
+            keepdims,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
 
 
-def permute_dims(a: Any, axes: Any) -> Any:
+def permute_dims(a: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``permute_dims``.
+
+    Args:
+        a: Input parameter ``a``.
+        axes: Input parameter ``axes``.
+
+    Returns:
+        The operation result.
+    """
     return transpose(a, axes)
 
 
-def piecewise(x: Any, condlist: Any, funclist: Any, *args: Any, **kw: Any) -> Any:
-    res = ops.piecewise(_to_tensor(x), condlist, funclist, *args, **kw)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def piecewise(x: ArrayLikeSpec, condlist: ArrayLikeSpec, funclist: ArrayLikeSpec, *args: ArrayLikeSpec, **kw: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``piecewise``.
+
+    Args:
+        x: Input parameter ``x``.
+        condlist: Input parameter ``condlist``.
+        funclist: Input parameter ``funclist``.
+        *args: Input parameter ``args``.
+        **kw: Input parameter ``kw``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.piecewise(_to_tensor(x), condlist, funclist, *args, **kw))
 
 
-def place(arr: Any, mask: Any, vals: Any) -> None:
-    pass
+def place(arr: ArrayLikeSpec, mask: ArrayLikeSpec, vals: ArrayLikeSpec) -> None:
+    """Execute ``place``.
+
+    Args:
+        arr: Input parameter ``arr``.
+        mask: Input parameter ``mask``.
+        vals: Input parameter ``vals``.
+    """
 
 
-def promote_types(type1: Any, type2: Any) -> Any:
-    res = ops.promote_types(type1, type2)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def promote_types(type1: ArrayLikeSpec, type2: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``promote_types``.
+
+    Args:
+        type1: Input parameter ``type1``.
+        type2: Input parameter ``type2``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.promote_types(type1, type2))
 
 
-def ptp(a: Any, axis: Any = None, out: Any = None, keepdims: bool = False) -> Any:
+def ptp(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, out: ArrayLikeSpec = None, keepdims: bool = False) -> ArrayLikeSpec:
+    """Execute ``ptp``.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+        out: Input parameter ``out``.
+        keepdims: Input parameter ``keepdims``.
+
+    Returns:
+        The operation result.
+    """
     return amax(a, axis=axis, keepdims=keepdims) - amin(a, axis=axis, keepdims=keepdims)
 
 
-def put(a: Any, ind: Any, v: Any, mode: str = "raise") -> None:
-    pass
+def put(a: ArrayLikeSpec, ind: ArrayLikeSpec, v: ArrayLikeSpec, mode: str = "raise") -> None:
+    """Execute ``put``.
+
+    Args:
+        a: Input parameter ``a``.
+        ind: Input parameter ``ind``.
+        v: Input parameter ``v``.
+        mode: Input parameter ``mode``.
+    """
 
 
 def quantile(
-    a: Any,
-    q: Any,
-    axis: Any = None,
-    out: Any = None,
+    a: ArrayLikeSpec,
+    q: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
     overwrite_input: bool = False,
     method: str = "linear",
     keepdims: bool = False,
-) -> Any:
-    res = ops.quantile(
-        _to_tensor(a),
-        _to_tensor(q) if isinstance(q, (list, tuple)) or hasattr(q, "__len__") else q,
-        axis,
-        out,
-        overwrite_input,
-        method,
-        keepdims,
+) -> ArrayLikeSpec:
+    """Execute ``quantile``.
+
+    Args:
+        a: Input parameter ``a``.
+        q: Input parameter ``q``.
+        axis: Input parameter ``axis``.
+        out: Input parameter ``out``.
+        overwrite_input: Input parameter ``overwrite_input``.
+        method: Input parameter ``method``.
+        keepdims: Input parameter ``keepdims``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.quantile(
+            _to_tensor(a),
+            _to_tensor(q) if isinstance(q, (list, tuple, ndarray, Tensor, ArrayProtocol)) else q,
+            axis,
+            out,
+            overwrite_input,
+            method,
+            keepdims,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
 
 
-def ravel_multi_index(
-    multi_index: Any, dims: Any, mode: str = "raise", order: str = "C"
-) -> Any:
-    """JAX API implementation for ravel_multi_index."""
-    res = ops.ravel_multi_index(multi_index, dims, mode, order)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def ravel_multi_index(multi_index: ArrayLikeSpec, dims: ArrayLikeSpec, mode: str = "raise", order: str = "C") -> ArrayLikeSpec:
+    """JAX API implementation for ravel_multi_index.
+
+    Args:
+        multi_index: Input parameter ``multi_index``.
+        dims: Input parameter ``dims``.
+        mode: Input parameter ``mode``.
+        order: Input parameter ``order``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.ravel_multi_index(multi_index, dims, mode, order))
 
 
-def resize(a: Any, new_shape: Any) -> Any:
-    """JAX API implementation for resize."""
-    res = ops.resize(_to_tensor(a), new_shape)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def resize(a: ArrayLikeSpec, new_shape: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for resize.
+
+    Args:
+        a: Input parameter ``a``.
+        new_shape: Input parameter ``new_shape``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.resize(_to_tensor(a), new_shape))
 
 
-def result_type(*arrays_and_dtypes: Any) -> Any:
+def result_type(*arrays_and_dtypes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``result_type``.
+
+    Args:
+        *arrays_and_dtypes: Input parameter ``arrays_and_dtypes``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
-    processed = [_to_tensor(x) if hasattr(x, "shape") else x for x in arrays_and_dtypes]
-    res = ops.result_type(*processed)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    processed = [_to_tensor(x) if isinstance(x, (ndarray, Tensor, ArrayProtocol)) else x for x in arrays_and_dtypes]
+    return _wrap(ops.result_type(*processed))
 
 
-def rollaxis(a: Any, axis: int, start: int = 0) -> Any:
+def rollaxis(a: ArrayLikeSpec, axis: int, start: int = 0) -> ArrayLikeSpec:
     # Use moveaxis internally since rollaxis delegates to it and numpy 2 expects arrays with ndim
+    """Execute ``rollaxis``.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+        start: Input parameter ``start``.
+
+    Returns:
+        The operation result.
+    """
     return moveaxis(a, axis, start)
 
 
-def rot90(m: Any, k: int = 1, axes: Any = (0, 1)) -> Any:
-    """JAX API implementation for rot90."""
-    res = ops.rot90(_to_tensor(m), k, axes)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def rot90(m: ArrayLikeSpec, k: int = 1, axes: ArrayLikeSpec = (0, 1)) -> ArrayLikeSpec:
+    """JAX API implementation for rot90.
+
+    Args:
+        m: Input parameter ``m``.
+        k: Input parameter ``k``.
+        axes: Input parameter ``axes``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.rot90(_to_tensor(m), k, axes))
 
 
-def save(
-    file: Any, arr: Any, allow_pickle: bool = True, fix_imports: bool = True
-) -> None:
-    """JAX API implementation for save."""
+def save(file: ArrayLikeSpec, arr: ArrayLikeSpec, allow_pickle: bool = True, fix_imports: bool = True) -> None:
+    """JAX API implementation for save.
+
+    Args:
+        file: Input parameter ``file``.
+        arr: Input parameter ``arr``.
+        allow_pickle: Input parameter ``allow_pickle``.
+        fix_imports: Input parameter ``fix_imports``.
+    """
     ops.save(file, _to_tensor(arr), allow_pickle, fix_imports)
 
 
-def savez(file: Any, *args: Any, **kwds: Any) -> None:
-    """JAX API implementation for savez."""
+def savez(file: ArrayLikeSpec, *args: ArrayLikeSpec, **kwds: ArrayLikeSpec) -> None:
+    """JAX API implementation for savez.
+
+    Args:
+        file: Input parameter ``file``.
+        *args: Input parameter ``args``.
+        **kwds: Input parameter ``kwds``.
+    """
     ops.savez(
         file,
         *[_to_tensor(a) for a in args],
@@ -4899,217 +5424,417 @@ def savez(file: Any, *args: Any, **kwds: Any) -> None:
     )
 
 
-def setdiff1d(ar1: Any, ar2: Any, assume_unique: bool = False) -> Any:
-    """JAX API implementation for setdiff1d."""
-    res = ops.setdiff1d(_to_tensor(ar1), _to_tensor(ar2), assume_unique)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def setdiff1d(ar1: ArrayLikeSpec, ar2: ArrayLikeSpec, assume_unique: bool = False) -> ArrayLikeSpec:
+    """JAX API implementation for setdiff1d.
+
+    Args:
+        ar1: Input parameter ``ar1``.
+        ar2: Input parameter ``ar2``.
+        assume_unique: Input parameter ``assume_unique``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.setdiff1d(_to_tensor(ar1), _to_tensor(ar2), assume_unique))
 
 
-def setxor1d(ar1: Any, ar2: Any, assume_unique: bool = False) -> Any:
-    """JAX API implementation for setxor1d."""
-    res = ops.setxor1d(_to_tensor(ar1), _to_tensor(ar2), assume_unique)
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def setxor1d(ar1: ArrayLikeSpec, ar2: ArrayLikeSpec, assume_unique: bool = False) -> ArrayLikeSpec:
+    """JAX API implementation for setxor1d.
+
+    Args:
+        ar1: Input parameter ``ar1``.
+        ar2: Input parameter ``ar2``.
+        assume_unique: Input parameter ``assume_unique``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.setxor1d(_to_tensor(ar1), _to_tensor(ar2), assume_unique))
 
 
-def size(a: Any, axis: Any = None) -> Any:
+def size(a: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``size``.
+
+    Args:
+        a: Input parameter ``a``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
-    res = ops.size(_to_tensor(a), axis=axis)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+    return _wrap(ops.size(_to_tensor(a), axis=axis))
 
 
-def sort_complex(a: Any) -> Any:
-    """JAX API implementation for sort_complex."""
-    res = ops.sort_complex(_to_tensor(a))
-    if isinstance(res, tuple):  # pragma: no cover
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+def sort_complex(a: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for sort_complex.
+
+    Args:
+        a: Input parameter ``a``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.sort_complex(_to_tensor(a)))
 
 
 def trace(
-    a: Any,
+    a: ArrayLikeSpec,
     offset: int = 0,
     axis1: int = 0,
     axis2: int = 1,
-    dtype: Any = None,
-    out: Any = None,
-) -> Any:
+    dtype: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Execute ``trace``.
+
+    Args:
+        a: Input parameter ``a``.
+        offset: Input parameter ``offset``.
+        axis1: Input parameter ``axis1``.
+        axis2: Input parameter ``axis2``.
+        dtype: Input parameter ``dtype``.
+        out: Input parameter ``out``.
+
+    Returns:
+        The operation result.
+    """
     from ml_switcheroo_compiler.ops import trace as _trace
 
     return _trace(_to_tensor(a), offset=offset, axis1=axis1, axis2=axis2)
 
 
-def trapezoid(y: Any, x: Any = None, dx: float = 1.0, axis: int = -1) -> Any:
-    res = ops.trapezoid(
-        _to_tensor(y), _to_tensor(x) if x is not None else None, dx, axis
-    )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def trapezoid(y: ArrayLikeSpec, x: ArrayLikeSpec = None, dx: float = 1.0, axis: int = -1) -> ArrayLikeSpec:
+    """Execute ``trapezoid``.
+
+    Args:
+        y: Input parameter ``y``.
+        x: Input parameter ``x``.
+        dx: Input parameter ``dx``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.trapezoid(_to_tensor(y), _to_tensor(x) if x is not None else None, dx, axis))
 
 
-def tri(N: int, M: Any = None, k: int = 0, dtype: Any = float) -> Any:
-    res = ops.tri(N, M, k, dtype)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def tri(N: int, M: ArrayLikeSpec = None, k: int = 0, dtype: ArrayLikeSpec = float) -> ArrayLikeSpec:
+    """Execute ``tri``.
+
+    Args:
+        N: Input parameter ``N``.
+        M: Input parameter ``M``.
+        k: Input parameter ``k``.
+        dtype: Input parameter ``dtype``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.tri(N, M, k, dtype))
 
 
-def tril_indices(n: int, k: int = 0, m: Any = None) -> Any:
-    res = ops.tril_indices(n, k, m)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def tril_indices(n: int, k: int = 0, m: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``tril_indices``.
+
+    Args:
+        n: Input parameter ``n``.
+        k: Input parameter ``k``.
+        m: Input parameter ``m``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.tril_indices(n, k, m))
 
 
-def tril_indices_from(arr: Any, k: int = 0) -> Any:
-    res = ops.tril_indices_from(_to_tensor(arr), k)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def tril_indices_from(arr: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
+    """Execute ``tril_indices_from``.
+
+    Args:
+        arr: Input parameter ``arr``.
+        k: Input parameter ``k``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.tril_indices_from(_to_tensor(arr), k))
 
 
-def trim_zeros(filt: Any, trim: str = "fb") -> Any:
-    res = ops.trim_zeros(_to_tensor(filt), trim)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def trim_zeros(filt: ArrayLikeSpec, trim: str = "fb") -> ArrayLikeSpec:
+    """Execute ``trim_zeros``.
+
+    Args:
+        filt: Input parameter ``filt``.
+        trim: Input parameter ``trim``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.trim_zeros(_to_tensor(filt), trim))
 
 
-def triu_indices(n: int, k: int = 0, m: Any = None) -> Any:
-    res = ops.triu_indices(n, k, m)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def triu_indices(n: int, k: int = 0, m: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``triu_indices``.
+
+    Args:
+        n: Input parameter ``n``.
+        k: Input parameter ``k``.
+        m: Input parameter ``m``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.triu_indices(n, k, m))
 
 
-def triu_indices_from(arr: Any, k: int = 0) -> Any:
-    res = ops.triu_indices_from(_to_tensor(arr), k)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def triu_indices_from(arr: ArrayLikeSpec, k: int = 0) -> ArrayLikeSpec:
+    """Execute ``triu_indices_from``.
+
+    Args:
+        arr: Input parameter ``arr``.
+        k: Input parameter ``k``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.triu_indices_from(_to_tensor(arr), k))
 
 
 def ufunc() -> None:
-    pass  # pragma: no cover
+    """Execute ``ufunc``."""
 
 
-def uint(x: Any = 0) -> Any:
+def uint(x: ArrayLikeSpec = 0) -> ArrayLikeSpec:
+    """Execute ``uint``.
+
+    Args:
+        x: Input parameter ``x``.
+
+    Returns:
+        The operation result.
+    """
     return array(x, dtype=_DType.UInt32)
 
 
-def uint4(x: Any = 0) -> Any:
+def uint4(x: ArrayLikeSpec = 0) -> ArrayLikeSpec:
+    """Execute ``uint4``.
+
+    Args:
+        x: Input parameter ``x``.
+
+    Returns:
+        The operation result.
+    """
     return array(x, dtype=_DType.UInt8)
 
 
-def union1d(ar1: Any, ar2: Any) -> Any:
-    res = ops.union1d(_to_tensor(ar1), _to_tensor(ar2))
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def union1d(ar1: ArrayLikeSpec, ar2: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``union1d``.
+
+    Args:
+        ar1: Input parameter ``ar1``.
+        ar2: Input parameter ``ar2``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.union1d(_to_tensor(ar1), _to_tensor(ar2)))
 
 
 def unique(
-    ar: Any,
+    ar: ArrayLikeSpec,
     return_index: bool = False,
     return_inverse: bool = False,
     return_counts: bool = False,
-    axis: Any = None,
+    axis: ArrayLikeSpec = None,
     *,
-    size: Any = None,
-    fill_value: Any = None,
-) -> Any:
-    res = ops.unique(
-        _to_tensor(ar),
-        return_index,
-        return_inverse,
-        return_counts,
-        axis,
-        size=size,
-        fill_value=fill_value,
+    size: ArrayLikeSpec = None,
+    fill_value: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Execute ``unique``.
+
+    Args:
+        ar: Input parameter ``ar``.
+        return_index: Input parameter ``return_index``.
+        return_inverse: Input parameter ``return_inverse``.
+        return_counts: Input parameter ``return_counts``.
+        axis: Input parameter ``axis``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.unique(
+            _to_tensor(ar),
+            return_index,
+            return_inverse,
+            return_counts,
+            axis,
+            size=size,
+            fill_value=fill_value,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
 
 
-def unique_all(x: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def unique_all(x: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``unique_all``.
+
+    Args:
+        x: Input parameter ``x``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     return unique(x, return_index=True, return_inverse=True, return_counts=True)
 
 
-def unique_counts(x: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def unique_counts(x: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``unique_counts``.
+
+    Args:
+        x: Input parameter ``x``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     return unique(x, return_counts=True)
 
 
-def unique_inverse(x: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def unique_inverse(x: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``unique_inverse``.
+
+    Args:
+        x: Input parameter ``x``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     return unique(x, return_inverse=True)
 
 
-def unique_values(x: Any, *, size: Any = None, fill_value: Any = None) -> Any:
+def unique_values(x: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Execute ``unique_values``.
+
+    Args:
+        x: Input parameter ``x``.
+        size: Input parameter ``size``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     return unique(x)
 
 
-def unravel_index(indices: Any, shape: Any) -> Any:
-    from ml_switcheroo_compiler.ops import unravel_index as _unravel_index
+def unravel_index(indices: ArrayLikeSpec, shape: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``unravel_index``.
 
-    res = _unravel_index(_to_tensor(indices), _to_tensor(shape))  # pragma: no cover
-    if isinstance(res, (tuple, list)):  # pragma: no cover
-        return tuple(array(r) for r in res)  # pragma: no cover
-    return array(res)  # pragma: no cover
+    Args:
+        indices: Input parameter ``indices``.
+        shape: Input parameter ``shape``.
 
+    Returns:
+        The operation result.
+    """
+    from ml_switcheroo_compiler.ops.base import get_op
 
-def unwrap(
-    p: Any, discont: Any = None, axis: int = -1, period: float = 6.283185307179586
-) -> Any:
-    res = ops.unwrap(_to_tensor(p), discont, axis, period)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
+    res = get_op("UnravelIndex")()(_to_tensor(indices), shape)
     return _wrap(res)
 
 
-def vander(x: Any, N: Any = None, increasing: bool = False) -> Any:
-    res = ops.vander(_to_tensor(x), N, increasing)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def unwrap(p: ArrayLikeSpec, discont: ArrayLikeSpec = None, axis: int = -1, period: float = 6.283185307179586) -> ArrayLikeSpec:
+    """Execute ``unwrap``.
+
+    Args:
+        p: Input parameter ``p``.
+        discont: Input parameter ``discont``.
+        axis: Input parameter ``axis``.
+        period: Input parameter ``period``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.unwrap(_to_tensor(p), discont, axis, period))
 
 
-def vecdot(x1: Any, x2: Any, /, *, axis: int = -1) -> Any:
+def vander(x: ArrayLikeSpec, N: ArrayLikeSpec = None, increasing: bool = False) -> ArrayLikeSpec:
+    """Execute ``vander``.
+
+    Args:
+        x: Input parameter ``x``.
+        N: Input parameter ``N``.
+        increasing: Input parameter ``increasing``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.vander(_to_tensor(x), N, increasing))
+
+
+def vecdot(x1: ArrayLikeSpec, x2: ArrayLikeSpec, /, *, axis: int = -1) -> ArrayLikeSpec:
+    """Execute ``vecdot``.
+
+    Args:
+        x1: Input parameter ``x1``.
+        x2: Input parameter ``x2``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
     return sum(x1 * x2, axis=axis)
 
 
 class vectorize:
+    """Frontend class for ``vectorize``."""
+
     def __init__(
         self,
-        pyfunc: Any,
-        otypes: Any = None,
-        doc: Any = None,
-        excluded: Any = None,
+        pyfunc: ArrayLikeSpec,
+        otypes: ArrayLikeSpec = None,
+        doc: ArrayLikeSpec = None,
+        excluded: ArrayLikeSpec = None,
         cache: bool = False,
-        signature: Any = None,
+        signature: ArrayLikeSpec = None,
     ) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            pyfunc: Input parameter ``pyfunc``.
+            otypes: Input parameter ``otypes``.
+            doc: Input parameter ``doc``.
+            excluded: Input parameter ``excluded``.
+            cache: Input parameter ``cache``.
+            signature: Input parameter ``signature``.
+        """
         self._vec = ops.vectorize(pyfunc, otypes, doc, excluded, cache, signature)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        vec = getattr(self._vec, "data", self._vec)  # pragma: no cover
-        if callable(vec):  # pragma: no cover
-            res = vec(*[_to_tensor(a) for a in args], **kwargs)  # pragma: no cover
-        else:
-            res = self._vec(
-                *[_to_tensor(a) for a in args], **kwargs
-            )  # pragma: no cover
-        if isinstance(res, tuple):  # pragma: no cover
-            return tuple(_wrap(t) for t in res)  # pragma: no cover
-        return _wrap(res)  # pragma: no cover
+    def __call__(self, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``__call__``.
+
+        Args:
+            *args: Input parameter ``args``.
+            **kwargs: Input parameter ``kwargs``.
+
+        Returns:
+            The operation result.
+        """
+        vec = self._vec.data if isinstance(self._vec, Tensor) else self._vec
+        res = vec(*[_to_tensor(a) for a in args], **kwargs)
+        return _wrap(res)
 
 
-def apply_over_axes(func: Any, a: Any, axes: Any) -> Any:
+def apply_over_axes(func: ArrayLikeSpec, a: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for apply_over_axes.
 
     Args:
@@ -5118,213 +5843,322 @@ def apply_over_axes(func: Any, a: Any, axes: Any) -> Any:
         axes: Argument axes.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.apply_over_axes(func, _to_tensor(a), axes)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+    return _wrap(ops.apply_over_axes(func, _to_tensor(a), axes))
 
 
-def argpartition(
-    a: Any, kth: Any, axis: int = -1, kind: str = "introselect", order: Any = None
-) -> Any:
-    """JAX API implementation for argpartition."""
-    res = ops.argpartition(_to_tensor(a), kth, axis, kind, order)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def argpartition(a: ArrayLikeSpec, kth: ArrayLikeSpec, axis: int = -1, kind: str = "introselect", order: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """JAX API implementation for argpartition.
+
+    Args:
+        a: Input parameter ``a``.
+        kth: Input parameter ``kth``.
+        axis: Input parameter ``axis``.
+        kind: Input parameter ``kind``.
+        order: Input parameter ``order``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.argpartition(_to_tensor(a), kth, axis, kind, order))
 
 
-def argwhere(a: Any) -> Any:
-    """JAX API implementation for argwhere."""
-    res = ops.argwhere(_to_tensor(a))
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def argwhere(a: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for argwhere.
+
+    Args:
+        a: Input parameter ``a``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.argwhere(_to_tensor(a)))
 
 
 def fromfile(
-    file: Any,
-    dtype: Any = float,
+    file: ArrayLikeSpec,
+    dtype: ArrayLikeSpec = float,
     count: int = -1,
     sep: str = "",
     offset: int = 0,
     *,
-    like: Any = None,
-) -> Any:
-    """JAX API implementation for fromfile."""
-    res = ops.fromfile(file, dtype, count, sep, offset, like=like)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+    like: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """JAX API implementation for fromfile.
+
+    Args:
+        file: Input parameter ``file``.
+        dtype: Input parameter ``dtype``.
+        count: Input parameter ``count``.
+        sep: Input parameter ``sep``.
+        offset: Input parameter ``offset``.
+        like: Input parameter ``like``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.fromfile(file, dtype, count, sep, offset, like=like))
 
 
-def fromfunction(
-    function: Any, shape: Any, *, dtype: Any = float, like: Any = None, **kwargs: Any
-) -> Any:
-    """JAX API implementation for fromfunction."""
-    res = ops.fromfunction(function, shape, dtype=dtype, like=like, **kwargs)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def fromfunction(function: ArrayLikeSpec, shape: ArrayLikeSpec, *, dtype: ArrayLikeSpec = float, like: ArrayLikeSpec = None, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for fromfunction.
+
+    Args:
+        function: Input parameter ``function``.
+        shape: Input parameter ``shape``.
+        dtype: Input parameter ``dtype``.
+        like: Input parameter ``like``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.fromfunction(function, shape, dtype=dtype, like=like, **kwargs))
 
 
-def fromiter(iter: Any, dtype: Any, count: int = -1, *, like: Any = None) -> Any:
-    """JAX API implementation for fromiter."""
-    res = ops.fromiter(iter, dtype, count, like=like)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def fromiter(iter: ArrayLikeSpec, dtype: ArrayLikeSpec, count: int = -1, *, like: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """JAX API implementation for fromiter.
+
+    Args:
+        iter: Input parameter ``iter``.
+        dtype: Input parameter ``dtype``.
+        count: Input parameter ``count``.
+        like: Input parameter ``like``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.fromiter(iter, dtype, count, like=like))
 
 
-def frompyfunc(func: Any, nin: int, nout: int, *args: Any, **kwargs: Any) -> Any:
-    """JAX API implementation for frompyfunc."""
-    res = ops.frompyfunc(func, nin, nout, *args, **kwargs)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def frompyfunc(func: ArrayLikeSpec, nin: int, nout: int, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for frompyfunc.
+
+    Args:
+        func: Input parameter ``func``.
+        nin: Input parameter ``nin``.
+        nout: Input parameter ``nout``.
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.frompyfunc(func, nin, nout, *args, **kwargs))
 
 
-def fromstring(string: Any, dtype: Any = float, count: int = -1, sep: str = "") -> Any:
-    """JAX API implementation for fromstring."""
-    res = ops.fromstring(string, dtype, count, sep)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def fromstring(string: ArrayLikeSpec, dtype: ArrayLikeSpec = float, count: int = -1, sep: str = "") -> ArrayLikeSpec:
+    """JAX API implementation for fromstring.
+
+    Args:
+        string: Input parameter ``string``.
+        dtype: Input parameter ``dtype``.
+        count: Input parameter ``count``.
+        sep: Input parameter ``sep``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.fromstring(string, dtype, count, sep))
 
 
 def geomspace(
-    start: Any,
-    stop: Any,
+    start: ArrayLikeSpec,
+    stop: ArrayLikeSpec,
     num: int = 50,
     endpoint: bool = True,
-    dtype: Any = None,
+    dtype: ArrayLikeSpec = None,
     axis: int = 0,
-) -> Any:
-    """JAX API implementation for geomspace."""
-    res = ops.geomspace(_to_tensor(start), _to_tensor(stop), num, endpoint, dtype, axis)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+) -> ArrayLikeSpec:
+    """JAX API implementation for geomspace.
+
+    Args:
+        start: Input parameter ``start``.
+        stop: Input parameter ``stop``.
+        num: Input parameter ``num``.
+        endpoint: Input parameter ``endpoint``.
+        dtype: Input parameter ``dtype``.
+        axis: Input parameter ``axis``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.geomspace(_to_tensor(start), _to_tensor(stop), num, endpoint, dtype, axis))
 
 
-def get_printoptions() -> Any:
+def get_printoptions() -> ArrayLikeSpec:
     """JAX API implementation for get_printoptions.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return ops.get_printoptions()
 
 
-def gradient(f: Any, *varargs: Any, axis: Any = None, edge_order: int = 1) -> Any:
-    """JAX API implementation for gradient."""
-    res = ops.gradient(_to_tensor(f), *varargs, axis=axis, edge_order=edge_order)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def gradient(f: ArrayLikeSpec, *varargs: ArrayLikeSpec, axis: ArrayLikeSpec = None, edge_order: int = 1) -> ArrayLikeSpec:
+    """JAX API implementation for gradient.
+
+    Args:
+        f: Input parameter ``f``.
+        axis: Input parameter ``axis``.
+        edge_order: Input parameter ``edge_order``.
+        *varargs: Input parameter ``varargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.gradient(_to_tensor(f), *varargs, axis=axis, edge_order=edge_order))
 
 
-def hamming(M: Any) -> Any:
-    """JAX API implementation for hamming."""
-    res = ops.hamming(M)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def hamming(M: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for hamming.
+
+    Args:
+        M: Input parameter ``M``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.hamming(M))
 
 
-def hanning(M: Any) -> Any:
-    """JAX API implementation for hanning."""
-    res = ops.hanning(M)
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def hanning(M: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for hanning.
+
+    Args:
+        M: Input parameter ``M``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.hanning(M))
 
 
 def histogram(
-    a: Any,
-    bins: Any = 10,
-    range: Any = None,
-    normed: Any = None,
-    weights: Any = None,
-    density: Any = None,
-) -> Any:
-    """JAX API implementation for histogram."""
-    res = ops.histogram(
-        _to_tensor(a),
-        bins,
-        range,
-        normed,
-        _to_tensor(weights) if weights is not None else None,
-        density,
+    a: ArrayLikeSpec,
+    bins: ArrayLikeSpec = 10,
+    range: ArrayLikeSpec = None,
+    normed: ArrayLikeSpec = None,
+    weights: ArrayLikeSpec = None,
+    density: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """JAX API implementation for histogram.
+
+    Args:
+        a: Input parameter ``a``.
+        bins: Input parameter ``bins``.
+        range: Input parameter ``range``.
+        normed: Input parameter ``normed``.
+        weights: Input parameter ``weights``.
+        density: Input parameter ``density``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.histogram(
+            _to_tensor(a),
+            bins,
+            range,
+            normed,
+            _to_tensor(weights) if weights is not None else None,
+            density,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)
-    return _wrap(res)  # pragma: no cover
 
 
 def histogram2d(
-    x: Any,
-    y: Any,
-    bins: Any = 10,
-    range: Any = None,
-    normed: Any = None,
-    weights: Any = None,
-    density: Any = None,
-) -> Any:
-    """JAX API implementation for histogram2d."""
-    res = ops.histogram2d(
-        _to_tensor(x),
-        _to_tensor(y),
-        bins,
-        range,
-        normed,
-        _to_tensor(weights) if weights is not None else None,
-        density,
+    x: ArrayLikeSpec,
+    y: ArrayLikeSpec,
+    bins: ArrayLikeSpec = 10,
+    range: ArrayLikeSpec = None,
+    normed: ArrayLikeSpec = None,
+    weights: ArrayLikeSpec = None,
+    density: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """JAX API implementation for histogram2d.
+
+    Args:
+        x: Input parameter ``x``.
+        y: Input parameter ``y``.
+        bins: Input parameter ``bins``.
+        range: Input parameter ``range``.
+        normed: Input parameter ``normed``.
+        weights: Input parameter ``weights``.
+        density: Input parameter ``density``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.histogram2d(
+            _to_tensor(x),
+            _to_tensor(y),
+            bins,
+            range,
+            normed,
+            _to_tensor(weights) if weights is not None else None,
+            density,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)
-    return _wrap(res)  # pragma: no cover
 
 
 def histogramdd(
-    sample: Any,
-    bins: Any = 10,
-    range: Any = None,
-    normed: Any = None,
-    weights: Any = None,
-    density: Any = None,
-) -> Any:
-    """JAX API implementation for histogramdd."""
-    res = ops.histogramdd(
-        sample,
-        bins,
-        range,
-        normed,
-        _to_tensor(weights) if weights is not None else None,
-        density,
+    sample: ArrayLikeSpec,
+    bins: ArrayLikeSpec = 10,
+    range: ArrayLikeSpec = None,
+    normed: ArrayLikeSpec = None,
+    weights: ArrayLikeSpec = None,
+    density: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """JAX API implementation for histogramdd.
+
+    Args:
+        sample: Input parameter ``sample``.
+        bins: Input parameter ``bins``.
+        range: Input parameter ``range``.
+        normed: Input parameter ``normed``.
+        weights: Input parameter ``weights``.
+        density: Input parameter ``density``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(
+        ops.histogramdd(
+            sample,
+            bins,
+            range,
+            normed,
+            _to_tensor(weights) if weights is not None else None,
+            density,
+        )
     )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)
-    return _wrap(res)  # pragma: no cover
 
 
-def histogram_bin_edges(
-    a: Any, bins: Any = 10, range: Any = None, weights: Any = None
-) -> Any:
-    """JAX API implementation for histogram_bin_edges."""
-    res = ops.histogram_bin_edges(
-        _to_tensor(a), bins, range, _to_tensor(weights) if weights is not None else None
-    )
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def histogram_bin_edges(a: ArrayLikeSpec, bins: ArrayLikeSpec = 10, range: ArrayLikeSpec = None, weights: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """JAX API implementation for histogram_bin_edges.
+
+    Args:
+        a: Input parameter ``a``.
+        bins: Input parameter ``bins``.
+        range: Input parameter ``range``.
+        weights: Input parameter ``weights``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.histogram_bin_edges(_to_tensor(a), bins, range, _to_tensor(weights) if weights is not None else None))
 
 
-def i0(x: Any) -> Any:
-    """JAX API implementation for i0."""
-    res = ops.i0(_to_tensor(x))
-    if isinstance(res, tuple):
-        return tuple(_wrap(t) for t in res)  # pragma: no cover
-    return _wrap(res)
+def i0(x: ArrayLikeSpec) -> ArrayLikeSpec:
+    """JAX API implementation for i0.
+
+    Args:
+        x: Input parameter ``x``.
+
+    Returns:
+        The operation result.
+    """
+    return _wrap(ops.i0(_to_tensor(x)))

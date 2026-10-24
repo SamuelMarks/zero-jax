@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.interpreters.pxla as mod
 
@@ -122,63 +122,49 @@ def test_Unstacked() -> None:
 
 def test_are_op_shardings_equal() -> None:
     """Test are_op_shardings_equal."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.are_op_shardings_equal", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.are_op_shardings_equal", create=True) as mock_op:
         mod.are_op_shardings_equal()
         mock_op.assert_called_once_with()
 
 
 def test_array_mapping_to_axis_resources() -> None:
     """Test array_mapping_to_axis_resources."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.array_mapping_to_axis_resources", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.array_mapping_to_axis_resources", create=True) as mock_op:
         mod.array_mapping_to_axis_resources()
         mock_op.assert_called_once_with()
 
 
 def test_global_aval_to_result_handler() -> None:
     """Test global_aval_to_result_handler."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.global_aval_to_result_handler", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.global_aval_to_result_handler", create=True) as mock_op:
         mod.global_aval_to_result_handler()
         mock_op.assert_called_once_with()
 
 
 def test_global_avals_to_results_handler() -> None:
     """Test global_avals_to_results_handler."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.global_avals_to_results_handler", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.global_avals_to_results_handler", create=True) as mock_op:
         mod.global_avals_to_results_handler()
         mock_op.assert_called_once_with()
 
 
 def test_is_op_sharding_replicated() -> None:
     """Test is_op_sharding_replicated."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.is_op_sharding_replicated", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.is_op_sharding_replicated", create=True) as mock_op:
         mod.is_op_sharding_replicated()
         mock_op.assert_called_once_with()
 
 
 def test_op_sharding_to_indices() -> None:
     """Test op_sharding_to_indices."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.op_sharding_to_indices", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.op_sharding_to_indices", create=True) as mock_op:
         mod.op_sharding_to_indices()
         mock_op.assert_called_once_with()
 
 
 def test_parallel_callable() -> None:
     """Test parallel_callable."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.parallel_callable", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.parallel_callable", create=True) as mock_op:
         mod.parallel_callable()
         mock_op.assert_called_once_with()
 

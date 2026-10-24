@@ -1,7 +1,11 @@
+"""Tests for tests/test_api_misc.py."""
+
+from __future__ import annotations
+
 import os
 import sys
 
-import pytest
+from zero_jax._types import ArrayLikeSpec
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -9,7 +13,8 @@ import zero_jax
 from zero_jax.numpy import array
 
 
-def test_device_properties():
+def test_device_properties() -> None:
+    """Execute ``test_device_properties``."""
     assert zero_jax.default_backend() == "cpu"
     assert zero_jax.device_count() == 1
     assert zero_jax.local_device_count() == 1
@@ -20,18 +25,21 @@ def test_device_properties():
     assert zero_jax.host_ids() == [0]
 
 
-def test_types():
+def test_types() -> None:
+    """Execute ``test_types``."""
     assert isinstance(zero_jax.ShapeDtypeStruct((2, 2), int), zero_jax.ShapeDtypeStruct)
     assert isinstance(zero_jax.Shard("cpu", 0), zero_jax.Shard)
     assert isinstance(zero_jax.NamedSharding(None, None), zero_jax.NamedSharding)
 
 
-def test_device_put():
+def test_device_put() -> None:
+    """Execute ``test_device_put``."""
     assert zero_jax.device_put(5) == 5
     assert zero_jax.device_put_replicated(5, [1, 2]) == [5, 5]
 
 
-def test_debug_leaks():
+def test_debug_leaks() -> None:
+    """Execute ``test_debug_leaks``."""
     assert not zero_jax.checking_leaks()
     with zero_jax.check_tracer_leaks():
         pass
@@ -42,7 +50,8 @@ def test_debug_leaks():
         pass
 
 
-def test_misc():
+def test_misc() -> None:
+    """Execute ``test_misc``."""
     zero_jax.enable_checks()
     zero_jax.print_environment_info()
     zero_jax.effects_barrier()
@@ -67,10 +76,12 @@ def test_misc():
         pass
 
 
-def test_ad():
+def test_ad() -> None:
+    """Execute ``test_ad``."""
     import numpy as np
 
-    def f(x):
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return x * x
 
     np.testing.assert_allclose(zero_jax.jacfwd(f)(array(1.0)), 2.0)
@@ -85,8 +96,11 @@ def test_ad():
     np.testing.assert_allclose(val, 1.0)
 
 
-def test_more_misc():
-    def f(x):
+def test_more_misc() -> None:
+    """Execute ``test_more_misc``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return x
 
     f2, _ = zero_jax.closure_convert(f)
@@ -111,8 +125,11 @@ def test_more_misc():
         pass
 
 
-def test_even_more_misc():
-    def f(x):
+def test_even_more_misc() -> None:
+    """Execute ``test_even_more_misc``."""
+
+    def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Execute ``f``."""
         return x
 
     f2 = zero_jax.custom_gradient(f)
@@ -120,9 +137,7 @@ def test_even_more_misc():
 
     assert zero_jax.linear_transpose(f)(1) == 1
     assert isinstance(zero_jax.float0, type(zero_jax.float0))
-    assert isinstance(
-        zero_jax.threefry_partitionable, type(zero_jax.threefry_partitionable)
-    )
+    assert isinstance(zero_jax.threefry_partitionable, type(zero_jax.threefry_partitionable))
     assert isinstance(zero_jax.checkpoint_policies, type(zero_jax.checkpoint_policies))
     assert isinstance(zero_jax.legacy_prng_key, type(zero_jax.legacy_prng_key))
     zero_jax.enable_custom_prng()
@@ -137,20 +152,17 @@ def test_even_more_misc():
 
     zero_jax.make_jaxpr(f)(1)
 
-    assert zero_jax.make_array_from_single_device_arrays(
-        (1,), None, [array(1.0)]
-    ).shape == (1,)
+    assert zero_jax.make_array_from_single_device_arrays((1,), None, [array(1.0)]).shape == (1,)
     assert zero_jax.make_array_from_callback((2,), None, lambda: None).shape == (2,)
     assert zero_jax.device_put_sharded([array(1.0)], ["cpu"]).shape == (1,)
     assert zero_jax.block_until_ready(5) == 5
 
 
-def test_phase5_stubs():
-    import zero_jax.experimental.x64_context.config.profiler as c2
+def test_phase5_stubs() -> None:
+    """Execute ``test_phase5_stubs``."""
     import zero_jax.interpreters.partial_eval as pe
     import zero_jax.interpreters.partial_eval.config as pec
     import zero_jax.interpreters.traceback_util.config as tuc
-    import zero_jax.interpreters.traceback_util.util.jaxlib_utils as tuju
 
     assert hasattr(pe, "JaxprTrace")
     assert hasattr(pec, "jax_jit")

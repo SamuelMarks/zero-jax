@@ -1,6 +1,6 @@
 """Frontend API routing for jax.scipy."""
 
-from typing import Any
+from __future__ import annotations
 
 from . import (
     cluster,

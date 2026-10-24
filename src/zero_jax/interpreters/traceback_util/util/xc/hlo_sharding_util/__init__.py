@@ -1,27 +1,20 @@
 """Frontend API routing for zero-jax.interpreters.traceback_util.util.xc.hlo_sharding_util."""
 
-import ml_switcheroo_compiler
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ConfigValue
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+class PartiallyReplicateTiledShardingOnDims:
+    """Stub class for PartiallyReplicateTiledShardingOnDims."""
 
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize PartiallyReplicateTiledShardingOnDims.
 
-        return stub
-    except ImportError:  # pragma: no cover
-
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
-
-        return stub  # pragma: no cover
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs

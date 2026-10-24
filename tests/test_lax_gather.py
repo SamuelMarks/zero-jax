@@ -1,6 +1,6 @@
-from ml_switcheroo_compiler.core.tensor import TensorConfig
-
 """Tests for lax gather and scatter operations."""
+
+from __future__ import annotations
 
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
@@ -8,7 +8,7 @@ from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 from zero_jax.lax import gather, scatter, scatter_add
 
 
-def test_gather_scatter_tracing():
+def test_gather_scatter_tracing() -> None:
     """Test gather, scatter, and scatter_add using tracing mode."""
     _tracer.start_tracing()
     try:
@@ -16,23 +16,20 @@ def test_gather_scatter_tracing():
         start_indices = ProxyTensor(id="idx", shape=(1,))
         updates = ProxyTensor(id="up", shape=(1,))
 
-        res_gather = gather(
-            operand, start_indices, dimension_numbers=None, slice_sizes=None
-        )
+        res_gather = gather(operand, start_indices, dimension_numbers=None, slice_sizes=None)
         assert res_gather is not None
 
         res_scatter = scatter(operand, start_indices, updates, dimension_numbers=None)
         assert res_scatter is not None
 
-        res_scatter_add = scatter_add(
-            operand, start_indices, updates, dimension_numbers=None
-        )
+        res_scatter_add = scatter_add(operand, start_indices, updates, dimension_numbers=None)
         assert res_scatter_add is not None
     finally:
         _tracer.stop_tracing()
 
 
-def test_gather_scatter_dimension_numbers():
+def test_gather_scatter_dimension_numbers() -> None:
+    """Execute ``test_gather_scatter_dimension_numbers``."""
     from zero_jax.numpy import array
 
     operand = array([1, 2, 3])

@@ -1,29 +1,29 @@
 """Frontend API routing for jax.scipy.sparse."""
 
-from typing import Any
+from __future__ import annotations
 
 from . import linalg
 
 
 class RaggedConstant:
-    pass
+    """Frontend class for ``RaggedConstant``."""
 
 
 class RaggedCrossHashed:
-    pass
+    """Frontend class for ``RaggedCrossHashed``."""
 
 
 class RaggedRange:
-    pass
+    """Frontend class for ``RaggedRange``."""
 
 
 class SparseMask:
-    pass
+    """Frontend class for ``SparseMask``."""
 
 
 class SparseEye:
-    pass
+    """Frontend class for ``SparseEye``."""
 
 
 class SparseMapValues:
-    pass
+    """Frontend class for ``SparseMapValues``."""

@@ -1,31 +1,60 @@
 """Module transfer_guard_lib."""
 
-import typing
-
-import ml_switcheroo_compiler
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ConfigValue
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+class TransferGuardLevel:
+    """Stub class for TransferGuardLevel."""
 
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize TransferGuardLevel.
 
-        return stub
-    except ImportError:  # pragma: no cover
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
 
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
 
-        return stub  # pragma: no cover
+class TransferGuardState:
+    """Stub class for TransferGuardState."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize TransferGuardState.
+
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
+
+
+def global_state(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route global_state to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.global_state(*args, **kwargs)
+
+
+def thread_local_state(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route thread_local_state to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.thread_local_state(*args, **kwargs)

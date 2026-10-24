@@ -1,19 +1,23 @@
-"""Module documentation."""
+"""Tensor conversion utilities for zero_jax.numpy."""
 
-from typing import Any
+from __future__ import annotations
 
-import ml_switcheroo_compiler as compiler
 import ml_switcheroo_compiler.ops as compiler_ops
-from ml_switcheroo_compiler.core.dtype import DType
+from ml_switcheroo_compiler.core.tensor import Tensor
+
+from zero_jax._types import ArrayLikeSpec
 
 
-def to_array(x):
-    """JAX API implementation for to_array.
+def to_array(x: ArrayLikeSpec) -> Tensor:
+    """Convert an array-like input to an ``ml-switcheroo-compiler`` ``Tensor``.
 
     Args:
-        x: Argument x.
+        x: Input array-like value.
 
     Returns:
-        Any: The result.
+        Tensor: The converted compiler tensor.
     """
     return compiler_ops.array(x)
+
+
+__all__ = ["to_array"]

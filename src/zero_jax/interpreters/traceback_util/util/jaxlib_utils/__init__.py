@@ -1,10 +1,12 @@
 """jaxlib_utils stub."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
 class CallOp:
-    pass
+    """Frontend class for ``CallOp``."""
 
 
 import typing
@@ -14,8 +16,16 @@ import ml_switcheroo_compiler
 import zero_jax._compiler_proxy_ops as _ops
 
 
-def safe_map(f: Any, *args: Any) -> Any:
-    """Map a function over sequences, checking they have the same length."""
+def safe_map(f: ArrayLikeSpec, *args: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Map a function over sequences, checking they have the same length.
+
+    Args:
+        f: Input parameter ``f``.
+        *args: Input parameter ``args``.
+
+    Returns:
+        The operation result.
+    """
     if not args:
         return []
     n = len(args[0])
@@ -24,37 +34,18 @@ def safe_map(f: Any, *args: Any) -> Any:
     return list(map(f, *args))
 
 
-def safe_zip(*args: Any) -> Any:
-    """Zip sequences, checking they have the same length."""
+def safe_zip(*args: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Zip sequences, checking they have the same length.
+
+    Args:
+        *args: Input parameter ``args``.
+
+    Returns:
+        The operation result.
+    """
     if not args:
         return []
     n = len(args[0])
     for arg in args[1:]:
         assert len(arg) == n, "Lengths must match"
     return list(zip(*args))
-
-
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
-
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
-
-        return stub
-    except ImportError:  # pragma: no cover
-
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
-
-        return stub  # pragma: no cover

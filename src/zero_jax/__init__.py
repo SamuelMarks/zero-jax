@@ -5,12 +5,16 @@ from __future__ import annotations
 __version__ = "0.4.30"
 __version_info__ = (0, 4, 30)
 
+import ml_switcheroo_compiler as _ml_switcheroo_compiler
+from ml_switcheroo_compiler.core import EagerMode
+from ml_switcheroo_compiler.core.config import config
 
-from typing import Any
+import zero_jax._compiler_patches as _compiler_patches
+import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ConfigValue, T
+from zero_jax.numpy.lax_numpy import ndarray as Array
 
-import ml_switcheroo_compiler
-
-import zero_jax._compiler_patches
+_compiler_patches.register_compiler_patches()
 
 from . import (
     ad_checkpoint,
@@ -128,10 +132,74 @@ from .api import (
 )
 
 
-def jax(*args: Any, **kwargs: Any) -> Any:
-    """Stub for jax."""
-    return None
+def jax(*args: ConfigValue, **kwargs: ConfigValue) -> None:
+    """Stub callable for the top-level ``jax`` entry point.
 
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        None: Always returns ``None``.
+    """
+    return
+
+
+class Device:
+    """Represents a logical computational device.
+
+    Attributes:
+        platform: The target execution platform name (e.g. ``"cpu"``).
+    """
+
+    def __init__(self, platform: str = "cpu") -> None:
+        """Initialize a ``Device`` instance.
+
+        Args:
+            platform: Platform identifier string.
+        """
+        self.platform = platform
+
+
+def devices(backend: str | None = None) -> list[Device]:
+    """Return a list of all available devices for the given backend.
+
+    Args:
+        backend: Optional backend platform name.
+
+    Returns:
+        list[Device]: List of available devices.
+    """
+    b = backend or config.backend
+    return [Device(platform=b)]
+
+
+def local_devices(backend: str | None = None) -> list[Device]:
+    """Return a list of local devices addressable by the current process.
+
+    Args:
+        backend: Optional backend platform name.
+
+    Returns:
+        list[Device]: List of local devices.
+    """
+    b = backend or config.backend
+    return [Device(platform=b)]
+
+
+def device_get(x: T) -> T:
+    """Transfer a value or PyTree from device to host Python memory.
+
+    Args:
+        x: Input array or PyTree to retrieve.
+
+    Returns:
+        T: The host-resident value.
+    """
+    return x
+
+
+config.eager_mode = True
 
 __all__ = [
     "Array",
@@ -140,6 +208,9 @@ __all__ = [
     "NamedSharding",
     "ShapeDtypeStruct",
     "Shard",
+    "_compiler_patches",
+    "_ml_switcheroo_compiler",
+    "_ops",
     "ad_checkpoint",
     "api_util",
     "block_until_ready",
@@ -199,6 +270,7 @@ __all__ = [
     "jacfwd",
     "jacobian",
     "jacrev",
+    "jax",
     "jax2tf_associative_scan_reductions",
     "jit",
     "jvp",
@@ -251,39 +323,3 @@ __all__ = [
     "vjp",
     "vmap",
 ]
-
-from zero_jax.numpy.lax_numpy import ndarray as Array
-
-
-class Device:
-    """Represents a computational device."""
-
-    def __init__(self, platform: Any = "cpu") -> None:
-        self.platform = platform
-
-
-def devices(backend: Any = None) -> Any:
-    from ml_switcheroo_compiler.core.config import config
-
-    b = backend or config.backend
-    return [Device(platform=b)]
-
-
-def local_devices(backend: Any = None) -> Any:
-    from ml_switcheroo_compiler.core.config import config
-
-    b = backend or config.backend
-    return [Device(platform=b)]
-
-
-def device_get(x: Any) -> Any:
-    return x
-
-
-from ml_switcheroo_compiler.core import EagerMode
-from ml_switcheroo_compiler.core.config import config
-
-config.eager_mode = True
-
-
-import zero_jax._compiler_proxy_ops as _ops

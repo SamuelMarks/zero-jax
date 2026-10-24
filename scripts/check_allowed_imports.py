@@ -1,108 +1,22 @@
-"""AST parser to ensure no disallowed 3rd party imports."""
+"""AST parser CLI entry point to ensure no disallowed 3rd-party imports."""
 
-import ast
-import os
+from __future__ import annotations
+
 import sys
+from collections.abc import Sequence
 
-ALLOWED_3RD_PARTY = {"numpy", "jax", "pydantic"}
-ALLOWED_INTERNAL = {
-    "ml_switcheroo_compiler",
-    "cdd_python",
-    "ml_switcheroo_ir",
-    "zero_jax",
-}
+from scripts.run_checks import main as _run_checks_main
 
 
-def check_file(filepath: str) -> bool:
-    """Check a file for disallowed imports.
+def main(argv: Sequence[str] | None = None) -> None:
+    """Delegate allowed imports check to ``scripts.run_checks``.
 
     Args:
-        filepath (str): The file to check.
-
-    Returns:
-        bool: True if clean, False otherwise.
+        argv: Optional list of file paths to check.
     """
-    with open(filepath, "r", encoding="utf-8") as f:
-        source = f.read()
-
-    try:
-        tree = ast.parse(source, filename=filepath)
-    except SyntaxError:
-        print(f"Syntax error in {filepath}")
-        return False
-
-    errors = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                base_module = alias.name.split(".")[0]
-                if (
-                    (
-                        base_module not in ALLOWED_3RD_PARTY
-                        and base_module not in ALLOWED_INTERNAL
-                        and base_module not in sys.stdlib_module_names
-                    )
-                    or base_module in ("numpy", "jax")
-                    and "src" in filepath.split(os.sep)
-                ):
-                    errors.append((node.lineno, base_module))
-        elif isinstance(node, ast.ImportFrom):
-            if node.level > 0:  # Relative import
-                continue
-            if node.module:
-                base_module = node.module.split(".")[0]
-                if (
-                    (
-                        base_module not in ALLOWED_3RD_PARTY
-                        and base_module not in ALLOWED_INTERNAL
-                        and base_module not in sys.stdlib_module_names
-                    )
-                    or base_module in ("numpy", "jax")
-                    and "src" in filepath.split(os.sep)
-                ):
-                    errors.append((node.lineno, base_module))
-
-    if errors:
-        for lineno, module in errors:
-            print(
-                f"{filepath}:{lineno}: Disallowed 3rd party import detected: '{module}'"
-            )
-        return False
-    return True
+    args = list(argv) if argv is not None else sys.argv[1:]
+    _run_checks_main(["check_allowed_imports", *args])
 
 
 if __name__ == "__main__":
-    if not hasattr(sys, "stdlib_module_names"):
-        # Polyfill for python < 3.10
-        import pathlib
-        import sysconfig
-
-        try:
-            from stdlib_list import stdlib_list
-
-            names = set(stdlib_list(".".join(map(str, sys.version_info[:2]))))
-        except ImportError:
-            # Fallback
-            import distutils.sysconfig as ds
-
-            stdlib_paths = [ds.get_python_lib(standard_lib=True)]
-            names = set(sys.builtin_module_names)
-            for p in stdlib_paths:
-                path = pathlib.Path(p)
-                if path.exists():
-                    for item in path.iterdir():
-                        if item.is_file() and item.suffix == ".py":
-                            names.add(item.stem)
-                        elif item.is_dir():
-                            names.add(item.name)
-        names.update(["math", "uuid", "builtins", "contextlib", "functools", "typing"])
-        sys.stdlib_module_names = frozenset(names)
-
-    success = True
-    for arg in sys.argv[1:]:
-        if arg.endswith(".py"):
-            if not check_file(arg):
-                success = False
-
-    if not success:
-        sys.exit(1)
+    main()

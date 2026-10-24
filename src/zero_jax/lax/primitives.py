@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from ml_switcheroo_compiler.core.tensor import Tensor
 
 import zero_jax._compiler_proxy_ops as ops
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import (
     _to_tensor,
     _wrap,
@@ -14,7 +15,7 @@ from zero_jax.numpy.lax_numpy import (
 )
 
 
-def add(x: Any, y: Any) -> Any:
+def add(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise addition.
 
     Args:
@@ -27,7 +28,7 @@ def add(x: Any, y: Any) -> Any:
     return _wrap(ops.add(_to_tensor(x), _to_tensor(y)))
 
 
-def sub(x: Any, y: Any) -> Any:
+def sub(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise subtraction.
 
     Args:
@@ -40,7 +41,7 @@ def sub(x: Any, y: Any) -> Any:
     return _wrap(ops.subtract(_to_tensor(x), _to_tensor(y)))
 
 
-def mul(x: Any, y: Any) -> Any:
+def mul(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise multiplication.
 
     Args:
@@ -53,7 +54,7 @@ def mul(x: Any, y: Any) -> Any:
     return _wrap(ops.multiply(_to_tensor(x), _to_tensor(y)))
 
 
-def div(x: Any, y: Any) -> Any:
+def div(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise division.
 
     Args:
@@ -66,7 +67,7 @@ def div(x: Any, y: Any) -> Any:
     return _wrap(ops.divide(_to_tensor(x), _to_tensor(y)))
 
 
-def broadcast(x: Any, sizes: Any) -> Any:
+def broadcast(x: ArrayLikeSpec, sizes: ArrayLikeSpec) -> ArrayLikeSpec:
     """Broadcasts an array by adding new leading dimensions.
 
     Args:
@@ -80,7 +81,7 @@ def broadcast(x: Any, sizes: Any) -> Any:
     return _wrap(ops.broadcast_to(_to_tensor(x), sizes_tuple))
 
 
-def broadcast_in_dim(x: Any, shape: Any, broadcast_dimensions: Any) -> Any:
+def broadcast_in_dim(x: ArrayLikeSpec, shape: ArrayLikeSpec, broadcast_dimensions: ArrayLikeSpec) -> ArrayLikeSpec:
     """Broadcasts an array to a specified shape by mapping existing dimensions.
 
     Args:
@@ -100,7 +101,7 @@ def broadcast_in_dim(x: Any, shape: Any, broadcast_dimensions: Any) -> Any:
     return _wrap(ops.broadcast_to(reshaped, shape))
 
 
-def reshape(x: Any, new_sizes: Any, dimensions: Any = None) -> Any:
+def reshape(x: ArrayLikeSpec, new_sizes: ArrayLikeSpec, dimensions: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Reshapes an array.
 
     Args:
@@ -113,11 +114,11 @@ def reshape(x: Any, new_sizes: Any, dimensions: Any = None) -> Any:
     """
     t = _to_tensor(x)
     if dimensions is not None:
-        t = ops.transpose(t, dimensions[0], dimensions[1])  # pragma: no cover
+        t = ops.transpose(t, axes=dimensions)
     return _wrap(ops.reshape(t, tuple(new_sizes)))
 
 
-def transpose(x: Any, permutation: Any) -> Any:
+def transpose(x: ArrayLikeSpec, permutation: ArrayLikeSpec) -> ArrayLikeSpec:
     """Transposes the dimensions of an array.
 
     Args:
@@ -130,9 +131,7 @@ def transpose(x: Any, permutation: Any) -> Any:
     return _wrap(ops.permute(_to_tensor(x), permutation))
 
 
-def slice(
-    operand: Any, start_indices: Any, limit_indices: Any, strides: Any = None
-) -> Any:
+def slice(operand: ArrayLikeSpec, start_indices: ArrayLikeSpec, limit_indices: ArrayLikeSpec, strides: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Extracts a slice from an array.
 
     Args:
@@ -146,12 +145,10 @@ def slice(
     """
     if strides is None:
         strides = [1] * len(start_indices)
-    return _wrap(
-        ops.strided_slice(_to_tensor(operand), start_indices, limit_indices, strides)
-    )
+    return _wrap(ops.strided_slice(_to_tensor(operand), start_indices, limit_indices, strides))
 
 
-def dynamic_slice(operand: Any, start_indices: Any, slice_sizes: Any) -> Any:
+def dynamic_slice(operand: ArrayLikeSpec, start_indices: ArrayLikeSpec, slice_sizes: ArrayLikeSpec) -> ArrayLikeSpec:
     """Extracts a dynamic slice from an array.
 
     Args:
@@ -162,12 +159,11 @@ def dynamic_slice(operand: Any, start_indices: Any, slice_sizes: Any) -> Any:
     Returns:
         The extracted dynamic slice.
     """
-    # Cast start_indices to integers if they are not already
-    s_idx = [int(s) if not hasattr(s, "data") else int(s.data) for s in start_indices]
+    s_idx = [int(s.data) if isinstance(s, Tensor) else int(s) for s in start_indices]
     return _wrap(ops.dynamic_slice(_to_tensor(operand), s_idx, slice_sizes))
 
 
-def dynamic_update_slice(operand: Any, update: Any, start_indices: Any) -> Any:
+def dynamic_update_slice(operand: ArrayLikeSpec, update: ArrayLikeSpec, start_indices: ArrayLikeSpec) -> ArrayLikeSpec:
     """Updates a dynamic slice of an array.
 
     Args:
@@ -178,11 +174,11 @@ def dynamic_update_slice(operand: Any, update: Any, start_indices: Any) -> Any:
     Returns:
         The updated array.
     """
-    s_idx = [int(s) if not hasattr(s, "data") else int(s.data) for s in start_indices]
+    s_idx = [int(s.data) if isinstance(s, Tensor) else int(s) for s in start_indices]
     return _wrap(ops.update_slice(_to_tensor(operand), _to_tensor(update), s_idx))
 
 
-def reduce(operand: Any, init_value: Any, computation: Any, dimensions: Any) -> Any:
+def reduce(operand: ArrayLikeSpec, init_value: ArrayLikeSpec, computation: ArrayLikeSpec, dimensions: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for reduce.
 
     Args:
@@ -192,14 +188,14 @@ def reduce(operand: Any, init_value: Any, computation: Any, dimensions: Any) -> 
         dimensions: Argument dimensions.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     t_operand = _to_tensor(operand)
-    t_init = _to_tensor(init_value)
+    _to_tensor(init_value)
 
     # Simple dispatch based on the computation callable's name or identity.
     # In a full implementation, we'd trace the computation or match against known functions.
-    comp_name = getattr(computation, "__name__", "")
+    comp_name = computation.__name__ if callable(computation) else ""
 
     if comp_name == "add":
         res = ops.sum(t_operand, axis=dimensions)
@@ -216,7 +212,7 @@ def reduce(operand: Any, init_value: Any, computation: Any, dimensions: Any) -> 
     return _wrap(res)
 
 
-def select(pred: Any, on_true: Any, on_false: Any) -> Any:
+def select(pred: ArrayLikeSpec, on_true: ArrayLikeSpec, on_false: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise selection based on a predicate.
 
     Args:
@@ -230,7 +226,7 @@ def select(pred: Any, on_true: Any, on_false: Any) -> Any:
     return _wrap(ops.where(_to_tensor(pred), _to_tensor(on_true), _to_tensor(on_false)))
 
 
-def clamp(min_val: Any, x: Any, max_val: Any) -> Any:
+def clamp(min_val: ArrayLikeSpec, x: ArrayLikeSpec, max_val: ArrayLikeSpec) -> ArrayLikeSpec:
     """Clamps the values of an array to a specified range.
 
     Args:
@@ -246,21 +242,32 @@ def clamp(min_val: Any, x: Any, max_val: Any) -> Any:
     return _wrap(ops.maximum(_to_tensor(min_val), ops.minimum(t, _to_tensor(max_val))))
 
 
-import builtins
-
-
 def gather(
-    operand: Any,
-    start_indices: Any,
-    dimension_numbers: Any,
-    slice_sizes: Any,
+    operand: ArrayLikeSpec,
+    start_indices: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
+    slice_sizes: ArrayLikeSpec,
     *,
     unique_indices: bool = False,
     indices_are_sorted: bool = False,
-    mode: Any = None,
-    fill_value: Any = None,
-) -> Any:
-    """Gather operator."""
+    mode: ArrayLikeSpec = None,
+    fill_value: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Gather operator.
+
+    Args:
+        operand: Input parameter ``operand``.
+        start_indices: Input parameter ``start_indices``.
+        dimension_numbers: Input parameter ``dimension_numbers``.
+        slice_sizes: Input parameter ``slice_sizes``.
+        unique_indices: Input parameter ``unique_indices``.
+        indices_are_sorted: Input parameter ``indices_are_sorted``.
+        mode: Input parameter ``mode``.
+        fill_value: Input parameter ``fill_value``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
@@ -279,16 +286,29 @@ def gather(
 
 
 def scatter(
-    operand: Any,
-    scatter_indices: Any,
-    updates: Any,
-    dimension_numbers: Any,
+    operand: ArrayLikeSpec,
+    scatter_indices: ArrayLikeSpec,
+    updates: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
     *,
     indices_are_sorted: bool = False,
     unique_indices: bool = False,
-    mode: Any = None,
-) -> Any:
-    """Scatter operator."""
+    mode: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Scatter operator.
+
+    Args:
+        operand: Input parameter ``operand``.
+        scatter_indices: Input parameter ``scatter_indices``.
+        updates: Input parameter ``updates``.
+        dimension_numbers: Input parameter ``dimension_numbers``.
+        indices_are_sorted: Input parameter ``indices_are_sorted``.
+        unique_indices: Input parameter ``unique_indices``.
+        mode: Input parameter ``mode``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
@@ -302,16 +322,29 @@ def scatter(
 
 
 def scatter_add(
-    operand: Any,
-    scatter_indices: Any,
-    updates: Any,
-    dimension_numbers: Any,
+    operand: ArrayLikeSpec,
+    scatter_indices: ArrayLikeSpec,
+    updates: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
     *,
     indices_are_sorted: bool = False,
     unique_indices: bool = False,
-    mode: Any = None,
-) -> Any:
-    """Scatter-add operator."""
+    mode: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Scatter-add operator.
+
+    Args:
+        operand: Input parameter ``operand``.
+        scatter_indices: Input parameter ``scatter_indices``.
+        updates: Input parameter ``updates``.
+        dimension_numbers: Input parameter ``dimension_numbers``.
+        indices_are_sorted: Input parameter ``indices_are_sorted``.
+        unique_indices: Input parameter ``unique_indices``.
+        mode: Input parameter ``mode``.
+
+    Returns:
+        The operation result.
+    """
     import zero_jax._compiler_proxy_ops as ops
 
     t_op = _to_tensor(operand)
@@ -327,7 +360,7 @@ def scatter_add(
     return _wrap(ops.scatter_add(t_op, 0, t_idx, t_up))
 
 
-def acos(x: Any) -> Any:
+def acos(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise arc cosine.
 
     Args:
@@ -339,7 +372,7 @@ def acos(x: Any) -> Any:
     return _wrap(ops.acos(_to_tensor(x)))
 
 
-def acosh(x: Any) -> Any:
+def acosh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise inverse hyperbolic cosine.
 
     Args:
@@ -351,7 +384,7 @@ def acosh(x: Any) -> Any:
     return _wrap(ops.acosh(_to_tensor(x)))
 
 
-def asin(x: Any) -> Any:
+def asin(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise arc sine.
 
     Args:
@@ -363,7 +396,7 @@ def asin(x: Any) -> Any:
     return _wrap(ops.asin(_to_tensor(x)))
 
 
-def asinh(x: Any) -> Any:
+def asinh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise inverse hyperbolic sine.
 
     Args:
@@ -375,7 +408,7 @@ def asinh(x: Any) -> Any:
     return _wrap(ops.asinh(_to_tensor(x)))
 
 
-def atan(x: Any) -> Any:
+def atan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise arc tangent.
 
     Args:
@@ -387,7 +420,7 @@ def atan(x: Any) -> Any:
     return _wrap(ops.atan(_to_tensor(x)))
 
 
-def atan2(x: Any, y: Any) -> Any:
+def atan2(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise arc tangent of two variables.
 
     Args:
@@ -400,7 +433,7 @@ def atan2(x: Any, y: Any) -> Any:
     return _wrap(ops.atan2(_to_tensor(x), _to_tensor(y)))
 
 
-def atanh(x: Any) -> Any:
+def atanh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Elementwise inverse hyperbolic tangent.
 
     Args:
@@ -412,7 +445,7 @@ def atanh(x: Any) -> Any:
     return _wrap(ops.atanh(_to_tensor(x)))
 
 
-def bitwise_and(x: Any, y: Any) -> Any:
+def bitwise_and(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_and.
 
     Args:
@@ -420,24 +453,24 @@ def bitwise_and(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_and(_to_tensor(x), _to_tensor(y)))
 
 
-def bitwise_not(x: Any) -> Any:
+def bitwise_not(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_not.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_not(_to_tensor(x)))
 
 
-def bitwise_or(x: Any, y: Any) -> Any:
+def bitwise_or(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_or.
 
     Args:
@@ -445,12 +478,12 @@ def bitwise_or(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_or(_to_tensor(x), _to_tensor(y)))
 
 
-def bitwise_xor(x: Any, y: Any) -> Any:
+def bitwise_xor(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for bitwise_xor.
 
     Args:
@@ -458,12 +491,12 @@ def bitwise_xor(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.bitwise_xor(_to_tensor(x), _to_tensor(y)))
 
 
-def eq(x: Any, y: Any) -> Any:
+def eq(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for eq.
 
     Args:
@@ -471,12 +504,12 @@ def eq(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.equal(_to_tensor(x), _to_tensor(y)))
 
 
-def ne(x: Any, y: Any) -> Any:
+def ne(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for ne.
 
     Args:
@@ -484,12 +517,12 @@ def ne(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.not_equal(_to_tensor(x), _to_tensor(y)))
 
 
-def gt(x: Any, y: Any) -> Any:
+def gt(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for gt.
 
     Args:
@@ -497,12 +530,12 @@ def gt(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.greater(_to_tensor(x), _to_tensor(y)))
 
 
-def ge(x: Any, y: Any) -> Any:
+def ge(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for ge.
 
     Args:
@@ -510,12 +543,12 @@ def ge(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.greater_equal(_to_tensor(x), _to_tensor(y)))
 
 
-def lt(x: Any, y: Any) -> Any:
+def lt(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for lt.
 
     Args:
@@ -523,12 +556,12 @@ def lt(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.less(_to_tensor(x), _to_tensor(y)))
 
 
-def le(x: Any, y: Any) -> Any:
+def le(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for le.
 
     Args:
@@ -536,48 +569,48 @@ def le(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.less_equal(_to_tensor(x), _to_tensor(y)))
 
 
-def cbrt(x: Any) -> Any:
+def cbrt(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cbrt.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cbrt(_to_tensor(x)))
 
 
-def conj(x: Any) -> Any:
+def conj(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for conj.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.conj(_to_tensor(x)))
 
 
-def imag(x: Any) -> Any:
+def imag(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for imag.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.imag(_to_tensor(x)))
 
 
-def nextafter(x1: Any, x2: Any) -> Any:
+def nextafter(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for nextafter.
 
     Args:
@@ -585,50 +618,48 @@ def nextafter(x1: Any, x2: Any) -> Any:
         x2: Argument x2.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.nextafter(*[_to_tensor(t) for t in _broadcast_arrays(x1, x2)]))
 
 
-def real(x: Any) -> Any:
+def real(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for real.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.real(_to_tensor(x)))
 
 
-def reciprocal(x: Any) -> Any:
+def reciprocal(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for reciprocal.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.reciprocal(_to_tensor(x)))
 
 
-def round(x: Any) -> Any:
+def round(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for round.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.round(_to_tensor(x)))
 
 
-def sort(
-    operand: Any, dimension: int = -1, is_stable: bool = True, num_keys: int = 1
-) -> Any:
+def sort(operand: ArrayLikeSpec, dimension: int = -1, is_stable: bool = True, num_keys: int = 1) -> ArrayLikeSpec:
     # ml-switcheroo-compiler sort does not accept num_keys, but JAX does.
     # For now pass what compiler accepts.
     """JAX API implementation for sort.
@@ -640,12 +671,12 @@ def sort(
         num_keys: Argument num_keys.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sort(_to_tensor(operand), axis=dimension, is_stable=is_stable))
 
 
-def shift_left(x: Any, y: Any) -> Any:
+def shift_left(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for shift_left.
 
     Args:
@@ -653,12 +684,12 @@ def shift_left(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.left_shift(_to_tensor(x), _to_tensor(y)))
 
 
-def shift_right_arithmetic(x: Any, y: Any) -> Any:
+def shift_right_arithmetic(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for shift_right_arithmetic.
 
     Args:
@@ -666,12 +697,12 @@ def shift_right_arithmetic(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.right_shift(_to_tensor(x), _to_tensor(y)))
 
 
-def shift_right_logical(x: Any, y: Any) -> Any:
+def shift_right_logical(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for shift_right_logical.
 
     Args:
@@ -679,24 +710,24 @@ def shift_right_logical(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.right_shift(_to_tensor(x), _to_tensor(y)))
 
 
-def abs(x: Any) -> Any:
+def abs(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for abs.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.abs(_to_tensor(x)))
 
 
-def argmax(operand: Any, axis: int, index_dtype: Any) -> Any:
+def argmax(operand: ArrayLikeSpec, axis: int, index_dtype: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for argmax.
 
     Args:
@@ -705,12 +736,12 @@ def argmax(operand: Any, axis: int, index_dtype: Any) -> Any:
         index_dtype: Argument index_dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.argmax(_to_tensor(operand), axis=axis))
 
 
-def argmin(operand: Any, axis: int, index_dtype: Any) -> Any:
+def argmin(operand: ArrayLikeSpec, axis: int, index_dtype: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for argmin.
 
     Args:
@@ -719,19 +750,19 @@ def argmin(operand: Any, axis: int, index_dtype: Any) -> Any:
         index_dtype: Argument index_dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.argmin(_to_tensor(operand), axis=axis))
 
 
-def broadcast_shapes(*shapes: Any) -> Any:
+def broadcast_shapes(*shapes: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for broadcast_shapes.
 
     Args:
         *shapes: Variable arguments.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     import functools
 
@@ -742,19 +773,19 @@ def broadcast_shapes(*shapes: Any) -> Any:
     return functools.reduce(_bs, shapes)
 
 
-def ceil(x: Any) -> Any:
+def ceil(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for ceil.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.ceil(_to_tensor(x)))
 
 
-def concatenate(operands: Any, dimension: int) -> Any:
+def concatenate(operands: ArrayLikeSpec, dimension: int) -> ArrayLikeSpec:
     """JAX API implementation for concatenate.
 
     Args:
@@ -762,24 +793,24 @@ def concatenate(operands: Any, dimension: int) -> Any:
         dimension: Argument dimension.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.concatenate([_to_tensor(o) for o in operands], axis=dimension))
 
 
 def conv_general_dilated(
-    lhs: Any,
-    rhs: Any,
-    window_strides: Any,
-    padding: Any,
-    lhs_dilation: Any = None,
-    rhs_dilation: Any = None,
-    dimension_numbers: Any = None,
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    window_strides: ArrayLikeSpec,
+    padding: ArrayLikeSpec,
+    lhs_dilation: ArrayLikeSpec = None,
+    rhs_dilation: ArrayLikeSpec = None,
+    dimension_numbers: ArrayLikeSpec = None,
     feature_group_count: int = 1,
     batch_group_count: int = 1,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for conv_general_dilated.
 
     Args:
@@ -796,7 +827,7 @@ def conv_general_dilated(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(
         ops.conv_general_dilated(
@@ -813,31 +844,31 @@ def conv_general_dilated(
     )
 
 
-def cos(x: Any) -> Any:
+def cos(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cos.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cos(_to_tensor(x)))
 
 
-def cosh(x: Any) -> Any:
+def cosh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cosh.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cosh(_to_tensor(x)))
 
 
-def cumsum(operand: Any, axis: int, reverse: bool = False) -> Any:
+def cumsum(operand: ArrayLikeSpec, axis: int, reverse: bool = False) -> ArrayLikeSpec:
     """JAX API implementation for cumsum.
 
     Args:
@@ -846,26 +877,24 @@ def cumsum(operand: Any, axis: int, reverse: bool = False) -> Any:
         reverse: Argument reverse.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cumsum(_to_tensor(operand), axis=axis))
 
 
-def digamma(x: Any) -> Any:
+def digamma(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for digamma.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.digamma(_to_tensor(x)))
 
 
-def dot(
-    lhs: Any, rhs: Any, precision: Any = None, preferred_element_type: Any = None
-) -> Any:
+def dot(lhs: ArrayLikeSpec, rhs: ArrayLikeSpec, precision: ArrayLikeSpec = None, preferred_element_type: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for dot.
 
     Args:
@@ -875,18 +904,18 @@ def dot(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.dot(_to_tensor(lhs), _to_tensor(rhs)))
 
 
 def dot_general(
-    lhs: Any,
-    rhs: Any,
-    dimension_numbers: Any,
-    precision: Any = None,
-    preferred_element_type: Any = None,
-) -> Any:
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for dot_general.
 
     Args:
@@ -897,64 +926,60 @@ def dot_general(
         preferred_element_type: Argument preferred_element_type.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    return _wrap(
-        ops.dot_general(
-            _to_tensor(lhs), _to_tensor(rhs), dimension_numbers=dimension_numbers
-        )
-    )
+    return _wrap(ops.dot_general(_to_tensor(lhs), _to_tensor(rhs), dimension_numbers=dimension_numbers))
 
 
-def erf(x: Any) -> Any:
+def erf(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for erf.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.erf(_to_tensor(x)))
 
 
-def erfc(x: Any) -> Any:
+def erfc(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for erfc.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.erfc(_to_tensor(x)))
 
 
-def exp(x: Any) -> Any:
+def exp(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for exp.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.exp(_to_tensor(x)))
 
 
-def exp2(x: Any) -> Any:
+def exp2(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for exp2.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.exp2(_to_tensor(x)))
 
 
-def expand_dims(operand: Any, dimensions: Any) -> Any:
+def expand_dims(operand: ArrayLikeSpec, dimensions: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for expand_dims.
 
     Args:
@@ -962,36 +987,36 @@ def expand_dims(operand: Any, dimensions: Any) -> Any:
         dimensions: Argument dimensions.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.expand_dims(_to_tensor(operand), axis=dimensions))
 
 
-def expm1(x: Any) -> Any:
+def expm1(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for expm1.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.expm1(_to_tensor(x)))
 
 
-def floor(x: Any) -> Any:
+def floor(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for floor.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.floor(_to_tensor(x)))
 
 
-def full(shape: Any, fill_value: Any, dtype: Any = None) -> Any:
+def full(shape: ArrayLikeSpec, fill_value: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for full.
 
     Args:
@@ -1000,14 +1025,12 @@ def full(shape: Any, fill_value: Any, dtype: Any = None) -> Any:
         dtype: Argument dtype.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.full(shape, fill_value))
 
 
-def full_like(
-    operand: Any, fill_value: Any, dtype: Any = None, shape: Any = None
-) -> Any:
+def full_like(operand: ArrayLikeSpec, fill_value: ArrayLikeSpec, dtype: ArrayLikeSpec = None, shape: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for full_like.
 
     Args:
@@ -1017,48 +1040,48 @@ def full_like(
         shape: Argument shape.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.full_like(_to_tensor(operand), fill_value))
 
 
-def lgamma(x: Any) -> Any:
+def lgamma(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for lgamma.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.lgamma(_to_tensor(x)))
 
 
-def log(x: Any) -> Any:
+def log(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for log.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.log(_to_tensor(x)))
 
 
-def log1p(x: Any) -> Any:
+def log1p(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for log1p.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.log1p(_to_tensor(x)))
 
 
-def max(x: Any, y: Any) -> Any:
+def max(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for max.
 
     Args:
@@ -1066,12 +1089,12 @@ def max(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.maximum(_to_tensor(x), _to_tensor(y)))
 
 
-def min(x: Any, y: Any) -> Any:
+def min(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for min.
 
     Args:
@@ -1079,12 +1102,12 @@ def min(x: Any, y: Any) -> Any:
         y: Argument y.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.minimum(_to_tensor(x), _to_tensor(y)))
 
 
-def pad(operand: Any, padding_value: Any, padding_config: Any) -> Any:
+def pad(operand: ArrayLikeSpec, padding_value: ArrayLikeSpec, padding_config: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for pad.
 
     Args:
@@ -1093,7 +1116,7 @@ def pad(operand: Any, padding_value: Any, padding_config: Any) -> Any:
         padding_config: Argument padding_config.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(
         ops.pad(
@@ -1104,7 +1127,7 @@ def pad(operand: Any, padding_value: Any, padding_config: Any) -> Any:
     )
 
 
-def pmean(x: Any, axis_name: Any, axis_index_groups: Any = None) -> Any:
+def pmean(x: ArrayLikeSpec, axis_name: ArrayLikeSpec, axis_index_groups: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for pmean.
 
     Args:
@@ -1113,12 +1136,12 @@ def pmean(x: Any, axis_name: Any, axis_index_groups: Any = None) -> Any:
         axis_index_groups: Argument axis_index_groups.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.pmean(_to_tensor(x), axis_name=axis_name))
 
 
-def psum(x: Any, axis_name: Any, axis_index_groups: Any = None) -> Any:
+def psum(x: ArrayLikeSpec, axis_name: ArrayLikeSpec, axis_index_groups: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """JAX API implementation for psum.
 
     Args:
@@ -1127,21 +1150,21 @@ def psum(x: Any, axis_name: Any, axis_index_groups: Any = None) -> Any:
         axis_index_groups: Argument axis_index_groups.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.psum(_to_tensor(x), axis_name=axis_name))
 
 
 def reduce_window(
-    operand: Any,
-    init_value: Any,
-    computation: Any,
-    window_dimensions: Any,
-    window_strides: Any,
-    padding: Any,
-    base_dilation: Any = None,
-    window_dilation: Any = None,
-) -> Any:
+    operand: ArrayLikeSpec,
+    init_value: ArrayLikeSpec,
+    computation: ArrayLikeSpec,
+    window_dimensions: ArrayLikeSpec,
+    window_strides: ArrayLikeSpec,
+    padding: ArrayLikeSpec,
+    base_dilation: ArrayLikeSpec = None,
+    window_dilation: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for reduce_window.
 
     Args:
@@ -1155,7 +1178,7 @@ def reduce_window(
         window_dilation: Argument window_dilation.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(
         ops.reduce_window(
@@ -1171,79 +1194,79 @@ def reduce_window(
     )
 
 
-def rsqrt(x: Any) -> Any:
+def rsqrt(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for rsqrt.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.rsqrt(_to_tensor(x)))
 
 
-def sign(x: Any) -> Any:
+def sign(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for sign.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sign(_to_tensor(x)))
 
 
-def sin(x: Any) -> Any:
+def sin(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for sin.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sin(_to_tensor(x)))
 
 
-def sinh(x: Any) -> Any:
+def sinh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for sinh.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sinh(_to_tensor(x)))
 
 
-def sqrt(x: Any) -> Any:
+def sqrt(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for sqrt.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.sqrt(_to_tensor(x)))
 
 
-def square(x: Any) -> Any:
+def square(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for square.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.square(_to_tensor(x)))
 
 
-def squeeze(operand: Any, dimensions: Any) -> Any:
+def squeeze(operand: ArrayLikeSpec, dimensions: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for squeeze.
 
     Args:
@@ -1251,36 +1274,36 @@ def squeeze(operand: Any, dimensions: Any) -> Any:
         dimensions: Argument dimensions.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.squeeze(_to_tensor(operand), axis=dimensions))
 
 
-def tan(x: Any) -> Any:
+def tan(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for tan.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.tan(_to_tensor(x)))
 
 
-def tanh(x: Any) -> Any:
+def tanh(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for tanh.
 
     Args:
         x: Argument x.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.tanh(_to_tensor(x)))
 
 
-def top_k(operand: Any, k: int) -> Any:
+def top_k(operand: ArrayLikeSpec, k: int) -> ArrayLikeSpec:
     """JAX API implementation for top_k.
 
     Args:
@@ -1288,15 +1311,17 @@ def top_k(operand: Any, k: int) -> Any:
         k: Argument k.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.top_k(_to_tensor(operand), k=k)  # pragma: no cover
-    return tuple(_wrap(t) for t in res)  # pragma: no cover
+    res = ops.top_k(_to_tensor(operand), k=k)
+    return tuple(_wrap(t) for t in res)
 
 
-def fft(operand: Any, fft_type: Any, fft_lengths: Any) -> Any:
-    # ml-switcheroo-compiler might not support fft_type directly on ops.fft,
-    # let's just pass it to ops.fft
+def fft(
+    operand: ArrayLikeSpec,
+    fft_type: ArrayLikeSpec = None,
+    fft_lengths: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """JAX API implementation for fft.
 
     Args:
@@ -1305,12 +1330,12 @@ def fft(operand: Any, fft_type: Any, fft_lengths: Any) -> Any:
         fft_lengths: Argument fft_lengths.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.fft(_to_tensor(operand)))
 
 
-def neg(x: Any) -> Any:
+def neg(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """Computes the numerical negative of x element-wise.
 
     Args:

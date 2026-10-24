@@ -1,151 +1,35 @@
 """Tests for zero_jax.api.core."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.api.core as mod
 
 
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
+def test_ShapeDtypeStruct_Shard_NamedSharding() -> None:
+    """Verify ShapeDtypeStruct, Shard, and NamedSharding."""
+    sds = mod.ShapeDtypeStruct((2, 3), "float32")
+    assert sds.shape == (2, 3)
+    assert sds.dtype == "float32"
+
+    shard = mod.Shard("cpu:0", (slice(None),))
+    assert shard.device == "cpu:0"
+    assert shard.index == (slice(None),)
+
+    ns = mod.NamedSharding(None, None)
+    assert ns.is_fully_replicated is True
 
 
-def test_class_NamedSharding() -> None:
-    """Test class NamedSharding."""
-    try:
-        mod.NamedSharding(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_class_ShapeDtypeStruct() -> None:
-    """Test class ShapeDtypeStruct."""
-    try:
-        mod.ShapeDtypeStruct(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_class_Shard() -> None:
-    """Test class Shard."""
-    try:
-        mod.Shard(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_Tuple() -> None:
-    """Test Tuple."""
-    try:
-        mod.Tuple()
-    except Exception:
-        pass
-
-
-def test_block_until_ready() -> None:
-    """Test block_until_ready."""
-    try:
-        mod.block_until_ready(1.0)
-    except Exception:
-        pass
-
-
-def test_default_backend() -> None:
-    """Test default_backend."""
-    try:
-        mod.default_backend()
-    except Exception:
-        pass
-
-
-def test_default_device() -> None:
-    """Test default_device."""
-    try:
-        mod.default_device()
-    except Exception:
-        pass
-
-
-def test_device_count() -> None:
-    """Test device_count."""
-    try:
-        mod.device_count()
-    except Exception:
-        pass
-
-
-def test_device_put() -> None:
-    """Test device_put."""
-    try:
-        mod.device_put(1.0)
-    except Exception:
-        pass
-
-
-def test_device_put_replicated() -> None:
-    """Test device_put_replicated."""
-    try:
-        mod.device_put_replicated(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_device_put_sharded() -> None:
-    """Test device_put_sharded."""
-    try:
-        mod.device_put_sharded(1.0, 1.0)
-    except Exception:
-        pass
-
-
-def test_host_count() -> None:
-    """Test host_count."""
-    try:
-        mod.host_count()
-    except Exception:
-        pass
-
-
-def test_host_id() -> None:
-    """Test host_id."""
-    try:
-        mod.host_id()
-    except Exception:
-        pass
-
-
-def test_host_ids() -> None:
-    """Test host_ids."""
-    try:
-        mod.host_ids()
-    except Exception:
-        pass
-
-
-def test_local_device_count() -> None:
-    """Test local_device_count."""
-    try:
-        mod.local_device_count()
-    except Exception:
-        pass
-
-
-def test_process_count() -> None:
-    """Test process_count."""
-    try:
-        mod.process_count()
-    except Exception:
-        pass
-
-
-def test_process_index() -> None:
-    """Test process_index."""
-    try:
-        mod.process_index()
-    except Exception:
-        pass
+def test_device_and_host_functions() -> None:
+    """Verify device, backend, process, and host query functions."""
+    assert mod.block_until_ready(42) == 42
+    assert mod.default_backend() == "cpu"
+    assert mod.device_count() == 1
+    assert mod.device_put(7) == 7
+    assert mod.device_put_replicated(3, ["cpu:0", "cpu:1"]) == [3, 3]
+    assert mod.device_put_sharded([1, 2], ["cpu:0", "cpu:1"]).shape == (2,)
+    assert mod.host_count() == 1
+    assert mod.host_id() == 0
+    assert mod.host_ids() == [0]
+    assert mod.local_device_count() == 1
+    assert mod.process_count() == 1
+    assert mod.process_index() == 0

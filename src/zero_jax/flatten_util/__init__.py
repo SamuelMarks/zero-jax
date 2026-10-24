@@ -1,64 +1,71 @@
 """Flatten util submodule for zero_jax."""
 
+from __future__ import annotations
+
 import math
-from typing import Any, Callable, Tuple
+from collections.abc import Callable
 
 import zero_jax.numpy as jnp
+from zero_jax._types import ArrayProtocol, PyTree
+from zero_jax.numpy.lax_numpy import ndarray
 from zero_jax.tree_util import tree_flatten, tree_unflatten
 
 
-def ravel_pytree(pytree: Any) -> Tuple[Any, Callable[[Any], Any]]:
-    """Flatten a pytree of arrays into a single 1D array.
+def ravel_pytree(pytree: PyTree) -> tuple[ndarray, Callable[[ndarray], PyTree]]:
+    """Flatten a PyTree of arrays into a single 1D array.
 
     Args:
-        pytree: A pytree of arrays and/or scalars to flatten.
+        pytree: A PyTree of arrays and/or scalars to flatten.
 
     Returns:
-        A tuple `(flat_array, unflatten_fn)`.
-        `flat_array` is a 1D array containing all the values.
-        `unflatten_fn` is a function that takes a 1D array and returns a pytree
-        with the same structure as the original `pytree`.
+        tuple[ndarray, Callable[[ndarray], PyTree]]: A tuple ``(flat_array, unflatten_fn)``.
     """
-    leaves, treedef = tree_flatten(pytree)  # pragma: no cover
-    if not leaves:  # pragma: no cover
-        flat = jnp.array([])  # pragma: no cover
+    leaves, treedef = tree_flatten(pytree)
+    if not leaves:
+        flat = jnp.array([])
 
-        def unflatten_fn_empty(flat_array: Any) -> Any:  # pragma: no cover
-            return tree_unflatten(treedef, [])  # pragma: no cover
+        def unflatten_fn_empty(flat_array: ndarray) -> PyTree:
+            """Reconstruct an empty PyTree from ``flat_array``.
 
-        return flat, unflatten_fn_empty  # pragma: no cover
+            Args:
+                flat_array: Empty 1D array.
 
-    # Record the original shapes, sizes, and dtypes to reconstruct exactly
-    shapes = [jnp.shape(leaf) for leaf in leaves]  # pragma: no cover
-    sizes = [math.prod(s) for s in shapes]  # pragma: no cover
+            Returns:
+                PyTree: Reconstructed empty PyTree.
+            """
+            return tree_unflatten(treedef, [])
 
-    # Store dtypes, handling potential scalars
-    dtypes = []  # pragma: no cover
-    for leaf in leaves:  # pragma: no cover
-        if hasattr(leaf, "dtype"):  # pragma: no cover
-            dtypes.append(leaf.dtype)  # pragma: no cover
-        else:
-            # Scalar, convert to array to check dtype
-            dtypes.append(jnp.array(leaf).dtype)  # pragma: no cover
+        return flat, unflatten_fn_empty
 
-    flat_leaves = [jnp.ravel(leaf) for leaf in leaves]  # pragma: no cover
-    flat = jnp.concatenate(flat_leaves)  # pragma: no cover
+    shapes = [jnp.shape(leaf) for leaf in leaves]
+    sizes = [math.prod(s) for s in shapes]
 
-    def unflatten_fn(flat_array: Any) -> Any:  # pragma: no cover
-        unflattened_leaves = []  # pragma: no cover
-        start = 0  # pragma: no cover
-        for shape, size, original_dtype in zip(
-            shapes, sizes, dtypes
-        ):  # pragma: no cover
-            end = start + size  # pragma: no cover
-            leaf_flat = flat_array[start:end]  # pragma: no cover
-            leaf = jnp.reshape(leaf_flat, shape)  # pragma: no cover
-            leaf = jnp.astype(leaf, original_dtype)  # pragma: no cover
-            unflattened_leaves.append(leaf)  # pragma: no cover
-            start = end  # pragma: no cover
-        return tree_unflatten(treedef, unflattened_leaves)  # pragma: no cover
+    dtypes = [leaf.dtype if isinstance(leaf, ArrayProtocol) else jnp.array(leaf).dtype for leaf in leaves]
 
-    return flat, unflatten_fn  # pragma: no cover
+    flat_leaves = [jnp.ravel(leaf) for leaf in leaves]
+    flat = jnp.concatenate(flat_leaves)
+
+    def unflatten_fn(flat_array: ndarray) -> PyTree:
+        """Reconstruct the original PyTree structure from a 1D ``flat_array``.
+
+        Args:
+            flat_array: 1D array containing all flattened leaf elements.
+
+        Returns:
+            PyTree: Reconstructed PyTree matching the original structure and dtypes.
+        """
+        unflattened_leaves: list[ndarray] = []
+        start = 0
+        for shape, size, original_dtype in zip(shapes, sizes, dtypes):
+            end = start + size
+            leaf_flat = flat_array[start:end]
+            leaf = jnp.reshape(leaf_flat, shape)
+            leaf = jnp.astype(leaf, original_dtype)
+            unflattened_leaves.append(leaf)
+            start = end
+        return tree_unflatten(treedef, unflattened_leaves)
+
+    return flat, unflatten_fn
 
 
 __all__ = ["ravel_pytree"]

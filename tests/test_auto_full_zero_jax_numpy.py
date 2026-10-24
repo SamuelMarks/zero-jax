@@ -1,18 +1,8 @@
 """Tests for zero_jax.numpy."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.numpy as mod
-
-
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
 
 
 def test_class_ComplexWarning() -> None:

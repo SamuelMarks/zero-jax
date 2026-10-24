@@ -1,11 +1,13 @@
 """SciPy optimize submodule."""
 
+from __future__ import annotations
+
 import typing
-from collections.abc import Mapping
-from typing import Any, Callable, Optional
+from collections.abc import Callable, Mapping
 
 from ml_switcheroo_compiler.ops.registry import get_op
 
+from zero_jax._types import ArrayLikeSpec, VariadicCallable
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
@@ -24,25 +26,25 @@ class OptimizeResults(typing.NamedTuple):
         nit: Number of iterations performed by the optimizer.
     """
 
-    x: Any
-    success: Any
-    status: Any
-    fun: Any
-    jac: Any
-    hess_inv: Any
-    nfev: Any
-    njev: Any
-    nit: Any
+    x: ArrayLikeSpec
+    success: ArrayLikeSpec
+    status: ArrayLikeSpec
+    fun: ArrayLikeSpec
+    jac: ArrayLikeSpec
+    hess_inv: ArrayLikeSpec
+    nfev: ArrayLikeSpec
+    njev: ArrayLikeSpec
+    nit: ArrayLikeSpec
 
 
 def minimize(
-    fun: Callable[..., Any],
-    x0: Any,
-    args: tuple[Any, ...] = (),
+    fun: VariadicCallable[ArrayLikeSpec],
+    x0: ArrayLikeSpec,
+    args: tuple[ArrayLikeSpec, ...] = (),
     *,
     method: str,
-    tol: Optional[float] = None,
-    options: Optional[Mapping[str, Any]] = None,
+    tol: float | None = None,
+    options: Mapping[str, ArrayLikeSpec] | None = None,
 ) -> OptimizeResults:
     """Minimization of scalar function of one or more variables.
 

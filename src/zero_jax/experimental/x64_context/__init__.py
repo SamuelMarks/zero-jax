@@ -1,22 +1,47 @@
 """Frontend API routing for jax.experimental.x64_context."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 from . import config
 
 
-def contextmanager(*args: Any, **kwargs: Any) -> Any:
-    """@contextmanager decorator."""
-    return _ops.contextmanager(*args, **kwargs)  # pragma: no cover
+def contextmanager(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """@contextmanager decorator.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _ops.contextmanager(*args, **kwargs)
 
 
-def disable_x64(*args: Any, **kwargs: Any) -> Any:
-    """Experimental context manager to temporarily disable X64 mode."""
-    return _ops.disable_x64(*args, **kwargs)  # pragma: no cover
+def disable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Experimental context manager to temporarily disable X64 mode.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _ops.disable_x64(*args, **kwargs)
 
 
-def enable_x64(*args: Any, **kwargs: Any) -> Any:
-    """Experimental context manager to temporarily enable X64 mode."""
-    return _ops.enable_x64(*args, **kwargs)  # pragma: no cover
+def enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Experimental context manager to temporarily enable X64 mode.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return _ops.enable_x64(*args, **kwargs)

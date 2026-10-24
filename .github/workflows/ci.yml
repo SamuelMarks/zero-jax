@@ -23,29 +23,39 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ruff pytest pytest-cov build
+        pip install ruff mypy interrogate pytest pytest-cov build
+        pip install "ml-ecosystem-snapshots @ https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.4/ml_ecosystem_snapshots-0.0.4-py3-none-any.whl"
         if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
-        if [ -f "pyproject.toml" ]; then pip install -e .[test]; fi
+        if [ -f "pyproject.toml" ]; then pip install -e ".[test]"; fi
 
     - name: Check Code Formatting (Ruff)
       run: ruff format --check .
 
-    - name: Check Linting (Ruff)
+    - name: Check Linting & Docstrings (Ruff)
       run: ruff check .
 
-    - name: Test & Coverage
-      run: |
-        pytest --cov=. --cov-report=xml
-        
-    - name: API Parity and Ops Coverage
-      run: |
-        python scripts/check_api_parity.py
-        python scripts/check_ops_coverage.py
+    - name: Check Static Types (Mypy)
+      run: mypy --config-file pyproject.toml src scripts tests
 
+    - name: Check 100% Docstring Coverage (Interrogate)
+      run: interrogate -vv -f 100 -c pyproject.toml src scripts tests
+
+    - name: Run Static Compliance & Snapshot Parity Checks
+      run: |
+        python scripts/run_checks.py check_strict_typing
+        python scripts/run_checks.py check_docstrings
+        python scripts/run_checks.py check_allowed_imports src/zero_jax
+        python scripts/run_checks.py enforce_all_list src/zero_jax
+        python scripts/run_checks.py check_api_parity
+        python scripts/run_checks.py check_ops_coverage
+
+    - name: Test & Branch Coverage (100%)
+      run: |
+        pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-report=xml --cov-fail-under=100
 
     - name: Update Badges
       run: |
-        python scripts/update_badges.py
+        python scripts/run_checks.py update_badges
         if ! git diff --exit-code README.md; then
           echo "Coverage badges in README.md are out of date. Please run pre-commit or the update badges script locally and commit the changes."
           exit 1

@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.profiler as mod
 
@@ -21,27 +21,21 @@ def test_TraceAnnotation() -> None:
 
 def test_annotate_function() -> None:
     """Test annotate_function."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.annotate_function", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.annotate_function", create=True) as mock_op:
         mod.annotate_function()
         mock_op.assert_called_once_with()
 
 
 def test_device_memory_profile() -> None:
     """Test device_memory_profile."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.device_memory_profile", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.device_memory_profile", create=True) as mock_op:
         mod.device_memory_profile()
         mock_op.assert_called_once_with()
 
 
 def test_save_device_memory_profile() -> None:
     """Test save_device_memory_profile."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.save_device_memory_profile", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.save_device_memory_profile", create=True) as mock_op:
         mod.save_device_memory_profile()
         mock_op.assert_called_once_with()
 

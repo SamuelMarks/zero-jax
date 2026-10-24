@@ -1,48 +1,136 @@
 """Frontend API routing for jax.tree."""
 
-from typing import Any
+from __future__ import annotations
 
-import ml_switcheroo_compiler.tree_util as _tu
-
-
-def all(tree: Any) -> bool:
-    """Checks if all leaves of a PyTree are truthy."""
-    return _tu.tree_all(tree)
-
-
-def flatten(tree: Any) -> Any:
-    """Flattens a PyTree into a list of leaves and a treedef."""
-    return _tu.tree_flatten(tree)
-
-
-def leaves(tree: Any) -> Any:
-    """Gets the leaves of a PyTree."""
-    return _tu.tree_leaves(tree)
+from zero_jax._types import ArrayLikeSpec
+from zero_jax.tree_util.missing_funcs import tree_reduce, tree_transpose
+from zero_jax.tree_util.pytree import (
+    PyTreeDef,
+    tree_all,
+    tree_flatten,
+    tree_leaves,
+    tree_map,
+    tree_structure,
+    tree_unflatten,
+)
 
 
-def map(f: Any, tree: Any, *rest: Any) -> Any:
-    """Maps a function over the leaves of a PyTree."""
-    return _tu.tree_map(f, tree, *rest)
+def all(tree: ArrayLikeSpec, *, is_leaf: ArrayLikeSpec = None) -> bool:
+    """Check whether all leaves of a PyTree are truthy.
+
+    Args:
+        tree: Input PyTree.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        bool: ``True`` if all leaves evaluate to ``True``.
+    """
+    return tree_all(tree, is_leaf=is_leaf)
 
 
-def reduce(f: Any, tree: Any, initializer: Any = None) -> Any:
-    """Reduces a PyTree by applying a function over its leaves."""
-    return _tu.tree_reduce(f, tree, initializer)
+def flatten(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> tuple[list[ArrayLikeSpec], PyTreeDef]:
+    """Flatten a PyTree into a list of leaves and a ``PyTreeDef``.
+
+    Args:
+        tree: Input PyTree.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        tuple[list[ArrayLikeSpec], PyTreeDef]: ``(leaves, treedef)``.
+    """
+    return tree_flatten(tree, is_leaf=is_leaf)
 
 
-def structure(tree: Any) -> Any:
-    """Gets the structure of a PyTree."""
-    return _tu.tree_structure(tree)
+def leaves(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> list[ArrayLikeSpec]:
+    """Return the flat list of leaves of a PyTree.
+
+    Args:
+        tree: Input PyTree.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        list[ArrayLikeSpec]: Leaves of ``tree``.
+    """
+    return tree_leaves(tree, is_leaf=is_leaf)
 
 
-def transpose(outer_treedef: Any, inner_treedef: Any, pytree_to_transpose: Any) -> Any:
-    """Transposes a PyTree of PyTrees."""
-    return _tu.tree_transpose(outer_treedef, inner_treedef, pytree_to_transpose)
+def map(f: ArrayLikeSpec, tree: ArrayLikeSpec, *rest: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Map a multi-argument function ``f`` over the leaves of one or more PyTrees.
+
+    Args:
+        f: Callable to apply to leaves.
+        tree: Primary PyTree.
+        *rest: Additional PyTrees with matching structure.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        ArrayLikeSpec: New PyTree with mapped leaves.
+    """
+    return tree_map(f, tree, *rest, is_leaf=is_leaf)
 
 
-def unflatten(treedef: Any, leaves: Any) -> Any:
-    """Reconstructs a PyTree from a treedef and a list of leaves."""
-    return _tu.tree_unflatten(treedef, leaves)
+def reduce(
+    f: ArrayLikeSpec,
+    tree: ArrayLikeSpec,
+    initializer: ArrayLikeSpec = None,
+    is_leaf: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Reduce a binary function ``f`` over the leaves of a PyTree.
+
+    Args:
+        f: Binary reduction callable.
+        tree: Input PyTree.
+        initializer: Optional initial accumulator value.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        ArrayLikeSpec: Reduced value.
+    """
+    return tree_reduce(f, tree, initializer=initializer, is_leaf=is_leaf)
+
+
+def structure(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> PyTreeDef:
+    """Return the :class:`PyTreeDef` structure of a PyTree.
+
+    Args:
+        tree: Input PyTree.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        PyTreeDef: Structure definition.
+    """
+    return tree_structure(tree, is_leaf=is_leaf)
+
+
+def transpose(
+    outer_treedef: PyTreeDef,
+    inner_treedef: PyTreeDef,
+    pytree_to_transpose: ArrayLikeSpec,
+) -> ArrayLikeSpec:
+    """Transpose a PyTree with structure ``outer_treedef`` of ``inner_treedef``.
+
+    Args:
+        outer_treedef: Outer ``PyTreeDef`` structure.
+        inner_treedef: Inner ``PyTreeDef`` structure.
+        pytree_to_transpose: Nested PyTree to transpose.
+
+    Returns:
+        ArrayLikeSpec: Transposed PyTree.
+    """
+    return tree_transpose(outer_treedef, inner_treedef, pytree_to_transpose)
+
+
+def unflatten(treedef: PyTreeDef, leaves: list[ArrayLikeSpec]) -> ArrayLikeSpec:
+    """Reconstruct a PyTree from its ``treedef`` and ``leaves``.
+
+    Args:
+        treedef: Structure definition.
+        leaves: List of leaf values.
+
+    Returns:
+        ArrayLikeSpec: Reconstructed PyTree.
+    """
+    return tree_unflatten(treedef, leaves)
 
 
 __all__ = [

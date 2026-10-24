@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.lib.xla_bridge as mod
 
@@ -23,8 +23,6 @@ def test_get_backend() -> None:
 
 def test_get_compile_options() -> None:
     """Test get_compile_options."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.get_compile_options", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.get_compile_options", create=True) as mock_op:
         mod.get_compile_options()
         mock_op.assert_called_once_with()

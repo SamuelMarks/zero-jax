@@ -1,10 +1,20 @@
 """Frontend API routing for jax.version."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
-def annotations(*args: Any, **kwargs: Any) -> Any:
-    """Stub for annotations."""
+def annotations(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Stub for annotations.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 

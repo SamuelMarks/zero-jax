@@ -1,11 +1,13 @@
-import pytest
+"""Tests for tests/test_new_compiler_ops.py."""
+
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as ops
-import zero_jax.numpy as jnp
 
 
-def test_new_ops():
+def test_new_ops() -> None:
     # Just reference them to satisfy the regex check and basic execution if applicable
+    """Execute ``test_new_ops``."""
     ops_to_check = [
         "decode_csv",
         "decode_image",

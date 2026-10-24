@@ -1,20 +1,21 @@
 """Module documentation."""
 
-from typing import Any
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as ops
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.lax.mock_p import MockPrimitive
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
-def cholesky(a: Any) -> Any:
+def cholesky(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for cholesky.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.cholesky(_to_tensor(a)))
 
@@ -22,7 +23,7 @@ def cholesky(a: Any) -> Any:
 cholesky_p = MockPrimitive("cholesky")
 
 
-def eig(x: Any, compute_v: bool = True) -> Any:
+def eig(x: ArrayLikeSpec, compute_v: bool = True) -> ArrayLikeSpec:
     """JAX API implementation for eig.
 
     Args:
@@ -30,7 +31,7 @@ def eig(x: Any, compute_v: bool = True) -> Any:
         compute_v: Argument compute_v.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.eig(_to_tensor(x), compute_v=compute_v)
     if isinstance(res, tuple):
@@ -42,11 +43,11 @@ eig_p = MockPrimitive("eig")
 
 
 def eigh(
-    x: Any,
+    x: ArrayLikeSpec,
     lower: bool = True,
     symmetrize_input: bool = True,
     sort_eigenvalues: bool = True,
-) -> Any:
+) -> ArrayLikeSpec:
     """JAX API implementation for eigh.
 
     Args:
@@ -56,7 +57,7 @@ def eigh(
         sort_eigenvalues: Argument sort_eigenvalues.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.eigh(
         _to_tensor(x),
@@ -72,14 +73,14 @@ def eigh(
 eigh_p = MockPrimitive("eigh")
 
 
-def hessenberg(a: Any) -> Any:
+def hessenberg(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for hessenberg.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.hessenberg(_to_tensor(a))
     if isinstance(res, tuple):
@@ -90,7 +91,7 @@ def hessenberg(a: Any) -> Any:
 hessenberg_p = MockPrimitive("hessenberg")
 
 
-def householder_product(a: Any, taus: Any) -> Any:
+def householder_product(a: ArrayLikeSpec, taus: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for householder_product.
 
     Args:
@@ -98,7 +99,7 @@ def householder_product(a: Any, taus: Any) -> Any:
         taus: Argument taus.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(ops.householder_product(_to_tensor(a), _to_tensor(taus)))
 
@@ -106,14 +107,14 @@ def householder_product(a: Any, taus: Any) -> Any:
 householder_product_p = MockPrimitive("householder_product")
 
 
-def lu(a: Any) -> Any:
+def lu(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for lu.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.lu(_to_tensor(a))
     if isinstance(res, tuple):
@@ -124,7 +125,7 @@ def lu(a: Any) -> Any:
 lu_p = MockPrimitive("lu")
 
 
-def lu_pivots_to_permutation(pivots: Any, permutation_size: int) -> Any:
+def lu_pivots_to_permutation(pivots: ArrayLikeSpec, permutation_size: int) -> ArrayLikeSpec:
     """JAX API implementation for lu_pivots_to_permutation.
 
     Args:
@@ -132,16 +133,12 @@ def lu_pivots_to_permutation(pivots: Any, permutation_size: int) -> Any:
         permutation_size: Argument permutation_size.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    return _wrap(
-        ops.lu_pivots_to_permutation(
-            _to_tensor(pivots), permutation_size=permutation_size
-        )
-    )
+    return _wrap(ops.lu_pivots_to_permutation(_to_tensor(pivots), permutation_size=permutation_size))
 
 
-def qdwh(x: Any, is_hermitian: bool = False, max_iterations: int = 100) -> Any:
+def qdwh(x: ArrayLikeSpec, is_hermitian: bool = False, max_iterations: int = 100) -> ArrayLikeSpec:
     """JAX API implementation for qdwh.
 
     Args:
@@ -150,17 +147,15 @@ def qdwh(x: Any, is_hermitian: bool = False, max_iterations: int = 100) -> Any:
         max_iterations: Argument max_iterations.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    res = ops.qdwh(
-        _to_tensor(x), is_hermitian=is_hermitian, max_iterations=max_iterations
-    )
+    res = ops.qdwh(_to_tensor(x), is_hermitian=is_hermitian, max_iterations=max_iterations)
     if isinstance(res, tuple):
         return tuple(_wrap(t) for t in res)
     return _wrap(res)
 
 
-def qr(a: Any, full_matrices: bool = True) -> Any:
+def qr(a: ArrayLikeSpec, full_matrices: bool = True) -> ArrayLikeSpec:
     """JAX API implementation for qr.
 
     Args:
@@ -168,7 +163,7 @@ def qr(a: Any, full_matrices: bool = True) -> Any:
         full_matrices: Argument full_matrices.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.qr(_to_tensor(a), full_matrices=full_matrices)
     if isinstance(res, tuple):
@@ -179,14 +174,14 @@ def qr(a: Any, full_matrices: bool = True) -> Any:
 qr_p = MockPrimitive("qr")
 
 
-def schur(a: Any) -> Any:
+def schur(a: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for schur.
 
     Args:
         a: Argument a.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.schur(_to_tensor(a))
     if isinstance(res, tuple):
@@ -197,7 +192,7 @@ def schur(a: Any) -> Any:
 schur_p = MockPrimitive("schur")
 
 
-def svd(a: Any, full_matrices: bool = True, compute_uv: bool = True) -> Any:
+def svd(a: ArrayLikeSpec, full_matrices: bool = True, compute_uv: bool = True) -> ArrayLikeSpec:
     """JAX API implementation for svd.
 
     Args:
@@ -206,26 +201,26 @@ def svd(a: Any, full_matrices: bool = True, compute_uv: bool = True) -> Any:
         compute_uv: Argument compute_uv.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.svd(_to_tensor(a), full_matrices=full_matrices, compute_uv=compute_uv)
     if isinstance(res, tuple):
         return tuple(_wrap(t) for t in res)
-    return _wrap(res)  # pragma: no cover
+    return _wrap(res)
 
 
 svd_p = MockPrimitive("svd")
 
 
 def triangular_solve(
-    a: Any,
-    b: Any,
+    a: ArrayLikeSpec,
+    b: ArrayLikeSpec,
     left_side: bool = False,
     lower: bool = False,
     transpose_a: bool = False,
     conjugate_a: bool = False,
     unit_diagonal: bool = False,
-) -> Any:
+) -> ArrayLikeSpec:
     """JAX API implementation for triangular_solve.
 
     Args:
@@ -238,7 +233,7 @@ def triangular_solve(
         unit_diagonal: Argument unit_diagonal.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     return _wrap(
         ops.triangular_solve(
@@ -256,7 +251,7 @@ def triangular_solve(
 triangular_solve_p = MockPrimitive("triangular_solve")
 
 
-def tridiagonal(a: Any, lower: bool = True) -> Any:
+def tridiagonal(a: ArrayLikeSpec, lower: bool = True) -> ArrayLikeSpec:
     """JAX API implementation for tridiagonal.
 
     Args:
@@ -264,7 +259,7 @@ def tridiagonal(a: Any, lower: bool = True) -> Any:
         lower: Argument lower.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
     res = ops.tridiagonal(_to_tensor(a), lower=lower)
     if isinstance(res, tuple):
@@ -275,7 +270,7 @@ def tridiagonal(a: Any, lower: bool = True) -> Any:
 tridiagonal_p = MockPrimitive("tridiagonal")
 
 
-def tridiagonal_solve(dl: Any, d: Any, du: Any, b: Any) -> Any:
+def tridiagonal_solve(dl: ArrayLikeSpec, d: ArrayLikeSpec, du: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     """JAX API implementation for tridiagonal_solve.
 
     Args:
@@ -285,13 +280,9 @@ def tridiagonal_solve(dl: Any, d: Any, du: Any, b: Any) -> Any:
         b: Argument b.
 
     Returns:
-        Any: The result.
+        ArrayLikeSpec: The result.
     """
-    return _wrap(
-        ops.tridiagonal_solve(
-            _to_tensor(dl), _to_tensor(d), _to_tensor(du), _to_tensor(b)
-        )
-    )
+    return _wrap(ops.tridiagonal_solve(_to_tensor(dl), _to_tensor(d), _to_tensor(du), _to_tensor(b)))
 
 
 tridiagonal_solve_p = MockPrimitive("tridiagonal_solve")

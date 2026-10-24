@@ -2,37 +2,37 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Callable, Tuple, Union
+import math
+from collections.abc import Callable, Sequence
+from typing import Union
 
 from ml_switcheroo_compiler import random
 from ml_switcheroo_compiler.core.dtype import DType
 
 import zero_jax._compiler_proxy_creation as creation
+from zero_jax._types import ArrayLikeSpec, RealScalar
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 from zero_jax.numpy.lax_numpy import ndarray as Array
 
-KeyArray = Any
+KeyArray = ArrayLikeSpec
 Shape = Sequence[int]
-Initializer = Callable[[KeyArray, Shape, Any], Array]
-RealNumeric = Union[float, int]
+Initializer = Callable[[KeyArray, Shape, ArrayLikeSpec], Array]
+RealNumeric = "float | int"
 
 
-def _to_dtype(dtype: Any) -> DType:
-    """
-    Converts a loosely specified dtype to a formal DType object.
+def _to_dtype(dtype: ArrayLikeSpec) -> DType:
+    """Convert a loosely specified dtype to a formal ``DType`` object.
 
     Args:
-        dtype (Any): Type to convert, can be a string, type, or DType.
+        dtype: Type to convert (string, Python type, ``NamedProtocol``, or ``DType``).
 
     Returns:
-        DType: The corresponding parsed DType.
+        DType: The corresponding parsed ``DType``.
     """
+    from zero_jax._types import NamedProtocol
+
     if isinstance(dtype, DType):
         return dtype
-    name = getattr(dtype, "name", None)
-    if name is not None:
-        return DType(name)
     if isinstance(dtype, str):
         return DType(dtype)
     if dtype is float:
@@ -41,20 +41,22 @@ def _to_dtype(dtype: Any) -> DType:
         return DType("int64")
     if dtype is bool:
         return DType("bool")
-    try:
+    if dtype is complex:
+        return DType("complex64")
+    if isinstance(dtype, type):
         return DType(dtype.__name__)
-    except Exception:
-        return DType(str(dtype))
+    if isinstance(dtype, NamedProtocol):
+        return DType(dtype.name)
+    return DType(str(dtype))
 
 
-def zeros(key: KeyArray, shape: Shape, dtype: Any = float) -> Array:
-    """
-    Initializes an array with all zeros.
+def zeros(key: KeyArray, shape: Shape, dtype: ArrayLikeSpec = float) -> Array:
+    """Initialize an array with all zeros.
 
     Args:
-        key (KeyArray): PRNG key (unused, but kept for compatibility).
-        shape (Shape): Desired shape of the output array.
-        dtype (Any, optional): Desired data type. Defaults to float.
+        key: PRNG key (unused, kept for API parity).
+        shape: Desired shape of the output array.
+        dtype: Desired data type.
 
     Returns:
         Array: An array of zeros with the specified shape and dtype.
@@ -62,14 +64,13 @@ def zeros(key: KeyArray, shape: Shape, dtype: Any = float) -> Array:
     return _wrap(creation.zeros(shape=shape, dtype=_to_dtype(dtype)))
 
 
-def ones(key: KeyArray, shape: Shape, dtype: Any = float) -> Array:
-    """
-    Initializes an array with all ones.
+def ones(key: KeyArray, shape: Shape, dtype: ArrayLikeSpec = float) -> Array:
+    """Initialize an array with all ones.
 
     Args:
-        key (KeyArray): PRNG key (unused, but kept for compatibility).
-        shape (Shape): Desired shape of the output array.
-        dtype (Any, optional): Desired data type. Defaults to float.
+        key: PRNG key (unused, kept for API parity).
+        shape: Desired shape of the output array.
+        dtype: Desired data type.
 
     Returns:
         Array: An array of ones with the specified shape and dtype.
@@ -77,420 +78,493 @@ def ones(key: KeyArray, shape: Shape, dtype: Any = float) -> Array:
     return _wrap(creation.ones(shape=shape, dtype=_to_dtype(dtype)))
 
 
-def constant(value: RealNumeric, dtype: Any = float) -> Initializer:
-    """
-    Returns an initializer that generates arrays filled with a constant value.
+def constant(value: RealScalar, dtype: ArrayLikeSpec = float) -> Initializer:
+    """Return an initializer that generates arrays filled with a constant value.
 
     Args:
-        value (RealNumeric): The constant value to fill the array with.
-        dtype (Any, optional): The data type. Defaults to float.
+        value: The constant scalar value to fill the array with.
+        dtype: Default data type.
 
     Returns:
         Initializer: A function that generates constant-filled arrays.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes an array filled with a constant value.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize an array filled with ``value``.
 
         Args:
-            key (Any): PRNG key (unused).
-            shape (Any): The shape of the array.
-            dtype (Any, optional): The data type.
+            key: PRNG key (unused).
+            shape: Shape of the output array.
+            dtype: Data type override.
 
         Returns:
-            Any: A constant-filled array.
+            ArrayLikeSpec: A constant-filled array.
         """
-        return _wrap(
-            creation.full(shape=shape, fill_value=value, dtype=_to_dtype(dtype))
-        )
+        return _wrap(creation.full(shape=shape, fill_value=value, dtype=_to_dtype(dtype)))
 
     return init
 
 
-def uniform(scale: RealNumeric = 0.01, dtype: Any = float) -> Initializer:
-    """
-    Returns an initializer that generates arrays from a uniform distribution.
+def uniform(scale: RealScalar = 0.01, dtype: ArrayLikeSpec = float) -> Initializer:
+    """Return an initializer that samples from a uniform distribution ``[0, scale)``.
 
     Args:
-        scale (RealNumeric, optional): Upper bound (and absolute value of lower bound)
-            for the uniform distribution. Defaults to 0.01.
-        dtype (Any, optional): Data type of the generated array. Defaults to float.
+        scale: Upper bound for the uniform distribution.
+        dtype: Default data type of the generated array.
 
     Returns:
         Initializer: A function that initializes uniform arrays.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes an array with values from a uniform distribution.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize an array with values from a uniform distribution.
 
         Args:
-            key (Any): PRNG key used for generating uniform values.
-            shape (Any): The shape of the array.
-            dtype (Any, optional): The data type.
+            key: PRNG key used for generating uniform values.
+            shape: Shape of the array.
+            dtype: Data type override.
 
         Returns:
-            Any: An array of uniformly distributed values.
+            ArrayLikeSpec: An array of uniformly distributed values.
         """
-        dt = _to_dtype(dtype)  # pragma: no cover
-        u = random.uniform(  # pragma: no cover
-            _to_tensor(key), shape=shape, dtype=dt, minval=-scale, maxval=scale
-        )
-        return _wrap(u)  # pragma: no cover
+        dt = _to_dtype(dtype)
+        u = random.uniform(_to_tensor(key), shape=shape, dtype=dt, minval=-scale, maxval=scale)
+        return _wrap(u)
 
     return init
 
 
-def normal(stddev: RealNumeric = 0.01, dtype: Any = float) -> Initializer:
-    """
-    Returns an initializer that generates arrays from a normal distribution.
+def normal(stddev: RealScalar = 0.01, dtype: ArrayLikeSpec = float) -> Initializer:
+    """Return an initializer that samples from a zero-mean normal distribution.
 
     Args:
-        stddev (RealNumeric, optional): Standard deviation of the normal distribution. Defaults to 0.01.
-        dtype (Any, optional): Data type of the generated array. Defaults to float.
+        stddev: Standard deviation of the normal distribution.
+        dtype: Default data type of the generated array.
 
     Returns:
         Initializer: A function that initializes normal-distributed arrays.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes an array with values from a normal distribution.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize an array with values from a normal distribution.
 
         Args:
-            key (Any): PRNG key used for generating normal values.
-            shape (Any): The shape of the array.
-            dtype (Any, optional): The data type.
+            key: PRNG key used for generating normal values.
+            shape: Shape of the array.
+            dtype: Data type override.
 
         Returns:
-            Any: An array of normally distributed values.
+            ArrayLikeSpec: An array of normally distributed values.
         """
-        dt = _to_dtype(dtype)  # pragma: no cover
-        # switcheroo normal returns std normal (0, 1)
-        n = random.normal(_to_tensor(key), shape=shape, dtype=dt)  # pragma: no cover
-        import zero_jax._compiler_proxy_ops as ops  # pragma: no cover
+        dt = _to_dtype(dtype)
+        n = random.normal(_to_tensor(key), shape=shape, dtype=dt)
+        import zero_jax._compiler_proxy_ops as ops
 
-        return _wrap(ops.multiply(n, creation.full_like(n, stddev)))  # pragma: no cover
+        return _wrap(ops.multiply(n, creation.full_like(n, stddev)))
 
     return init
 
 
 def truncated_normal(
-    stddev: RealNumeric = 0.01,
-    dtype: Any = float,
-    lower: RealNumeric = -2.0,
-    upper: RealNumeric = 2.0,
+    stddev: RealScalar = 0.01,
+    dtype: ArrayLikeSpec = float,
+    lower: RealScalar = -2.0,
+    upper: RealScalar = 2.0,
 ) -> Initializer:
-    """
-    Returns an initializer that generates arrays from a truncated normal distribution.
+    """Return an initializer that samples from a truncated normal distribution.
 
     Args:
-        stddev (RealNumeric, optional): Standard deviation of the normal distribution before truncation. Defaults to 0.01.
-        dtype (Any, optional): Data type of the generated array. Defaults to float.
-        lower (RealNumeric, optional): Lower bound for truncation in standard deviations. Defaults to -2.0.
-        upper (RealNumeric, optional): Upper bound for truncation in standard deviations. Defaults to 2.0.
+        stddev: Standard deviation of the normal distribution before truncation.
+        dtype: Default data type of the generated array.
+        lower: Lower bound for truncation in standard deviations.
+        upper: Upper bound for truncation in standard deviations.
 
     Returns:
         Initializer: A function that initializes truncated-normal arrays.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes an array with values from a truncated normal distribution.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize an array with values from a truncated normal distribution.
 
         Args:
-            key (Any): PRNG key used for generating truncated normal values.
-            shape (Any): The shape of the array.
-            dtype (Any, optional): The data type.
+            key: PRNG key used for generating truncated normal values.
+            shape: Shape of the array.
+            dtype: Data type override.
 
         Returns:
-            Any: An array of truncated normally distributed values.
+            ArrayLikeSpec: An array of truncated normally distributed values.
         """
-        dt = _to_dtype(dtype)  # pragma: no cover
-        n = random.truncated_normal(  # pragma: no cover
-            _to_tensor(key), lower, upper, shape=shape, dtype=dt
-        )
-        import zero_jax._compiler_proxy_ops as ops  # pragma: no cover
+        dt = _to_dtype(dtype)
+        n = random.truncated_normal(_to_tensor(key), lower, upper, shape=shape, dtype=dt)
+        import zero_jax._compiler_proxy_ops as ops
 
-        return _wrap(ops.multiply(n, creation.full_like(n, stddev)))  # pragma: no cover
+        return _wrap(ops.multiply(n, creation.full_like(n, stddev)))
 
     return init
 
 
 def _compute_fans(
     shape: Shape,
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
-    batch_axis: Sequence[int] = (),
-) -> Tuple[int, int]:
-    """
-    Computes the number of input and output units for a weight shape.
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
+    batch_axis: int | Sequence[int] = (),
+) -> tuple[int, int]:
+    """Compute the fan-in and fan-out sizes for a weight tensor shape.
 
     Args:
-        shape (Shape): Shape of the weight array.
-        in_axis (Union[int, Sequence[int]], optional): Axis/axes for input dimension(s). Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Axis/axes for output dimension(s). Defaults to -1.
-        batch_axis (Sequence[int], optional): Axis/axes for batch dimensions. Defaults to ().
+        shape: Shape of the weight tensor.
+        in_axis: Axis or axes for input feature dimensions.
+        out_axis: Axis or axes for output feature dimensions.
+        batch_axis: Axis or axes for batch dimensions.
 
     Returns:
-        Tuple[int, int]: A tuple containing the fan-in and fan-out sizes.
+        tuple[int, int]: ``(fan_in, fan_out)`` sizes.
     """
-    # Dummy implementation for tests
-    return 10, 10
+    rank = len(shape)
+    if rank < 1:
+        return 1, 1
+    if rank == 1:
+        return int(shape[0]), int(shape[0])
+
+    in_axes = (in_axis,) if isinstance(in_axis, int) else tuple(in_axis)
+    out_axes = (out_axis,) if isinstance(out_axis, int) else tuple(out_axis)
+    batch_axes = (batch_axis,) if isinstance(batch_axis, int) else tuple(batch_axis)
+
+    norm_in = tuple(ax % rank for ax in in_axes)
+    norm_out = tuple(ax % rank for ax in out_axes)
+    norm_batch = tuple(ax % rank for ax in batch_axes)
+
+    in_size = math.prod(int(shape[i]) for i in norm_in)
+    out_size = math.prod(int(shape[i]) for i in norm_out)
+    batch_size = math.prod(int(shape[i]) for i in norm_batch)
+    total_size = math.prod(int(d) for d in shape)
+    receptive_field_size = max(1, total_size // max(1, in_size * out_size * batch_size))
+
+    fan_in = int(in_size * receptive_field_size)
+    fan_out = int(out_size * receptive_field_size)
+    return fan_in, fan_out
 
 
 def variance_scaling(
-    scale: RealNumeric,
+    scale: RealScalar,
     mode: str,
     distribution: str,
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer that scales its variance based on weight shape.
+    """Return an initializer that adapts its scale to the shape of the weight tensor.
 
     Args:
-        scale (RealNumeric): Scaling factor (variance multiplier).
-        mode (str): Mode for computing the scaling ('fan_in', 'fan_out', or 'fan_avg').
-        distribution (str): Distribution to use ('truncated_normal', 'normal', or 'uniform').
-        in_axis (Union[int, Sequence[int]], optional): Axis/axes corresponding to input dimensions. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Axis/axes corresponding to output dimensions. Defaults to -1.
-        batch_axis (Sequence[int], optional): Axis/axes corresponding to batch dimensions. Defaults to ().
-        dtype (Any, optional): Data type of the generated array. Defaults to float.
+        scale: Scaling factor (positive float).
+        mode: One of ``"fan_in"``, ``"fan_out"``, or ``"fan_avg"``.
+        distribution: One of ``"truncated_normal"``, ``"normal"``, or ``"uniform"``.
+        in_axis: Axis or axes corresponding to input dimensions.
+        out_axis: Axis or axes corresponding to output dimensions.
+        batch_axis: Axis or axes corresponding to batch dimensions.
+        dtype: Default data type of the generated array.
 
     Returns:
         Initializer: A function that initializes variance-scaled arrays.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes a variance-scaled array.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize a variance-scaled weight array.
 
         Args:
-            key (Any): PRNG key.
-            shape (Any): The shape of the array.
-            dtype (Any, optional): The data type.
+            key: PRNG key.
+            shape: Shape of the weight array.
+            dtype: Data type override.
 
         Returns:
-            Any: A variance-scaled array.
+            ArrayLikeSpec: Initialized weight array.
+
+        Raises:
+            ValueError: If ``mode`` or ``distribution`` is invalid.
         """
-        return uniform(scale, dtype)(key, shape, dtype)  # pragma: no cover
+        shape_tuple = (int(shape),) if isinstance(shape, int) else tuple(int(d) for d in shape)
+        fan_in, fan_out = _compute_fans(shape_tuple, in_axis=in_axis, out_axis=out_axis, batch_axis=batch_axis)
+        if mode == "fan_in":
+            denominator = float(max(1, fan_in))
+        elif mode == "fan_out":
+            denominator = float(max(1, fan_out))
+        elif mode == "fan_avg":
+            denominator = float(max(1, fan_in + fan_out)) / 2.0
+        else:
+            raise ValueError(f"invalid mode for variance scaling initializer: {mode}")
+
+        variance = float(scale) / denominator
+        if distribution == "truncated_normal":
+            stddev = math.sqrt(variance) / 0.87962566103423978
+            return truncated_normal(stddev=stddev, dtype=dtype)(key, shape_tuple, dtype)
+        if distribution == "normal":
+            return normal(stddev=math.sqrt(variance), dtype=dtype)(key, shape_tuple, dtype)
+        if distribution == "uniform":
+            return uniform(scale=math.sqrt(3.0 * variance), dtype=dtype)(key, shape_tuple, dtype)
+        raise ValueError(f"invalid distribution for variance scaling initializer: {distribution}")
 
     return init
 
 
 def glorot_uniform(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the Glorot (Xavier) uniform initialization.
+    """Return a Glorot (Xavier) uniform initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A Glorot uniform initializer function.
     """
-    return variance_scaling(
-        1.0, "fan_avg", "uniform", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(1.0, "fan_avg", "uniform", in_axis, out_axis, batch_axis, dtype)
 
 
 xavier_uniform = glorot_uniform
 
 
 def glorot_normal(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the Glorot (Xavier) normal initialization.
+    """Return a Glorot (Xavier) normal initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A Glorot normal initializer function.
     """
-    return variance_scaling(
-        1.0, "fan_avg", "truncated_normal", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(1.0, "fan_avg", "truncated_normal", in_axis, out_axis, batch_axis, dtype)
 
 
 xavier_normal = glorot_normal
 
 
 def lecun_uniform(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the LeCun uniform initialization.
+    """Return a LeCun uniform initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A LeCun uniform initializer function.
     """
-    return variance_scaling(
-        1.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(1.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype)
 
 
 def lecun_normal(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the LeCun normal initialization.
+    """Return a LeCun normal initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A LeCun normal initializer function.
     """
-    return variance_scaling(
-        1.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(1.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype)
 
 
 def he_uniform(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the He (Kaiming) uniform initialization.
+    """Return a He (Kaiming) uniform initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A He uniform initializer function.
     """
-    return variance_scaling(
-        2.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(2.0, "fan_in", "uniform", in_axis, out_axis, batch_axis, dtype)
 
 
 kaiming_uniform = he_uniform
 
 
 def he_normal(
-    in_axis: Union[int, Sequence[int]] = -2,
-    out_axis: Union[int, Sequence[int]] = -1,
+    in_axis: int | Sequence[int] = -2,
+    out_axis: int | Sequence[int] = -1,
     batch_axis: Sequence[int] = (),
-    dtype: Any = float,
+    dtype: ArrayLikeSpec = float,
 ) -> Initializer:
-    """
-    Returns an initializer for the He (Kaiming) normal initialization.
+    """Return a He (Kaiming) normal initializer.
 
     Args:
-        in_axis (Union[int, Sequence[int]], optional): Input dimension axis/axes. Defaults to -2.
-        out_axis (Union[int, Sequence[int]], optional): Output dimension axis/axes. Defaults to -1.
-        batch_axis (Sequence[int], optional): Batch dimension axis/axes. Defaults to ().
-        dtype (Any, optional): Data type. Defaults to float.
+        in_axis: Input dimension axis or axes.
+        out_axis: Output dimension axis or axes.
+        batch_axis: Batch dimension axis or axes.
+        dtype: Default data type.
 
     Returns:
         Initializer: A He normal initializer function.
     """
-    return variance_scaling(
-        2.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype
-    )
+    return variance_scaling(2.0, "fan_in", "truncated_normal", in_axis, out_axis, batch_axis, dtype)
 
 
 kaiming_normal = he_normal
 
 
-def orthogonal(
-    scale: RealNumeric = 1.0, column_axis: int = -1, dtype: Any = float
-) -> Initializer:
-    """
-    Returns an initializer that generates orthogonally initialized weight arrays.
+def orthogonal(scale: RealScalar = 1.0, column_axis: int = -1, dtype: ArrayLikeSpec = float) -> Initializer:
+    """Return an initializer that generates orthogonal or semi-orthogonal matrices via QR decomposition.
 
     Args:
-        scale (RealNumeric, optional): Scaling factor for the initialized array. Defaults to 1.0.
-        column_axis (int, optional): The axis to treat as columns. Defaults to -1.
-        dtype (Any, optional): Data type of the array. Defaults to float.
+        scale: Multiplicative scale factor applied to the orthogonal matrix.
+        column_axis: Axis containing the columns that should be orthogonal.
+        dtype: Default data type of the array.
 
     Returns:
         Initializer: An orthogonal initializer function.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes an orthogonally constrained array.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize an orthogonally constrained array using QR factorization.
 
         Args:
-            key (Any): PRNG key.
-            shape (Any): Shape of the output array.
-            dtype (Any, optional): Data type.
+            key: PRNG key.
+            shape: Shape of the output array (must have rank >= 2).
+            dtype: Data type override.
 
         Returns:
-            Any: An orthogonally initialized array.
+            ArrayLikeSpec: An orthogonally initialized array.
+
+        Raises:
+            ValueError: If ``len(shape) < 2``.
         """
-        return uniform(scale, dtype)(key, shape, dtype)  # pragma: no cover
+        import zero_jax._compiler_proxy_ops as ops
+        from zero_jax.numpy import diagonal, moveaxis, reshape, sign, transpose
+        from zero_jax.numpy.linalg import qr
+
+        shape_tuple = (int(shape),) if isinstance(shape, int) else tuple(int(d) for d in shape)
+        if len(shape_tuple) < 2:
+            raise ValueError(f"orthogonal initializer requires at least a 2D shape, got {shape_tuple}")
+
+        dt = _to_dtype(dtype)
+        col_ax = column_axis % len(shape_tuple)
+        n_cols = shape_tuple[col_ax]
+        rem_dims = [shape_tuple[i] for i in range(len(shape_tuple)) if i != col_ax]
+        n_rows = math.prod(rem_dims)
+
+        flat_shape = (max(n_rows, n_cols), min(n_rows, n_cols))
+        a = _wrap(random.normal(_to_tensor(key), shape=flat_shape, dtype=dt))
+        q_raw, r_raw = qr(a)
+        q = _wrap(q_raw)
+        r = _wrap(r_raw)
+        d = sign(diagonal(r))
+        q_signed = q * d
+        if n_rows < n_cols:
+            q_signed = transpose(q_signed)
+
+        reshaped = reshape(q_signed, (*tuple(rem_dims), n_cols))
+        moved = moveaxis(reshaped, -1, col_ax)
+        t_moved = _to_tensor(moved)
+        return _wrap(ops.multiply(t_moved, creation.full_like(t_moved, float(scale))))
 
     return init
 
 
-def delta_orthogonal(
-    scale: RealNumeric = 1.0, column_axis: int = -1, dtype: Any = float
-) -> Initializer:
-    """
-    Returns an initializer that generates delta orthogonal arrays (useful for CNNs).
+def delta_orthogonal(scale: RealScalar = 1.0, column_axis: int = -1, dtype: ArrayLikeSpec = float) -> Initializer:
+    """Return an initializer that generates delta-orthogonal convolutional kernels.
 
     Args:
-        scale (RealNumeric, optional): Scaling factor for the initialized array. Defaults to 1.0.
-        column_axis (int, optional): The axis to treat as columns. Defaults to -1.
-        dtype (Any, optional): Data type of the array. Defaults to float.
+        scale: Multiplicative scale factor applied to the central orthogonal matrix.
+        column_axis: Output channel axis (defaults to ``-1``).
+        dtype: Default data type of the kernel.
 
     Returns:
-        Initializer: A delta orthogonal initializer function.
+        Initializer: A delta-orthogonal initializer function.
     """
 
-    def init(key: Any, shape: Any, dtype: Any = dtype) -> Any:
-        """
-        Initializes a delta orthogonal constrained array.
+    def init(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = dtype) -> ArrayLikeSpec:
+        """Initialize a delta-orthogonal convolutional kernel (rank 3, 4, or 5).
 
         Args:
-            key (Any): PRNG key.
-            shape (Any): Shape of the output array.
-            dtype (Any, optional): Data type.
+            key: PRNG key.
+            shape: Shape of the convolutional kernel (rank 3, 4, or 5).
+            dtype: Data type override.
 
         Returns:
-            Any: A delta orthogonally initialized array.
+            ArrayLikeSpec: A delta-orthogonally initialized kernel.
+
+        Raises:
+            ValueError: If ``len(shape)`` is not in ``{3, 4, 5}``.
         """
-        return uniform(scale, dtype)(key, shape, dtype)  # pragma: no cover
+        shape_tuple = (int(shape),) if isinstance(shape, int) else tuple(int(d) for d in shape)
+        if len(shape_tuple) not in (3, 4, 5):
+            raise ValueError(f"delta_orthogonal requires a 3D, 4D, or 5D shape, got {shape_tuple}")
+
+        orth_matrix = orthogonal(scale=scale, column_axis=-1, dtype=dtype)(key, shape_tuple[-2:], dtype)
+        kernel = zeros(key, shape_tuple, dtype=dtype)
+        mid = tuple(d // 2 for d in shape_tuple[:-2])
+        idx = (*mid, slice(None), slice(None))
+        return kernel.at[idx].set(orth_matrix)
 
     return init
+
+
+__all__ = [
+    "Array",
+    "Callable",
+    "DType",
+    "Initializer",
+    "KeyArray",
+    "RealNumeric",
+    "Sequence",
+    "Shape",
+    "Union",
+    "_compute_fans",
+    "_to_dtype",
+    "constant",
+    "delta_orthogonal",
+    "glorot_normal",
+    "glorot_uniform",
+    "he_normal",
+    "he_uniform",
+    "kaiming_normal",
+    "kaiming_uniform",
+    "lecun_normal",
+    "lecun_uniform",
+    "normal",
+    "ones",
+    "orthogonal",
+    "truncated_normal",
+    "uniform",
+    "variance_scaling",
+    "xavier_normal",
+    "xavier_uniform",
+    "zeros",
+]

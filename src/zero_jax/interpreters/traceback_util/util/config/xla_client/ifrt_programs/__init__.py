@@ -1,31 +1,86 @@
 """Module ifrt_programs."""
 
-import typing
-
-import ml_switcheroo_compiler
+from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ConfigValue
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+class CompileOptions:
+    """Stub class for CompileOptions."""
 
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize CompileOptions.
 
-        return stub
-    except ImportError:  # pragma: no cover
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
 
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
 
-        return stub  # pragma: no cover
+class Program:
+    """Stub class for Program."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize Program.
+
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
+
+
+def make_hlo_program(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for make_hlo_program.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def make_plugin_compile_options(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for make_plugin_compile_options.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def make_plugin_program(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for make_plugin_program.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def make_xla_compile_options(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for make_xla_compile_options.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None

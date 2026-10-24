@@ -1,4 +1,6 @@
-import pytest
+"""Tests for tests/test_lax_added.py."""
+
+from __future__ import annotations
 
 from zero_jax import lax
 

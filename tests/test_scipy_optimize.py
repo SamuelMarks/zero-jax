@@ -1,5 +1,7 @@
 """Tests for scipy.optimize module."""
 
+from __future__ import annotations
+
 from unittest import mock
 
 import zero_jax.numpy as jnp
@@ -38,7 +40,6 @@ def test_OptimizeResults() -> None:
 @mock.patch("zero_jax.scipy.optimize.get_op")
 def test_minimize(mock_get_op: mock.MagicMock) -> None:
     """Test minimize function routes correctly."""
-
     mock_op_instance = mock.MagicMock()
     mock_get_op.return_value = mock_op_instance
 
@@ -56,6 +57,7 @@ def test_minimize(mock_get_op: mock.MagicMock) -> None:
     )
 
     def dummy_fun(x: jnp.ndarray) -> jnp.ndarray:
+        """Execute ``dummy_fun``."""
         return x**2
 
     x0 = jnp.array([0.5])
@@ -75,7 +77,7 @@ def test_minimize(mock_get_op: mock.MagicMock) -> None:
 
     # Verify the op was executed
     assert mock_op_instance.call_count == 1
-    call_args, call_kwargs = mock_op_instance.call_args
+    call_args, _call_kwargs = mock_op_instance.call_args
 
     assert call_args[0] is dummy_fun
     assert jnp.allclose(call_args[1], x0)

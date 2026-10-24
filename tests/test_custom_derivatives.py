@@ -1,8 +1,8 @@
 """Tests for zero_jax module."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
-import pytest
+from unittest.mock import patch
 
 import zero_jax.custom_derivatives as mod
 
@@ -47,9 +47,7 @@ def test_custom_vjp() -> None:
 
 def test_custom_vjp_primal_tree_values() -> None:
     """Test custom_vjp_primal_tree_values."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.custom_vjp_primal_tree_values", create=True
-    ) as mock_op:
+    with patch("zero_jax._compiler_proxy_ops.custom_vjp_primal_tree_values", create=True) as mock_op:
         mod.custom_vjp_primal_tree_values()
         mock_op.assert_called_once_with()
 

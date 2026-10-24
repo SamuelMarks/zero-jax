@@ -1,6 +1,6 @@
 """Tests for zero_jax module."""
 
-import pytest
+from __future__ import annotations
 
 import zero_jax.interpreters.traceback_util.util.it as mod
 

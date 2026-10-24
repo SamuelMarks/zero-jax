@@ -1,18 +1,8 @@
 """Tests for zero_jax.experimental.x64_context.config.jax_jit."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.experimental.x64_context.config.jax_jit as mod
-
-
-def test_Any() -> None:
-    """Test Any."""
-    try:
-        mod.Any()
-    except Exception:
-        pass
 
 
 def test_class_JitState() -> None:

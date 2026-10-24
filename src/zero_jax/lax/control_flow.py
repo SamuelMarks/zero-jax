@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
 
 import ml_switcheroo_compiler.ops.control_flow as cf
 from ml_switcheroo_compiler.core.config import config
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
-def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> Any:
+def cond(pred: ArrayLikeSpec, true_fn: Callable, false_fn: Callable, *operands: ArrayLikeSpec) -> ArrayLikeSpec:
     """Conditionally applies one of two functions.
 
     Args:
@@ -24,7 +25,7 @@ def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> An
         The output of the conditionally executed function.
     """
 
-    def wrapped_true() -> Any:
+    def wrapped_true() -> ArrayLikeSpec:
         """Executes the true branch.
 
         Returns:
@@ -32,7 +33,7 @@ def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> An
         """
         return _to_tensor(true_fn(*operands))
 
-    def wrapped_false() -> Any:
+    def wrapped_false() -> ArrayLikeSpec:
         """Executes the false branch.
 
         Returns:
@@ -43,7 +44,7 @@ def cond(pred: Any, true_fn: Callable, false_fn: Callable, *operands: Any) -> An
     return _wrap(cf.cond(_to_tensor(pred), wrapped_true, wrapped_false))
 
 
-def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
+def scan(f: Callable, init: ArrayLikeSpec, xs: ArrayLikeSpec, length: int | None = None) -> ArrayLikeSpec:
     """Scans a function over leading array axes while carrying along state.
 
     Args:
@@ -69,20 +70,56 @@ def scan(f: Callable, init: Any, xs: Any, length: int = None) -> Any:
             carry, y = f(carry, x)
             ys.append(y)
         return carry, ys
-    else:
-        # tracing
-        carry, ys = cf.scan(f, _to_tensor(init), _to_tensor(xs))
-        return _wrap(carry), _wrap(ys)
+    # tracing
+    carry, ys = cf.scan(f, _to_tensor(init), _to_tensor(xs))
+    return _wrap(carry), _wrap(ys)
 
 
-def stop_gradient(x: Any) -> Any:
-    """Stops the flow of gradients during reverse-mode differentiation.
+_STOP_GRADIENT_SOURCES: dict[str, str] = {}
+
+
+def stop_gradient(x: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Stop the flow of gradients during forward or reverse-mode differentiation.
 
     Args:
-        x: The value to stop gradients for.
+        x: The value or PyTree to stop gradients for.
 
     Returns:
-        The identical value, but treated as a constant by gradient computations.
+        ArrayLikeSpec: The identical value, treated as a constant by gradient computations.
     """
-    # Actually switcheroo doesn't have stop_gradient yet, just pass through
+    if _tracer.is_tracing and _tracer.active_graph is not None:
+        import uuid
+
+        from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
+        from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+        from ml_switcheroo_ir import LogicalNode
+
+        from zero_jax.numpy.lax_numpy import ndarray
+        from zero_jax.tree_util import tree_map
+
+        active_graph = _tracer.active_graph
+
+        def _detach_leaf(leaf: ArrayLikeSpec) -> ArrayLikeSpec:
+            """Create a detached constant-like proxy node when ``leaf`` is being traced.
+
+            Args:
+                leaf: Input leaf.
+
+            Returns:
+                ArrayLikeSpec: Detached leaf.
+            """
+            t = _to_tensor(leaf)
+            sg_id = str(uuid.uuid4())
+            _STOP_GRADIENT_SOURCES[sg_id] = t.data.id
+            node = LogicalNode(
+                id=sg_id,
+                op_type="Input",
+                inputs=[],
+                shape_metadata=t.shape,
+            )
+            active_graph.nodes[sg_id] = node
+            proxy = ProxyTensor(id=sg_id, shape=t.shape, dtype=t.dtype.value)
+            return ndarray(Tensor(data=proxy, config=TensorConfig(shape=t.shape, dtype=t.dtype, device=t.device)))
+
+        return tree_map(_detach_leaf, x)
     return x

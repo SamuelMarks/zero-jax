@@ -1,8 +1,6 @@
 """Tests for zero_jax.interpreters.traceback_util.util.xc.profiler."""
 
-from typing import Any
-
-import pytest
+from __future__ import annotations
 
 import zero_jax.interpreters.traceback_util.util.xc.profiler as mod
 

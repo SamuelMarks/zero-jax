@@ -1,5 +1,7 @@
 """Tests for scipy.spatial.transform module."""
 
+from __future__ import annotations
+
 from unittest import mock
 
 import zero_jax.numpy as jnp
@@ -43,7 +45,7 @@ def test_rotation_methods(mock_get_op: mock.MagicMock) -> None:
     rot = mod.Rotation.random(num=3, random_state=42)
     mock_get_op.assert_called_with("ScipySpatialRotationRandom")
 
-    res = mod.Rotation.align_vectors(
+    mod.Rotation.align_vectors(
         jnp.array([[1.0, 0.0, 0.0]]),
         jnp.array([[0.0, 1.0, 0.0]]),
         weights=jnp.array([1.0]),
@@ -114,7 +116,7 @@ def test_rotation_len_single_fallback() -> None:
 
     # Test property fallback
     class DummyQuat:
-        pass
+        """Test class ``DummyQuat``."""
 
     rot = mod.Rotation.from_quat(DummyQuat())
     assert rot.single is True
@@ -127,9 +129,7 @@ def test_align_vectors_none_weights() -> None:
         mock_op_instance = mock.MagicMock()
         mock_get_op.return_value = mock_op_instance
 
-        mod.Rotation.align_vectors(
-            jnp.array([[1.0, 0.0, 0.0]]), jnp.array([[0.0, 1.0, 0.0]]), weights=None
-        )
+        mod.Rotation.align_vectors(jnp.array([[1.0, 0.0, 0.0]]), jnp.array([[0.0, 1.0, 0.0]]), weights=None)
         assert mock_op_instance.call_args[0][2] is None
 
 

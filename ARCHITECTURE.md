@@ -71,8 +71,8 @@ graph TD
     ZZ -.->|Tests| ZJ
 ```
 
-### 1. `ml-switcheroo-ir` (Tier 1)
-The universal, canonical dialect. Defines `LogicalNode` and `LogicalGraph`. Contains the schema validator enforcing ONNX spec compliance without requiring the heavy `onnx` pip package.
+### 1. `ml-switcheroo-ir` & `ml-ecosystem-snapshots` (Tier 1)
+The universal, canonical dialect and anti-hallucination grounding contract. `ml-switcheroo-ir` defines Pydantic v2 `LogicalNode`, `LogicalGraph`, `GhostRef`, and `SnapshotEnvelope` models enforcing ONNX and StableHLO spec compliance without requiring heavy external binaries. `ml-ecosystem-snapshots` (`v0.0.4`) provides canonical API signature snapshots (`jax_v0.12.0.1.json`) used to verify 100% structural and semantic API parity.
 
 ### 2. `ml-switcheroo-compiler` (Tier 2)
 The computational heart. Implements:

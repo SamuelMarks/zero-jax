@@ -3,14 +3,28 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Any
+
+from zero_jax._types import ArrayLikeSpec
 
 
-def set_printoptions(*args: Any, **kwargs: Any) -> None:
-    """Set print options."""
+def set_printoptions(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> None:
+    """Set print options.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+    """
 
 
 @contextlib.contextmanager
-def printoptions(*args: Any, **kwargs: Any) -> Any:
-    """Context manager for setting print options."""
-    yield  # pragma: no cover
+def printoptions(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Context manager for setting print options.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    yield

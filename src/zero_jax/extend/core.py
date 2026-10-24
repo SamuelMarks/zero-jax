@@ -1,11 +1,21 @@
 """Core submodule for zero_jax.extend."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ArrayLikeSpec
 
 
-def stub(*args: Any, **kwargs: Any) -> Any:
-    """Stub function."""
-    return None  # pragma: no cover
+def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Stub function.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return None
 
 
 __all__ = ["stub"]

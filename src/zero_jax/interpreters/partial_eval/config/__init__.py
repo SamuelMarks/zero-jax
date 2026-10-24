@@ -1,6 +1,8 @@
 """Config stub."""
 
-from typing import Any
+from __future__ import annotations
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 from . import logging_config
 
@@ -17,59 +19,181 @@ import zero_jax._compiler_proxy_ops as _ops
 class Config:
     """Stub Config class."""
 
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            *args: Input parameter ``args``.
+            **kwargs: Input parameter ``kwargs``.
+        """
 
 
-def DEFINE_bool(*args: Any, **kwargs: Any) -> Any:
+def DEFINE_bool(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``DEFINE_bool``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def DEFINE_enum(*args: Any, **kwargs: Any) -> Any:
+def DEFINE_enum(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``DEFINE_enum``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def DEFINE_float(*args: Any, **kwargs: Any) -> Any:
+def DEFINE_float(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``DEFINE_float``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def DEFINE_integer(*args: Any, **kwargs: Any) -> Any:
+def DEFINE_integer(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``DEFINE_integer``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def DEFINE_string(*args: Any, **kwargs: Any) -> Any:
+def DEFINE_string(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``DEFINE_string``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def FlagHolder(*args: Any, **kwargs: Any) -> Any:
+def FlagHolder(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``FlagHolder``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def Generic(*args: Any, **kwargs: Any) -> Any:
+def Generic(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``Generic``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def Hashable(*args: Any, **kwargs: Any) -> Any:
+def Hashable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``Hashable``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def Iterator(*args: Any, **kwargs: Any) -> Any:
+def Iterator(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``Iterator``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def NamedTuple(*args: Any, **kwargs: Any) -> Any:
+def NamedTuple(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``NamedTuple``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def NoDefault(*args: Any, **kwargs: Any) -> Any:
+def NoDefault(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``NoDefault``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def NoReturn(*args: Any, **kwargs: Any) -> Any:
+def NoReturn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``NoReturn``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def TypeVar(*args: Any, **kwargs: Any) -> Any:
+def TypeVar(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``TypeVar``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
@@ -77,356 +201,1148 @@ UPGRADE_BOOL_EXTRA_DESC = ""
 UPGRADE_BOOL_HELP = ""
 
 
-def bcoo_cusparse_lowering(*args: Any, **kwargs: Any) -> Any:
+def bcoo_cusparse_lowering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``bcoo_cusparse_lowering``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
+    return None
+
+
+def bool_env(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``bool_env``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def check_exists(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``check_exists``.
 
-def bool_env(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def check_tracer_leaks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``check_tracer_leaks``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def check_exists(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def check_tracer_leaks(*args: Any, **kwargs: Any) -> Any:
+def checking_leaks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``checking_leaks``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def checking_leaks(*args: Any, **kwargs: Any) -> Any:
+def compilation_cache_dir(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``compilation_cache_dir``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def debug_key_reuse(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``debug_key_reuse``.
 
-def compilation_cache_dir(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def default_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``default_device``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def debug_key_reuse(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def default_device(*args: Any, **kwargs: Any) -> Any:
+def default_dtype_bits(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``default_dtype_bits``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def default_prng_impl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``default_prng_impl``.
 
-def default_dtype_bits(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def define_bool_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_bool_state``.
 
-def default_prng_impl(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def define_enum_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_enum_state``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def define_bool_state(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def define_enum_state(*args: Any, **kwargs: Any) -> Any:
+def define_float_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_float_state``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def define_int_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_int_state``.
 
-def define_float_state(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def define_string_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_string_state``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def define_int_state(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def define_string_state(*args: Any, **kwargs: Any) -> Any:
+def disable_jit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``disable_jit``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def disable_jit(*args: Any, **kwargs: Any) -> Any:
+def distributed_debug(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``distributed_debug``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def dynamic_shapes(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``dynamic_shapes``.
 
-def distributed_debug(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def eager_pmap(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``eager_pmap``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def dynamic_shapes(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def eager_pmap(*args: Any, **kwargs: Any) -> Any:
+def enable_checks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_checks``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def enable_custom_prng(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_custom_prng``.
 
-def enable_checks(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def enable_memories(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_memories``.
 
-def enable_custom_prng(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def enable_pgle(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_pgle``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def enable_memories(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def enable_pgle(*args: Any, **kwargs: Any) -> Any:
+def enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_x64``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def explain_cache_misses(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``explain_cache_misses``.
 
-def enable_x64(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def int_env(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``int_env``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def explain_cache_misses(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def int_env(*args: Any, **kwargs: Any) -> Any:
+def jax_platforms(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax_platforms``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def jax_platforms(*args: Any, **kwargs: Any) -> Any:
+def legacy_prng_key(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``legacy_prng_key``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def lib(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``lib``.
 
-def legacy_prng_key(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def log_compiles(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``log_compiles``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def lib(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def log_compiles(*args: Any, **kwargs: Any) -> Any:
+def logger(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``logger``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def no_default(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``no_default``.
 
-def logger(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def numpy_dtype_promotion(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``numpy_dtype_promotion``.
 
-def no_default(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def numpy_rank_promotion(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``numpy_rank_promotion``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def numpy_dtype_promotion(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def numpy_rank_promotion(*args: Any, **kwargs: Any) -> Any:
+def parse_flags_with_absl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``parse_flags_with_absl``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def pgle_profiling_runs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``pgle_profiling_runs``.
 
-def parse_flags_with_absl(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def pmap_no_rank_reduction(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``pmap_no_rank_reduction``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def pgle_profiling_runs(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def pmap_no_rank_reduction(*args: Any, **kwargs: Any) -> Any:
+def pmap_shmap_merge(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``pmap_shmap_merge``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def pmap_shmap_merge(*args: Any, **kwargs: Any) -> Any:
+def random_seed_offset(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``random_seed_offset``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def remat_opt_barrier(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``remat_opt_barrier``.
 
-def random_seed_offset(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def softmax_custom_jvp(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``softmax_custom_jvp``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def remat_opt_barrier(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def softmax_custom_jvp(*args: Any, **kwargs: Any) -> Any:
+def spmd_mode(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``spmd_mode``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def threefry_partitionable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``threefry_partitionable``.
 
-def spmd_mode(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def trace_context(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``trace_context``.
 
-def threefry_partitionable(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def traceback_filtering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``traceback_filtering``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def trace_context(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def traceback_filtering(*args: Any, **kwargs: Any) -> Any:
+def unset(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``unset``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def update(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``update``.
 
-def unset(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def xla_runtime_errors(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``xla_runtime_errors``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def update(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def xla_runtime_errors(*args: Any, **kwargs: Any) -> Any:
+def already_configured_with_absl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``already_configured_with_absl``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def already_configured_with_absl(*args: Any, **kwargs: Any) -> Any:
+def cast(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``cast``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def compilation_cache_include_metadata_in_key(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``compilation_cache_include_metadata_in_key``.
 
-def cast(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def compilation_cache_max_size(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``compilation_cache_max_size``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def compilation_cache_include_metadata_in_key(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def compilation_cache_max_size(*args: Any, **kwargs: Any) -> Any:
+def config(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``config``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def custom_vjp_disable_shape_check(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``custom_vjp_disable_shape_check``.
 
-def config(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def debug_infs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``debug_infs``.
 
-def custom_vjp_disable_shape_check(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def debug_nans(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``debug_nans``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def debug_infs(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def debug_nans(*args: Any, **kwargs: Any) -> Any:
+def default_matmul_precision(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``default_matmul_precision``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def define_optional_enum_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_optional_enum_state``.
 
-def default_matmul_precision(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def define_optional_string_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_optional_string_state``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def define_optional_enum_state(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def define_optional_string_state(*args: Any, **kwargs: Any) -> Any:
+def define_string_or_object_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``define_string_or_object_state``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def define_string_or_object_state(*args: Any, **kwargs: Any) -> Any:
+def enable_compilation_cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_compilation_cache``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def enable_custom_vjp_by_custom_transpose(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``enable_custom_vjp_by_custom_transpose``.
 
-def enable_compilation_cache(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def explicit_device_get_scope(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``explicit_device_get_scope``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def enable_custom_vjp_by_custom_transpose(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def explicit_device_get_scope(*args: Any, **kwargs: Any) -> Any:
+def explicit_device_put_scope(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``explicit_device_put_scope``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def hlo_source_file_canonicalization_regex(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``hlo_source_file_canonicalization_regex``.
 
-def explicit_device_put_scope(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def include_full_tracebacks_in_locations(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``include_full_tracebacks_in_locations``.
 
-def hlo_source_file_canonicalization_regex(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def jax2tf_associative_scan_reductions(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax2tf_associative_scan_reductions``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def include_full_tracebacks_in_locations(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def jax2tf_associative_scan_reductions(*args: Any, **kwargs: Any) -> Any:
+def jax2tf_default_native_serialization(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax2tf_default_native_serialization``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def jax_export_calling_convention_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax_export_calling_convention_version``.
 
-def jax2tf_default_native_serialization(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def jax_pjrt_client_create_options(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax_pjrt_client_create_options``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def jax_export_calling_convention_version(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def jax_pjrt_client_create_options(*args: Any, **kwargs: Any) -> Any:
+def jax_serialization_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax_serialization_version``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def jax_serialization_version(*args: Any, **kwargs: Any) -> Any:
+def jax_xla_profile_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``jax_xla_profile_version``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def log_checkpoint_residuals(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``log_checkpoint_residuals``.
 
-def jax_xla_profile_version(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def persistent_cache_min_compile_time_secs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``persistent_cache_min_compile_time_secs``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def log_checkpoint_residuals(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def persistent_cache_min_compile_time_secs(*args: Any, **kwargs: Any) -> Any:
+def persistent_cache_min_entry_size_bytes(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``persistent_cache_min_entry_size_bytes``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def pgle_aggregation_percentile(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``pgle_aggregation_percentile``.
 
-def persistent_cache_min_entry_size_bytes(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def raise_persistent_cache_errors(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``raise_persistent_cache_errors``.
 
-def pgle_aggregation_percentile(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def share_autotune_config_between_hosts(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``share_autotune_config_between_hosts``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def raise_persistent_cache_errors(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def share_autotune_config_between_hosts(*args: Any, **kwargs: Any) -> Any:
+def share_binary_between_hosts(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``share_binary_between_hosts``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def share_binary_between_hosts_timeout_ms(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``share_binary_between_hosts_timeout_ms``.
 
-def share_binary_between_hosts(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def threefry_gpu_kernel_lowering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``threefry_gpu_kernel_lowering``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def share_binary_between_hosts_timeout_ms(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def threefry_gpu_kernel_lowering(*args: Any, **kwargs: Any) -> Any:
+def traceback_in_locations_limit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``traceback_in_locations_limit``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def transfer_guard(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``transfer_guard``.
 
-def traceback_in_locations_limit(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def transfer_guard(*args: Any, **kwargs: Any) -> Any:
-    return None  # pragma: no cover
+def transfer_guard_device_to_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``transfer_guard_device_to_device``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def transfer_guard_device_to_device(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def transfer_guard_device_to_host(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``transfer_guard_device_to_host``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def transfer_guard_device_to_host(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-def transfer_guard_host_to_device(*args: Any, **kwargs: Any) -> Any:
+def transfer_guard_host_to_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``transfer_guard_host_to_device``.
+
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
 
+def update_thread_local_jit_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``update_thread_local_jit_state``.
 
-def update_thread_local_jit_state(*args: Any, **kwargs: Any) -> Any:
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
+
+    Returns:
+        The operation result.
+    """
     return None
+
+
+def Callable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Execute ``Callable``.
 
+    Args:
+        *args: Input parameter ``args``.
+        **kwargs: Input parameter ``kwargs``.
 
-def Callable(*args: Any, **kwargs: Any) -> Any:
+    Returns:
+        The operation result.
+    """
     return None
 
 
-annotations: Any = None
+annotations: ArrayLikeSpec = None

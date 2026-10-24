@@ -1,36 +1,101 @@
 """Module jax_jit."""
 
+from __future__ import annotations
+
 import typing
 
 import ml_switcheroo_compiler
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
 class JitState:
-    def __init__(self, *args, **kwargs):
-        pass
+    """Frontend class for ``JitState``."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            *args: Input parameter ``args``.
+            **kwargs: Input parameter ``kwargs``.
+        """
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+class PyArgSignature:
+    """Stub class for PyArgSignature."""
 
-        # If it's a known missing function, we might just return a dummy callable that raises NotImplementedError,
-        # BUT we only want to do that if it really doesn't exist, to pass test_stubs.py
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize PyArgSignature.
 
-        return stub
-    except ImportError:  # pragma: no cover
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
 
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
 
-        return stub  # pragma: no cover
+def get_enable_x64(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route get_enable_x64 to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.get_enable_x64(*args, **kwargs)
+
+
+def global_state(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route global_state to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.global_state(*args, **kwargs)
+
+
+def set_thread_local_state_initialization_callback(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route set_thread_local_state_initialization_callback to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.set_thread_local_state_initialization_callback(*args, **kwargs)
+
+
+def swap_thread_local_state_disable_jit(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route swap_thread_local_state_disable_jit to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.swap_thread_local_state_disable_jit(*args, **kwargs)
+
+
+def thread_local_state(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route thread_local_state to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.thread_local_state(*args, **kwargs)

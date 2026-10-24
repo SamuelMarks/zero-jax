@@ -15,16 +15,30 @@ repos:
         types: [python]
         pass_filenames: false
 
-      - id: pytest-coverage
-        name: Run Pytest Coverage
-        entry: env PYTHONPATH=src:../ml-switcheroo-compiler/src pytest --cov=src --cov-report=term-missing
+      - id: mypy
+        name: Mypy Strict Type Check
+        entry: mypy --config-file pyproject.toml src scripts tests
         language: system
         types: [python]
         pass_filenames: false
 
-      - id: update-badges
-        name: Update Coverage Shields
-        entry: python3 scripts/run_checks.py update_badges
+      - id: interrogate
+        name: Interrogate 100% Docstring Coverage
+        entry: interrogate -vv -f 100 -c pyproject.toml src scripts tests
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: check-strict-typing
+        name: Check Strict Typing & Zero Dunders/Getattr/Setattr
+        entry: python3 scripts/run_checks.py check_strict_typing
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: check-docstrings
+        name: Check 100% AST Docstrings (Args & Returns)
+        entry: python3 scripts/run_checks.py check_docstrings
         language: system
         types: [python]
         pass_filenames: false
@@ -51,6 +65,20 @@ repos:
       - id: check-ops-coverage
         name: Check 100% Ops Coverage
         entry: python3 scripts/run_checks.py check_ops_coverage
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest-coverage
+        name: Run Pytest 100% Line & Branch Coverage
+        entry: env PYTHONPATH=src:../ml-switcheroo-compiler/src pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-fail-under=100
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: update-badges
+        name: Update Coverage Shields
+        entry: python3 scripts/run_checks.py update_badges
         language: system
         types: [python]
         pass_filenames: false

@@ -1,4 +1,6 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.errors."""
+
+from __future__ import annotations
 
 import pytest
 
@@ -6,60 +8,84 @@ import zero_jax.errors as mod
 
 
 def test_ConcretizationTypeError() -> None:
-    """Test ConcretizationTypeError."""
-    obj = mod.ConcretizationTypeError()
-    assert obj is not None
+    """Verify ConcretizationTypeError is a TypeError and Exception."""
+    err = mod.ConcretizationTypeError("concrete required", id=1, name="x", value=2)
+    assert isinstance(err, TypeError)
+    assert err.id == 1
+    assert err.name == "x"
+    assert err.value == 2
+    with pytest.raises(mod.ConcretizationTypeError, match="concrete required"):
+        raise err
 
 
 def test_JAXIndexError() -> None:
-    """Test JAXIndexError."""
-    obj = mod.JAXIndexError()
-    assert obj is not None
+    """Verify JAXIndexError is an IndexError and Exception."""
+    err = mod.JAXIndexError("bad index")
+    assert isinstance(err, IndexError)
+    with pytest.raises(mod.JAXIndexError, match="bad index"):
+        raise err
 
 
 def test_JAXTypeError() -> None:
-    """Test JAXTypeError."""
-    obj = mod.JAXTypeError()
-    assert obj is not None
+    """Verify JAXTypeError is a TypeError and Exception."""
+    err = mod.JAXTypeError("bad type")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.JAXTypeError, match="bad type"):
+        raise err
 
 
 def test_KeyReuseError() -> None:
-    """Test KeyReuseError."""
-    obj = mod.KeyReuseError()
-    assert obj is not None
+    """Verify KeyReuseError is a RuntimeError and Exception."""
+    err = mod.KeyReuseError("key reused")
+    assert isinstance(err, RuntimeError)
+    with pytest.raises(mod.KeyReuseError, match="key reused"):
+        raise err
 
 
 def test_NonConcreteBooleanIndexError() -> None:
-    """Test NonConcreteBooleanIndexError."""
-    obj = mod.NonConcreteBooleanIndexError()
-    assert obj is not None
+    """Verify NonConcreteBooleanIndexError is an IndexError and Exception."""
+    err = mod.NonConcreteBooleanIndexError("non-concrete bool")
+    assert isinstance(err, IndexError)
+    with pytest.raises(mod.NonConcreteBooleanIndexError, match="non-concrete bool"):
+        raise err
 
 
 def test_SimplifiedTraceback() -> None:
-    """Test SimplifiedTraceback."""
-    obj = mod.SimplifiedTraceback()
-    assert obj is not None
+    """Verify SimplifiedTraceback stores frames and metadata."""
+    obj = mod.SimplifiedTraceback(frames=["frame0"], id=10, name="tb", value="v")
+    assert obj.frames == ["frame0"]
+    assert obj.id == 10
+    assert obj.name == "tb"
+    assert obj.value == "v"
 
 
 def test_TracerArrayConversionError() -> None:
-    """Test TracerArrayConversionError."""
-    obj = mod.TracerArrayConversionError()
-    assert obj is not None
+    """Verify TracerArrayConversionError is a TypeError and Exception."""
+    err = mod.TracerArrayConversionError("tracer array")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerArrayConversionError, match="tracer array"):
+        raise err
 
 
 def test_TracerBoolConversionError() -> None:
-    """Test TracerBoolConversionError."""
-    obj = mod.TracerBoolConversionError()
-    assert obj is not None
+    """Verify TracerBoolConversionError is a TypeError and Exception."""
+    err = mod.TracerBoolConversionError("tracer bool")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerBoolConversionError, match="tracer bool"):
+        raise err
 
 
 def test_TracerIntegerConversionError() -> None:
-    """Test TracerIntegerConversionError."""
-    obj = mod.TracerIntegerConversionError()
-    assert obj is not None
+    """Verify TracerIntegerConversionError is a TypeError and Exception."""
+    err = mod.TracerIntegerConversionError("tracer int")
+    assert isinstance(err, TypeError)
+    with pytest.raises(mod.TracerIntegerConversionError, match="tracer int"):
+        raise err
 
 
 def test_UnexpectedTracerError() -> None:
-    """Test UnexpectedTracerError."""
-    obj = mod.UnexpectedTracerError()
-    assert obj is not None
+    """Verify UnexpectedTracerError is a RuntimeError and Exception."""
+    err = mod.UnexpectedTracerError("leaked tracer")
+    assert isinstance(err, RuntimeError)
+    with pytest.raises(mod.UnexpectedTracerError, match="leaked tracer"):
+        raise err

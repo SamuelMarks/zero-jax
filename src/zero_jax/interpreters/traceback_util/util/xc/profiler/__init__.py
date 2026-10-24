@@ -1,32 +1,127 @@
 """Frontend API routing for zero-jax.interpreters.traceback_util.util.xc.profiler."""
 
+from __future__ import annotations
+
 import ml_switcheroo_compiler
 
 import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
 class TraceMe:
-    def __init__(self, *args, **kwargs):
-        pass
+    """Frontend class for ``TraceMe``."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            *args: Input parameter ``args``.
+            **kwargs: Input parameter ``kwargs``.
+        """
 
 
-def __getattr__(name):
-    if hasattr(_ops, name):
-        return getattr(_ops, name)  # pragma: no cover
-    if hasattr(ml_switcheroo_compiler, name):
-        return getattr(ml_switcheroo_compiler, name)  # pragma: no cover
-    try:
-        from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+class ProfileOptions:
+    """Stub class for ProfileOptions."""
 
-        def stub(*args, **kwargs):
-            raise NotImplementedError(f"Stub for {name} is not implemented in backend")
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize ProfileOptions.
 
-        return stub
-    except ImportError:  # pragma: no cover
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
 
-        def stub(*args, **kwargs):  # pragma: no cover
-            raise NotImplementedError(
-                f"Stub for {name} is not implemented in backend"
-            )  # pragma: no cover
 
-        return stub  # pragma: no cover
+class ProfilerServer:
+    """Stub class for ProfilerServer."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize ProfilerServer.
+
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
+
+
+class ProfilerSession:
+    """Stub class for ProfilerSession."""
+
+    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
+        """Initialize ProfilerSession.
+
+        Args:
+            *args: Positional configuration arguments.
+            **kwargs: Keyword configuration arguments.
+        """
+        self.args = args
+        self.kwargs = kwargs
+
+
+def aggregate_profiled_instructions(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for aggregate_profiled_instructions.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def get_fdo_profile(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for get_fdo_profile.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def get_profiled_instructions_proto(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for get_profiled_instructions_proto.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def register_plugin_profiler(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Stub function for register_plugin_profiler.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: None stub return value.
+    """
+    return None
+
+
+def start_server(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
+    """Route start_server to the compiler proxy operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ConfigValue: Result of the compiler operation.
+    """
+    return _ops.start_server(*args, **kwargs)
