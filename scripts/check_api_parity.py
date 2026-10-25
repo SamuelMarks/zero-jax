@@ -1,4 +1,4 @@
-"""API parity checker against JAX snapshots and ml-ecosystem-snapshots (v0.0.4)."""
+"""API parity checker against JAX snapshots and ml-ecosystem-snapshots (v0.0.5)."""
 
 from __future__ import annotations
 

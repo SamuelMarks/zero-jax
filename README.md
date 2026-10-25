@@ -32,7 +32,7 @@ When you execute code using `zero-jax`, it dynamically traces the operations usi
 4. **Tier 4 (Frontends & Add-ons):** Repositories like `zero-flax`, `zero-optax`, and `zero-chex` build on top of `zero-jax` to provide Neural Network layers, optimizers, and typing without any heavy external dependencies.
 5. **Tier 5 (`zero-zoo`):** Headless CI pipelines that train models deterministically to assert float-for-float equivalence ("Golden Seed" testing) across all simulated frameworks.
 
-By maintaining structural API parity with the real JAX framework (verified via [`ml-ecosystem-snapshots`](https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/tag/v0.0.4)), `zero-jax` allows users to drop it in as a lightweight substitute in environments where installing the massive official JAX/XLA stack is unfeasible—such as highly constrained serverless functions, or directly inside a web browser natively via [Pyodide](https://pyodide.org/) and [PyScript](https://pyscript.net/).
+By maintaining structural API parity with the real JAX framework (verified via [`ml-ecosystem-snapshots`](https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/tag/v0.0.5)), `zero-jax` allows users to drop it in as a lightweight substitute in environments where installing the massive official JAX/XLA stack is unfeasible—such as highly constrained serverless functions, or directly inside a web browser natively via [Pyodide](https://pyodide.org/) and [PyScript](https://pyscript.net/).
 
 ---
 

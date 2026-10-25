@@ -95,33 +95,40 @@ class _JitWrapped:
 
 def jit(
     fun: VariadicCallable[PyTree],
+    in_shardings: ConfigValue = None,
+    out_shardings: ConfigValue = None,
     static_argnums: int | Sequence[int] | None = None,
-    static_argnames: str | Sequence[str] | None = None,
-    donate_argnums: int | Sequence[int] | None = None,
+    compiler_options: dict[str, ConfigValue] | None = None,
     donate_argnames: str | Sequence[str] | None = None,
-    keep_unused: bool = False,
+    static_argnames: str | Sequence[str] | None = None,
     device: ConfigValue = None,
-    backend: str | None = None,
     inline: bool = False,
+    keep_unused: bool = False,
+    donate_argnums: int | Sequence[int] | None = None,
+    backend: str | None = None,
     abstracted_axes: ConfigValue = None,
 ) -> VariadicCallable[PyTree]:
     """Compile a function for trace-based graph execution.
 
     Args:
         fun: The function to be JIT-compiled.
+        in_shardings: Optional input sharding specifications.
+        out_shardings: Optional output sharding specifications.
         static_argnums: Optional positional argument indices treated as static.
-        static_argnames: Optional keyword argument names treated as static.
-        donate_argnums: Optional positional argument indices whose buffers may be donated.
+        compiler_options: Optional dictionary of compiler options.
         donate_argnames: Optional keyword argument names whose buffers may be donated.
-        keep_unused: Whether to retain unused arguments in the compiled signature.
+        static_argnames: Optional keyword argument names treated as static.
         device: Optional target device for execution.
-        backend: Optional backend identifier string.
         inline: Whether to inline the compiled function into callers.
+        keep_unused: Whether to retain unused arguments in the compiled signature.
+        donate_argnums: Optional positional argument indices whose buffers may be donated.
+        backend: Optional backend identifier string.
         abstracted_axes: Optional specification of abstracted dynamic axes.
 
     Returns:
         VariadicCallable[PyTree]: A JIT-compiled wrapper around ``fun``.
     """
+    _ = (in_shardings, out_shardings, compiler_options, donate_argnames, device, inline, keep_unused, donate_argnums, backend, abstracted_axes)
     from ml_switcheroo_ir import LogicalGraph
 
     from zero_jax.tree_util.pytree import PyTreeDef
@@ -222,7 +229,6 @@ def grad(
     holomorphic: bool = False,
     allow_int: bool = False,
     reduce_axes: Sequence[str] = (),
-    return_value: bool = False,
 ) -> VariadicCallable[PyTree]:
     """Create a function that evaluates the gradient of ``fun``.
 
@@ -233,11 +239,11 @@ def grad(
         holomorphic: Whether to differentiate with respect to complex holomorphic inputs.
         allow_int: Whether to allow differentiating with respect to integer inputs.
         reduce_axes: Axis names to reduce over during differentiation.
-        return_value: Whether to return the primal value alongside the gradient.
 
     Returns:
         VariadicCallable[PyTree]: A function that computes the gradient of ``fun``.
     """
+    _ = (holomorphic, allow_int, reduce_axes)
 
     @functools.wraps(fun)
     def wrapped(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -406,24 +412,27 @@ def value_and_grad(
 def vmap(
     fun: VariadicCallable[PyTree],
     in_axes: int | Sequence[AxisSpec] | dict[str, AxisSpec] | None = 0,
-    out_axes: AxisSpec = 0,
     axis_name: str | None = None,
     axis_size: int | None = None,
+    out_axes: AxisSpec = 0,
     spmd_axis_name: str | tuple[str, ...] | None = None,
+    sum_match: bool = False,
 ) -> VariadicCallable[PyTree]:
     """Create a function which maps ``fun`` over argument axes.
 
     Args:
         fun: The function to be mapped over argument axes.
         in_axes: Specification of input axes to map over.
-        out_axes: Specification of where the mapped axis appears in the output.
         axis_name: Optional name for the mapped axis.
         axis_size: Optional explicit size of the mapped axis.
+        out_axes: Specification of where the mapped axis appears in the output.
         spmd_axis_name: Optional SPMD axis name or tuple of names.
+        sum_match: Whether to match summed axes during reverse-mode AD.
 
     Returns:
         VariadicCallable[PyTree]: A vectorized version of ``fun``.
     """
+    _ = (in_axes, axis_name, axis_size, out_axes, spmd_axis_name, sum_match)
     import ml_switcheroo_compiler.ops.control_flow as cf
 
     from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
@@ -521,11 +530,9 @@ def pmap(
     out_axes: AxisSpec = 0,
     static_broadcasted_argnums: int | Sequence[int] = (),
     devices: Sequence[ConfigValue] | None = None,
-    backend: str | None = None,
     axis_size: int | None = None,
+    backend: str | None = None,
     donate_argnums: int | Sequence[int] = (),
-    in_parts: ConfigValue = None,
-    out_parts: ConfigValue = None,
 ) -> VariadicCallable[PyTree]:
     """Create a parallel mapped function across devices.
 
@@ -536,15 +543,14 @@ def pmap(
         out_axes: Specification of output axes.
         static_broadcasted_argnums: Argument indices to broadcast statically.
         devices: Optional sequence of target devices.
-        backend: Optional backend identifier string.
         axis_size: Optional size of the mapped axis.
+        backend: Optional backend identifier string.
         donate_argnums: Argument indices whose buffers can be donated.
-        in_parts: Optional input partitioning specification.
-        out_parts: Optional output partitioning specification.
 
     Returns:
         VariadicCallable[PyTree]: A parallelized version of ``fun``.
     """
+    _ = (static_broadcasted_argnums, devices, backend, donate_argnums)
     return vmap(fun, in_axes=in_axes, out_axes=out_axes, axis_name=axis_name, axis_size=axis_size)
 
 

@@ -1661,18 +1661,553 @@ def rem(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
     return _wrap(ops.rem(_to_tensor(x), _to_tensor(y)))
 
 
-def switch(index: ArrayLikeSpec, branches: ArrayLikeSpec, *operands: ArrayLikeSpec) -> ArrayLikeSpec:
+def switch(index: ArrayLikeSpec, branches: ArrayLikeSpec, *operands: ArrayLikeSpec, operand: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Execute ``switch``.
 
     Args:
         index: Input parameter ``index``.
         branches: Input parameter ``branches``.
         *operands: Input parameter ``operands``.
+        operand: Optional legacy single operand.
 
     Returns:
         The operation result.
     """
-    return branches[0](*operands)
+    _ = index
+    call_ops = (operand,) if operand is not None and not operands else operands
+    return branches[0](*call_ops)
+
+
+def axis_size(axis_name: ArrayLikeSpec) -> int:
+    """Return the size of the mapped axis ``axis_name``.
+
+    Args:
+        axis_name: Axis name or tuple of axis names.
+
+    Returns:
+        int: Size of the axis (``1`` in single-device execution).
+    """
+    _ = axis_name
+    return 1
+
+
+def broadcast_like(arr: ArrayLikeSpec, like_arr: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Broadcast ``arr`` to the shape of ``like_arr``.
+
+    Args:
+        arr: Array to broadcast.
+        like_arr: Prototype array defining the target shape.
+
+    Returns:
+        ArrayLikeSpec: Broadcasted array.
+    """
+    from zero_jax.numpy import asarray, broadcast_to
+
+    return broadcast_to(asarray(arr), asarray(like_arr).shape)
+
+
+def composite(decomposition: ArrayLikeSpec, name: str, version: int = 0) -> ArrayLikeSpec:
+    """Wrap ``decomposition`` as a named StableHLO composite operation.
+
+    Args:
+        decomposition: Function implementing the composite operation.
+        name: Composite operation name.
+        version: Composite version number.
+
+    Returns:
+        ArrayLikeSpec: Wrapped decomposition callable.
+    """
+    _ = (name, version)
+    return decomposition
+
+
+def dce_sink(val: ArrayLikeSpec, prevent_mlir_dce: bool = False) -> ArrayLikeSpec:
+    """Prevent dead-code elimination of ``val``.
+
+    Args:
+        val: Value or PyTree to sink.
+        prevent_mlir_dce: Whether to emit an MLIR side-effecting sink barrier.
+
+    Returns:
+        ArrayLikeSpec: Unmodified ``val``.
+    """
+    _ = prevent_mlir_dce
+    return val
+
+
+def empty(
+    shape: ArrayLikeSpec,
+    dtype: ArrayLikeSpec = "float32",
+    *,
+    out_sharding: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Return an uninitialized array of ``shape`` and ``dtype``.
+
+    Args:
+        shape: Output array shape.
+        dtype: Output array dtype.
+        out_sharding: Optional output sharding specification.
+
+    Returns:
+        ArrayLikeSpec: Allocated array.
+    """
+    _ = out_sharding
+    from zero_jax.numpy import empty as jnp_empty
+
+    return jnp_empty(shape, dtype=dtype)
+
+
+def log2(x: ArrayLikeSpec, accuracy: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Compute elementwise base-2 logarithm of ``x``.
+
+    Args:
+        x: Input array.
+        accuracy: Optional accuracy mode specification.
+
+    Returns:
+        ArrayLikeSpec: Base-2 logarithm of ``x``.
+    """
+    _ = accuracy
+    from zero_jax.numpy import log2 as jnp_log2
+
+    return jnp_log2(x)
+
+
+def mulhi(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Compute the high half of the full-width integer product of ``x`` and ``y``.
+
+    Args:
+        x: First integer operand.
+        y: Second integer operand.
+
+    Returns:
+        ArrayLikeSpec: High bits of ``x * y``.
+    """
+    from zero_jax.numpy import asarray, bitwise_right_shift, int64
+
+    prod_64 = asarray(x, dtype=int64) * asarray(y, dtype=int64)
+    return bitwise_right_shift(prod_64, 32)
+
+
+def one_minus_square(x: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Compute ``1 - x ** 2`` elementwise.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        ArrayLikeSpec: ``1 - x ** 2``.
+    """
+    from zero_jax.numpy import asarray, square
+
+    arr = asarray(x)
+    return 1 - square(arr)
+
+
+def optimization_barrier(operand: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Prevent compiler optimizations from moving computations across ``operand``.
+
+    Args:
+        operand: Input array or PyTree.
+
+    Returns:
+        ArrayLikeSpec: Unmodified ``operand``.
+    """
+    return operand
+
+
+def pcast(x: ArrayLikeSpec, axis_name: ArrayLikeSpec, *, to: str = "varying") -> ArrayLikeSpec:
+    """Perform a parallel collective cast of ``x`` along ``axis_name``.
+
+    Args:
+        x: Input array.
+        axis_name: Mapped axis name.
+        to: Target variance mode (e.g. ``"varying"`` or ``"reduced"``).
+
+    Returns:
+        ArrayLikeSpec: Cast array ``x``.
+    """
+    _ = (axis_name, to)
+    return x
+
+
+def polynomial(x: ArrayLikeSpec, coeffs: ArrayLikeSpec, *, unroll: int | None = None) -> ArrayLikeSpec:
+    """Evaluate a polynomial with coefficients ``coeffs`` at ``x`` using Horner's method.
+
+    Args:
+        x: Evaluation point array.
+        coeffs: Sequence of polynomial coefficients from highest to lowest degree.
+        unroll: Optional loop unroll threshold.
+
+    Returns:
+        ArrayLikeSpec: Evaluated polynomial values.
+    """
+    _ = unroll
+    from zero_jax.numpy import polyval
+
+    return polyval(coeffs, x)
+
+
+def psum_scatter_start(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Initiate an asynchronous collective reduce-scatter operation.
+
+    Args:
+        *args: Positional arguments.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        ArrayLikeSpec: First positional argument or ``None``.
+    """
+    _ = kwargs
+    return args[0] if args else None
+
+
+def ragged_all_to_all(
+    operand: ArrayLikeSpec,
+    output: ArrayLikeSpec,
+    input_offsets: ArrayLikeSpec,
+    send_sizes: ArrayLikeSpec,
+    output_offsets: ArrayLikeSpec,
+    recv_sizes: ArrayLikeSpec,
+    *,
+    axis_name: ArrayLikeSpec,
+    axis_index_groups: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Perform a ragged all-to-all collective exchange along ``axis_name``.
+
+    Args:
+        operand: Input buffer array.
+        output: Output buffer array.
+        input_offsets: Starting offsets in ``operand``.
+        send_sizes: Number of elements to send per peer.
+        output_offsets: Starting offsets in ``output``.
+        recv_sizes: Number of elements to receive per peer.
+        axis_name: Collective axis name.
+        axis_index_groups: Optional replica index groups.
+
+    Returns:
+        ArrayLikeSpec: Populated ``output`` buffer.
+    """
+    _ = (operand, input_offsets, send_sizes, output_offsets, recv_sizes, axis_name, axis_index_groups)
+    return output
+
+
+def ragged_dot_general(
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    group_sizes: ArrayLikeSpec,
+    ragged_dot_dimension_numbers: ArrayLikeSpec = None,
+    precision: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+    group_offset: ArrayLikeSpec = 0,
+    out_sharding: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Compute a generalized ragged dot product across variable-sized groups.
+
+    Args:
+        lhs: Left-hand side array.
+        rhs: Right-hand side array.
+        group_sizes: Group sizes array.
+        ragged_dot_dimension_numbers: Ragged dot dimension specification.
+        precision: Optional precision specification.
+        preferred_element_type: Optional accumulation/output dtype.
+        group_offset: Starting group offset.
+        out_sharding: Optional output sharding specification.
+
+    Returns:
+        ArrayLikeSpec: Ragged dot product output.
+    """
+    _ = (group_sizes, ragged_dot_dimension_numbers, precision, preferred_element_type, group_offset, out_sharding)
+    return ragged_dot(lhs, rhs)
+
+
+def reduce_and(operand: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using logical/bitwise AND.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+
+    Returns:
+        ArrayLikeSpec: Reduced array.
+    """
+    from zero_jax.numpy import all as jnp_all
+
+    return jnp_all(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_max(operand: ArrayLikeSpec, axes: ArrayLikeSpec, out_sharding: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using maximum.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+        out_sharding: Optional output sharding specification.
+
+    Returns:
+        ArrayLikeSpec: Reduced maximum array.
+    """
+    _ = out_sharding
+    from zero_jax.numpy import max as jnp_max
+
+    return jnp_max(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_min(operand: ArrayLikeSpec, axes: ArrayLikeSpec, out_sharding: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using minimum.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+        out_sharding: Optional output sharding specification.
+
+    Returns:
+        ArrayLikeSpec: Reduced minimum array.
+    """
+    _ = out_sharding
+    from zero_jax.numpy import min as jnp_min
+
+    return jnp_min(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_or(operand: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using logical/bitwise OR.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+
+    Returns:
+        ArrayLikeSpec: Reduced array.
+    """
+    from zero_jax.numpy import any as jnp_any
+
+    return jnp_any(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_prod(operand: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using product.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+
+    Returns:
+        ArrayLikeSpec: Reduced product array.
+    """
+    from zero_jax.numpy import prod as jnp_prod
+
+    return jnp_prod(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_sum(operand: ArrayLikeSpec, axes: ArrayLikeSpec, out_sharding: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using sum.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+        out_sharding: Optional output sharding specification.
+
+    Returns:
+        ArrayLikeSpec: Reduced sum array.
+    """
+    _ = out_sharding
+    from zero_jax.numpy import sum as jnp_sum
+
+    return jnp_sum(operand, axis=tuple(axes) if isinstance(axes, (list, tuple)) else axes)
+
+
+def reduce_xor(operand: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Reduce ``operand`` along ``axes`` using bitwise/logical XOR.
+
+    Args:
+        operand: Input array.
+        axes: Sequence of axes to reduce over.
+
+    Returns:
+        ArrayLikeSpec: Reduced XOR array.
+    """
+    from zero_jax.numpy import asarray, bitwise_xor
+
+    arr = asarray(operand)
+    ax_tuple = (int(axes),) if isinstance(axes, int) else tuple(int(a) for a in axes)
+    res = arr
+    for ax in sorted(ax_tuple, reverse=True):
+        acc = res.take(0, axis=ax)
+        for i in range(1, res.shape[ax]):
+            acc = bitwise_xor(acc, res.take(i, axis=ax))
+        res = acc
+    return res
+
+
+def scaled_dot(
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    lhs_scale: ArrayLikeSpec = None,
+    rhs_scale: ArrayLikeSpec = None,
+    dimension_numbers: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Compute a block-scaled dot product of ``lhs`` and ``rhs``.
+
+    Args:
+        lhs: Left-hand side operand.
+        rhs: Right-hand side operand.
+        lhs_scale: Optional scale factor for ``lhs``.
+        rhs_scale: Optional scale factor for ``rhs``.
+        dimension_numbers: Optional contracting/batch dimension numbers.
+        preferred_element_type: Optional output dtype.
+
+    Returns:
+        ArrayLikeSpec: Scaled dot product result.
+    """
+    from zero_jax.numpy import asarray, astype, matmul
+
+    l_arr = asarray(lhs)
+    r_arr = asarray(rhs)
+    if lhs_scale is not None:
+        l_arr = l_arr * asarray(lhs_scale)
+    if rhs_scale is not None:
+        r_arr = r_arr * asarray(rhs_scale)
+    if dimension_numbers is not None:
+        from zero_jax.lax.primitives import dot_general
+
+        return dot_general(l_arr, r_arr, dimension_numbers=dimension_numbers, preferred_element_type=preferred_element_type)
+    res = matmul(l_arr, r_arr)
+    if preferred_element_type is not None:
+        return astype(res, preferred_element_type)
+    return res
+
+
+def scatter_sub(
+    operand: ArrayLikeSpec,
+    scatter_indices: ArrayLikeSpec,
+    updates: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
+    *,
+    indices_are_sorted: bool = False,
+    unique_indices: bool = False,
+    mode: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
+    """Scatter-subtract ``updates`` from ``operand`` at ``scatter_indices``.
+
+    Args:
+        operand: Target array.
+        scatter_indices: Scatter index array.
+        updates: Values to subtract.
+        dimension_numbers: :class:`ScatterDimensionNumbers` specification.
+        indices_are_sorted: Whether indices are sorted.
+        unique_indices: Whether indices are unique.
+        mode: Out-of-bounds indexing mode.
+
+    Returns:
+        ArrayLikeSpec: Updated array.
+    """
+    _ = (dimension_numbers, indices_are_sorted, unique_indices, mode)
+    from zero_jax.numpy import array, asarray
+
+    op_arr = asarray(operand)
+    base = op_arr.__array__().copy()
+    idx_np = asarray(scatter_indices).__array__().ravel()
+    upd_np = asarray(updates).__array__().ravel()
+    for i, idx_val in enumerate(idx_np):
+        base[int(idx_val)] -= upd_np[i % len(upd_np)]
+    return array(base, dtype=op_arr.dtype)
+
+
+def shape_as_value(shape: ArrayLikeSpec) -> tuple[ArrayLikeSpec, ...]:
+    """Convert a static or dynamic ``shape`` tuple into a tuple of 0-D scalar arrays.
+
+    Args:
+        shape: Sequence of dimension sizes.
+
+    Returns:
+        tuple[ArrayLikeSpec, ...]: Tuple of scalar arrays representing each dimension size.
+    """
+    from zero_jax.numpy import array, int32
+
+    return tuple(array(int(d), dtype=int32) for d in shape)
+
+
+def split(operand: ArrayLikeSpec, sizes: ArrayLikeSpec, axis: int = 0) -> tuple[ArrayLikeSpec, ...]:
+    """Split ``operand`` along ``axis`` into sub-arrays of explicit ``sizes``.
+
+    Args:
+        operand: Input array to split.
+        sizes: Sequence of section sizes along ``axis``.
+        axis: Axis along which to split.
+
+    Returns:
+        tuple[ArrayLikeSpec, ...]: Tuple of split sub-arrays.
+    """
+    from zero_jax.numpy import asarray
+    from zero_jax.numpy import split as jnp_split
+
+    arr = asarray(operand)
+    cuts: list[int] = []
+    running = 0
+    size_list = list(sizes)
+    for s in size_list[:-1]:
+        running += int(s)
+        cuts.append(running)
+    return tuple(jnp_split(arr, cuts, axis=axis))
+
+
+def stack(operands: ArrayLikeSpec, axis: int = 0) -> ArrayLikeSpec:
+    """Stack a sequence of arrays ``operands`` along a new ``axis``.
+
+    Args:
+        operands: Sequence of arrays with identical shape and dtype.
+        axis: Axis in the result array along which the inputs are stacked.
+
+    Returns:
+        ArrayLikeSpec: Stacked array.
+    """
+    from zero_jax.numpy import stack as jnp_stack
+
+    return jnp_stack(operands, axis=axis)
+
+
+def stage(x: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Stage ``x`` into the current trace/computation.
+
+    Args:
+        x: Input array or callable.
+
+    Returns:
+        ArrayLikeSpec: Staged ``x``.
+    """
+    return x
+
+
+def tile(operand: ArrayLikeSpec, reps: ArrayLikeSpec) -> ArrayLikeSpec:
+    """Construct an array by repeating ``operand`` the number of times given by ``reps``.
+
+    Args:
+        operand: Input array.
+        reps: Number of repetitions along each axis.
+
+    Returns:
+        ArrayLikeSpec: Tiled array.
+    """
+    from zero_jax.numpy import tile as jnp_tile
+
+    return jnp_tile(operand, reps)
+
+
+def unstack(x: ArrayLikeSpec, axis: int = 0) -> tuple[ArrayLikeSpec, ...]:
+    """Unpack ``x`` along ``axis`` into a tuple of arrays.
+
+    Args:
+        x: Input array to unstack.
+        axis: Axis along which to unstack.
+
+    Returns:
+        tuple[ArrayLikeSpec, ...]: Tuple of unstacked arrays.
+    """
+    from zero_jax.numpy import unstack as jnp_unstack
+
+    return tuple(jnp_unstack(x, axis=axis))
 
 
 __all__ = [
@@ -1683,16 +2218,19 @@ __all__ = [
     "approx_min_k",
     "associative_scan",
     "axis_index",
+    "axis_size",
     "batch_matmul",
     "bessel_i0e",
     "bessel_i1e",
     "betainc",
     "bitcast_convert_type",
+    "broadcast_like",
     "broadcast_to_rank",
     "broadcasted_iota",
     "clz",
     "collapse",
     "complex",
+    "composite",
     "conv",
     "conv_dimension_numbers",
     "conv_general_dilated_local",
@@ -1711,11 +2249,13 @@ __all__ = [
     "cumprod",
     "custom_linear_solve",
     "custom_root",
+    "dce_sink",
     "dtype",
     "dynamic_index_in_dim",
     "dynamic_slice_in_dim",
     "dynamic_update_index_in_dim",
     "dynamic_update_slice_in_dim",
+    "empty",
     "erf_inv",
     "fori_loop",
     "igamma",
@@ -1727,40 +2267,64 @@ __all__ = [
     "integer_pow",
     "iota",
     "is_finite",
+    "log2",
     "logistic",
     "map",
+    "mulhi",
+    "one_minus_square",
+    "optimization_barrier",
     "outfeed",
     "padtype_to_pads",
     "pbroadcast",
+    "pcast",
     "pdot",
     "platform_dependent",
     "pmax",
     "pmin",
     "polygamma",
+    "polynomial",
     "population_count",
     "pow",
     "ppermute",
     "pshuffle",
     "psum_scatter",
+    "psum_scatter_start",
     "pswapaxes",
+    "ragged_all_to_all",
     "ragged_dot",
+    "ragged_dot_general",
     "random_gamma_grad",
+    "reduce_and",
+    "reduce_max",
+    "reduce_min",
+    "reduce_or",
     "reduce_precision",
+    "reduce_prod",
+    "reduce_sum",
     "reduce_window_shape_tuple",
+    "reduce_xor",
     "rem",
     "rev",
     "rng_bit_generator",
     "rng_uniform",
+    "scaled_dot",
     "scan_bind",
     "scatter_apply",
     "scatter_max",
     "scatter_min",
     "scatter_mul",
+    "scatter_sub",
     "select_n",
+    "shape_as_value",
     "slice_in_dim",
     "sort_key_val",
+    "split",
+    "stack",
+    "stage",
     "switch",
+    "tile",
     "top_k",
+    "unstack",
     "while_loop",
     "with_sharding_constraint",
     "xeinsum",

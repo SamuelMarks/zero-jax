@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from ml_switcheroo_compiler import random
 
-from zero_jax._types import ArrayLikeSpec
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
@@ -43,21 +43,31 @@ def fold_in(key: ArrayLikeSpec, data: ArrayLikeSpec) -> ArrayLikeSpec:
     return _wrap(random_stateless.stateless_fold_in(key_t, data))
 
 
-def PRNGKey(seed: int) -> ArrayLikeSpec:
+def PRNGKey(seed: int, *, impl: ConfigValue = None) -> ArrayLikeSpec:
     """Creates a PRNG key given an integer seed.
 
     Args:
         seed: The integer seed for the PRNG key.
+        impl: Optional PRNG implementation specification.
 
     Returns:
         A PRNG key.
     """
+    _ = impl
     from zero_jax.numpy.lax_numpy import array
 
     return array([0, int(seed)])
 
 
-def uniform(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None, minval: float = 0.0, maxval: float = 1.0) -> ArrayLikeSpec:
+def uniform(
+    key: ArrayLikeSpec,
+    shape: ArrayLikeSpec = (),
+    dtype: ArrayLikeSpec = None,
+    minval: float = 0.0,
+    maxval: float = 1.0,
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples uniform random values from a given key.
 
     Args:
@@ -66,10 +76,12 @@ def uniform(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = Non
         dtype: The dtype of the output array.
         minval: The minimum value of the uniform distribution.
         maxval: The maximum value of the uniform distribution.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         An array of uniform random values.
     """
+    _ = out_sharding
     from ml_switcheroo_compiler.core.config import config
 
     if dtype is None:
@@ -77,17 +89,25 @@ def uniform(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = Non
     return _wrap(random.uniform(_to_tensor(key), shape=shape, dtype=dtype, minval=minval, maxval=maxval))
 
 
-def normal(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def normal(
+    key: ArrayLikeSpec,
+    shape: ArrayLikeSpec = (),
+    dtype: ArrayLikeSpec = None,
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples standard normal random values from a given key.
 
     Args:
         key: The PRNG key to use for sampling.
         shape: The shape of the output array.
         dtype: The dtype of the output array.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         An array of standard normal random values.
     """
+    _ = out_sharding
     from ml_switcheroo_compiler.core.config import config
 
     if dtype is None:
@@ -95,7 +115,15 @@ def normal(key: ArrayLikeSpec, shape: ArrayLikeSpec, dtype: ArrayLikeSpec = None
     return _wrap(random.normal(_to_tensor(key), shape=shape, dtype=dtype))
 
 
-def randint(key: ArrayLikeSpec, shape: ArrayLikeSpec, minval: int, maxval: int, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def randint(
+    key: ArrayLikeSpec,
+    shape: ArrayLikeSpec,
+    minval: int,
+    maxval: int,
+    dtype: ArrayLikeSpec = None,
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples uniform random integers from a given key.
 
     Args:
@@ -104,10 +132,12 @@ def randint(key: ArrayLikeSpec, shape: ArrayLikeSpec, minval: int, maxval: int, 
         minval: The minimum integer value (inclusive).
         maxval: The maximum integer value (exclusive).
         dtype: The integer dtype of the output array.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         An array of uniform random integers.
     """
+    _ = out_sharding
     from ml_switcheroo_compiler.core.dtype import DType
 
     if dtype is None:
@@ -115,23 +145,42 @@ def randint(key: ArrayLikeSpec, shape: ArrayLikeSpec, minval: int, maxval: int, 
     return _wrap(random.randint(_to_tensor(key), shape=shape, minval=minval, maxval=maxval, dtype=dtype))
 
 
-def bernoulli(key: ArrayLikeSpec, p: float = 0.5, shape: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def bernoulli(
+    key: ArrayLikeSpec,
+    p: float = 0.5,
+    shape: ArrayLikeSpec = None,
+    mode: str = "low",
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples Bernoulli random variables from a given key.
 
     Args:
         key: The PRNG key to use for sampling.
         p: The probability of success (getting 1).
         shape: The shape of the output array.
+        mode: Precision mode (``"low"`` or ``"high"``).
+        out_sharding: Optional output sharding specification.
 
     Returns:
         A boolean array of Bernoulli random variables.
     """
+    _ = (mode, out_sharding)
     if shape is None:
         shape = ()
     return _wrap(random.bernoulli(_to_tensor(key), p=p, shape=shape))
 
 
-def categorical(key: ArrayLikeSpec, logits: ArrayLikeSpec, axis: int = -1, shape: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def categorical(
+    key: ArrayLikeSpec,
+    logits: ArrayLikeSpec,
+    axis: int = -1,
+    shape: ArrayLikeSpec = None,
+    *,
+    replace: bool = True,
+    mode: str | None = None,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples categorical random variables from a given key.
 
     Args:
@@ -139,16 +188,27 @@ def categorical(key: ArrayLikeSpec, logits: ArrayLikeSpec, axis: int = -1, shape
         logits: Unnormalized log probabilities.
         axis: The axis along which to sample.
         shape: The shape of the output array.
+        replace: Whether to sample with replacement.
+        mode: Optional sampling precision mode.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         An array of categorical random samples.
     """
+    _ = (replace, mode, out_sharding)
     from ml_switcheroo_compiler import random
 
     return _wrap(random.categorical(_to_tensor(key), _to_tensor(logits), axis=axis, shape=shape))
 
 
-def permutation(key: ArrayLikeSpec, x: ArrayLikeSpec, axis: int = 0, independent: bool = False) -> ArrayLikeSpec:
+def permutation(
+    key: ArrayLikeSpec,
+    x: ArrayLikeSpec,
+    axis: int = 0,
+    independent: bool = False,
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Randomly permutes a sequence or array.
 
     Args:
@@ -156,10 +216,12 @@ def permutation(key: ArrayLikeSpec, x: ArrayLikeSpec, axis: int = 0, independent
         x: An integer specifying the range (if an int) or an array to permute.
         axis: The axis along which to permute.
         independent: Whether to permute independently along other axes.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         A randomly permuted sequence or array.
     """
+    _ = out_sharding
     from ml_switcheroo_compiler import random
 
     from zero_jax._types import ArrayProtocol
@@ -181,6 +243,7 @@ def choice(
     replace: bool = True,
     p: ArrayLikeSpec = None,
     axis: int = 0,
+    mode: str | None = None,
 ) -> ArrayLikeSpec:
     """Generates a random sample from a given 1-D array.
 
@@ -191,10 +254,12 @@ def choice(
         replace: Whether the sample is with or without replacement.
         p: The probabilities associated with each entry in a.
         axis: The axis along which to perform the selection.
+        mode: Optional sampling mode.
 
     Returns:
         An array containing the random samples.
     """
+    _ = mode
     from ml_switcheroo_compiler import random
 
     from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
@@ -211,7 +276,15 @@ def choice(
     )
 
 
-def truncated_normal(key: ArrayLikeSpec, lower: ArrayLikeSpec, upper: ArrayLikeSpec, shape: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def truncated_normal(
+    key: ArrayLikeSpec,
+    lower: ArrayLikeSpec,
+    upper: ArrayLikeSpec,
+    shape: ArrayLikeSpec = None,
+    dtype: ArrayLikeSpec = None,
+    *,
+    out_sharding: ConfigValue = None,
+) -> ArrayLikeSpec:
     """Samples truncated normal random values from a given key.
 
     Args:
@@ -220,10 +293,12 @@ def truncated_normal(key: ArrayLikeSpec, lower: ArrayLikeSpec, upper: ArrayLikeS
         upper: The upper bound.
         shape: The shape of the output array.
         dtype: The dtype of the output array.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         An array of truncated normal random values.
     """
+    _ = out_sharding
     from ml_switcheroo_compiler.core.config import config
 
     if dtype is None:

@@ -143,6 +143,11 @@ def test_get_signatures_and_api_parity(tmp_path: Path) -> None:
     assert "valid_fn" in sigs and sigs["no_sig"] == "(...)"
     assert run_checks.get_signatures(mod, prefix="xla_client") == {}
 
+    assert run_checks._resolve_zero_jax_endpoint("jax.numpy.sin") is True
+    assert run_checks._resolve_zero_jax_endpoint("jax.Array.sum") is True
+    assert run_checks._resolve_zero_jax_endpoint("jax.nonexistent_mod.foo") is False
+    assert run_checks._resolve_zero_jax_endpoint("jax.numpy.nonexistent_fn") is False
+
     assert run_checks.verify_ecosystem_snapshot() is True
     with patch("os.path.exists", return_value=False):
         assert run_checks.verify_ecosystem_snapshot() is True

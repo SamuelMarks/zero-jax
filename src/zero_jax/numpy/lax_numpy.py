@@ -242,12 +242,17 @@ class ndarray:
         """
         return swapaxes(self, -2, -1)
 
-    def item(self) -> ArrayLikeSpec:
+    def item(self, *args: int) -> ArrayLikeSpec:
         """Copy an element of an array to a standard Python scalar and return it.
+
+        Args:
+            *args: Optional flat or multi-dimensional integer index.
 
         Returns:
             ArrayLikeSpec: Python scalar value.
         """
+        if args:
+            return self.__array__().item(*args)
         return self._tensor.item()
 
     def tolist(self) -> ArrayLikeSpec:
@@ -258,64 +263,91 @@ class ndarray:
         """
         return self.__array__().tolist()
 
-    def astype(self, dtype: DTypeSpec) -> ArrayLikeSpec:
+    def astype(
+        self,
+        dtype: DTypeSpec,
+        copy: builtins.bool = False,
+        device: ConfigValue = None,
+    ) -> ArrayLikeSpec:
         """Copy of the array, cast to a specified type.
 
         Args:
             dtype: Target dtype.
+            copy: Whether to force a copy.
+            device: Optional target device.
 
         Returns:
             ArrayLikeSpec: Cast array.
         """
-        return astype(self, dtype)
+        return astype(self, dtype, copy=copy, device=device)
 
-    def reshape(self, *shape: ArrayLikeSpec) -> ArrayLikeSpec:
+    def reshape(
+        self,
+        *args: ArrayLikeSpec,
+        order: str = "C",
+        out_sharding: ConfigValue = None,
+    ) -> ArrayLikeSpec:
         """Return an array containing the same data with a new shape.
 
         Args:
-            *shape: New shape specification (either a tuple/list or multiple int arguments).
+            *args: New shape specification (either a tuple/list or multiple int arguments).
+            order: Memory layout order (``"C"`` or ``"F"``).
+            out_sharding: Optional output sharding specification.
 
         Returns:
             ArrayLikeSpec: Reshaped array.
         """
-        newshape = tuple(int(d) for d in shape[0]) if len(shape) == 1 and isinstance(shape[0], (tuple, list)) else tuple(int(d) for d in shape)
+        _ = (order, out_sharding)
+        newshape = tuple(int(d) for d in args[0]) if len(args) == 1 and isinstance(args[0], (tuple, list)) else tuple(int(d) for d in args)
         return reshape(self, newshape)
 
-    def transpose(self, *axes: ArrayLikeSpec) -> ArrayLikeSpec:
+    def transpose(self, *args: ArrayLikeSpec) -> ArrayLikeSpec:
         """Return a view of the array with axes transposed.
 
         Args:
-            *axes: Optional permutation of axes.
+            *args: Optional permutation of axes.
 
         Returns:
             ArrayLikeSpec: Transposed array.
         """
-        if not axes or axes == (None,):
+        if not args or args == (None,):
             return transpose(self, None)
-        if len(axes) == 1 and isinstance(axes[0], (tuple, list)):
-            return transpose(self, [int(a) for a in axes[0]])
-        return transpose(self, [int(a) for a in axes])
+        if len(args) == 1 and isinstance(args[0], (tuple, list)):
+            return transpose(self, [int(a) for a in args[0]])
+        return transpose(self, [int(a) for a in args])
 
-    def ravel(self, order: str = "C") -> ArrayLikeSpec:
+    def ravel(
+        self,
+        order: str = "C",
+        out_sharding: ConfigValue = None,
+    ) -> ArrayLikeSpec:
         """Return a flattened 1-D array.
 
         Args:
             order: Memory layout order (``"C"`` or ``"F"``).
+            out_sharding: Optional output sharding specification.
 
         Returns:
             ArrayLikeSpec: Flattened 1-D array.
         """
+        _ = out_sharding
         return ravel(self, order=order)
 
-    def flatten(self, order: str = "C") -> ArrayLikeSpec:
+    def flatten(
+        self,
+        order: str = "C",
+        out_sharding: ConfigValue = None,
+    ) -> ArrayLikeSpec:
         """Return a copy of the array collapsed into one dimension.
 
         Args:
             order: Memory layout order (``"C"`` or ``"F"``).
+            out_sharding: Optional output sharding specification.
 
         Returns:
             ArrayLikeSpec: Flattened 1-D array.
         """
+        _ = out_sharding
         return ravel(self, order=order)
 
     def squeeze(self, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -337,6 +369,7 @@ class ndarray:
         keepdims: builtins.bool = False,
         initial: ArrayLikeSpec = None,
         where: ArrayLikeSpec = None,
+        promote_integers: builtins.bool = True,
     ) -> ArrayLikeSpec:
         """Return the sum of the array elements over the given axis.
 
@@ -347,16 +380,642 @@ class ndarray:
             keepdims: Whether reduced axes are left in the result as dimensions with size one.
             initial: Optional starting value for the sum.
             where: Optional boolean mask of elements to include.
+            promote_integers: Whether integer inputs are promoted to default integer width.
 
         Returns:
             ArrayLikeSpec: Summed array.
         """
+        _ = (out, promote_integers)
         res = sum(self, axis=axis, keepdims=keepdims, where=where)
         if initial is not None:
             res = add(res, initial)
         if dtype is not None:
             res = astype(res, dtype)
         return res
+
+    def addressable_data(self, index: int) -> ndarray:
+        """Return the addressable shard array at ``index``.
+
+        Args:
+            index: Shard index.
+
+        Returns:
+            ndarray: Addressable array shard.
+        """
+        _ = index
+        return self
+
+    def all(
+        self,
+        axis: ArrayLikeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        *,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Test whether all array elements along a given axis evaluate to True.
+
+        Args:
+            axis: Axis or axes along which a logical AND reduction is performed.
+            out: Unused output parameter.
+            keepdims: Whether reduced axes are retained with size 1.
+            where: Optional boolean mask of elements to include.
+
+        Returns:
+            ArrayLikeSpec: Boolean result array.
+        """
+        _ = out
+        arr = _wrap(ops.where(_to_tensor(where), self._tensor, _to_tensor(True))) if where is not None else self
+        return all(arr, axis=axis, keepdims=keepdims)
+
+    def any(
+        self,
+        axis: ArrayLikeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        *,
+        where: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Test whether any array element along a given axis evaluates to True.
+
+        Args:
+            axis: Axis or axes along which a logical OR reduction is performed.
+            out: Unused output parameter.
+            keepdims: Whether reduced axes are retained with size 1.
+            where: Optional boolean mask of elements to include.
+
+        Returns:
+            ArrayLikeSpec: Boolean result array.
+        """
+        _ = out
+        arr = _wrap(ops.where(_to_tensor(where), self._tensor, _to_tensor(False))) if where is not None else self
+        return any(arr, axis=axis, keepdims=keepdims)
+
+    def argmax(
+        self,
+        axis: int | None = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool | None = None,
+    ) -> ArrayLikeSpec:
+        """Return indices of the maximum values along the given axis.
+
+        Args:
+            axis: Axis along which to operate.
+            out: Unused output parameter.
+            keepdims: Whether reduced axis is retained with size 1.
+
+        Returns:
+            ArrayLikeSpec: Array of indices.
+        """
+        _ = out
+        return argmax(self, axis=axis, keepdims=builtins.bool(keepdims))
+
+    def argmin(
+        self,
+        axis: int | None = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool | None = None,
+    ) -> ArrayLikeSpec:
+        """Return indices of the minimum values along the given axis.
+
+        Args:
+            axis: Axis along which to operate.
+            out: Unused output parameter.
+            keepdims: Whether reduced axis is retained with size 1.
+
+        Returns:
+            ArrayLikeSpec: Array of indices.
+        """
+        _ = out
+        return argmin(self, axis=axis, keepdims=builtins.bool(keepdims))
+
+    def argpartition(self, kth: int, axis: int = -1) -> ArrayLikeSpec:
+        """Return indices that would partition this array along ``axis``.
+
+        Args:
+            kth: Element index to partition by.
+            axis: Axis along which to sort.
+
+        Returns:
+            ArrayLikeSpec: Indices of partitioned array.
+        """
+        return argpartition(self, kth=kth, axis=axis)
+
+    def argsort(
+        self,
+        axis: int | None = -1,
+        *,
+        kind: str | None = None,
+        order: ConfigValue = None,
+        stable: builtins.bool = True,
+        descending: builtins.bool = False,
+    ) -> ArrayLikeSpec:
+        """Return the indices that would sort this array.
+
+        Args:
+            axis: Axis along which to sort.
+            kind: Sorting algorithm (unused).
+            order: Field order (unused).
+            stable: Whether to preserve relative order of equal elements.
+            descending: Whether to sort in descending order.
+
+        Returns:
+            ArrayLikeSpec: Array of sort indices.
+        """
+        _ = stable
+        res = argsort(self, axis=axis, kind=kind, order=order)
+        if descending:
+            flip_ax = 0 if axis is None else axis
+            return flip(res, axis=flip_ax)
+        return res
+
+    def byteswap(self) -> ArrayLikeSpec:
+        """Swap the bytes of the array elements.
+
+        Returns:
+            ArrayLikeSpec: Byte-swapped array.
+        """
+        return array(self.__array__().byteswap(), dtype=self.dtype)
+
+    def choose(
+        self,
+        choices: ArrayLikeSpec,
+        out: ArrayLikeSpec = None,
+        mode: str = "raise",
+    ) -> ArrayLikeSpec:
+        """Construct an array from an index array and a list of arrays to choose from.
+
+        Args:
+            choices: Sequence of choice arrays.
+            out: Unused output array.
+            mode: Out-of-bounds index handling mode.
+
+        Returns:
+            ArrayLikeSpec: Chosen array.
+        """
+        return choose(self, choices, out=out, mode=mode)
+
+    def clip(
+        self,
+        min: ArrayLikeSpec = None,
+        max: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return an array whose values are limited to ``[min, max]``.
+
+        Args:
+            min: Minimum value.
+            max: Maximum value.
+
+        Returns:
+            ArrayLikeSpec: Clipped array.
+        """
+        return clip(self, a_min=min, a_max=max)
+
+    def compress(
+        self,
+        condition: ArrayLikeSpec,
+        axis: int | None = None,
+        *,
+        out: ArrayLikeSpec = None,
+        size: int | None = None,
+        fill_value: ArrayLikeSpec = 0,
+    ) -> ArrayLikeSpec:
+        """Return selected slices of this array along given axis.
+
+        Args:
+            condition: 1-D boolean array selecting entries.
+            axis: Axis along which to take slices.
+            out: Unused output array.
+            size: Optional static output size.
+            fill_value: Padding value when ``size`` is specified.
+
+        Returns:
+            ArrayLikeSpec: Compressed array.
+        """
+        return compress(condition, self, axis=axis, size=size, fill_value=fill_value, out=out)
+
+    def conj(self) -> ArrayLikeSpec:
+        """Return the complex conjugate, element-wise.
+
+        Returns:
+            ArrayLikeSpec: Complex-conjugated array.
+        """
+        return conj(self)
+
+    def conjugate(self) -> ArrayLikeSpec:
+        """Return the complex conjugate, element-wise.
+
+        Returns:
+            ArrayLikeSpec: Complex-conjugated array.
+        """
+        return conjugate(self)
+
+    def copy(self) -> ArrayLikeSpec:
+        """Return a copy of the array.
+
+        Returns:
+            ArrayLikeSpec: Copied array.
+        """
+        return copy(self)
+
+    def copy_to_host_async(self) -> None:
+        """Request an asynchronous copy of the array to host memory."""
+
+    def cumprod(
+        self,
+        axis: int | None = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the cumulative product of elements along a given axis.
+
+        Args:
+            axis: Axis along which the cumulative product is computed.
+            dtype: Optional dtype of the returned array.
+            out: Unused output parameter.
+
+        Returns:
+            ArrayLikeSpec: Cumulative product array.
+        """
+        return cumprod(self, axis=axis, dtype=dtype, out=out)
+
+    def cumsum(
+        self,
+        axis: int | None = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the cumulative sum of elements along a given axis.
+
+        Args:
+            axis: Axis along which the cumulative sum is computed.
+            dtype: Optional dtype of the returned array.
+            out: Unused output parameter.
+
+        Returns:
+            ArrayLikeSpec: Cumulative sum array.
+        """
+        _ = out
+        return cumsum(self, axis=axis, dtype=dtype)
+
+    def diagonal(
+        self,
+        offset: int = 0,
+        axis1: int = 0,
+        axis2: int = 1,
+    ) -> ArrayLikeSpec:
+        """Return specified diagonals.
+
+        Args:
+            offset: Offset of the diagonal from the main diagonal.
+            axis1: First axis of the 2-D sub-arrays.
+            axis2: Second axis of the 2-D sub-arrays.
+
+        Returns:
+            ArrayLikeSpec: Array of diagonals.
+        """
+        return diagonal(self, offset=offset, axis1=axis1, axis2=axis2)
+
+    def dot(
+        self,
+        b: ArrayLikeSpec,
+        *,
+        precision: ConfigValue = None,
+        preferred_element_type: DTypeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Compute the dot product of this array with ``b``.
+
+        Args:
+            b: Second operand.
+            precision: Optional matmul precision.
+            preferred_element_type: Optional accumulation/output dtype.
+
+        Returns:
+            ArrayLikeSpec: Dot product result.
+        """
+        _ = precision
+        res = dot(self, b)
+        if preferred_element_type is not None:
+            return astype(res, preferred_element_type)
+        return res
+
+    def nonzero(
+        self,
+        *,
+        fill_value: ArrayLikeSpec = None,
+        size: int | None = None,
+    ) -> tuple[ArrayLikeSpec, ...]:
+        """Return the indices of the elements that are non-zero.
+
+        Args:
+            fill_value: Optional padding value when ``size`` is specified.
+            size: Optional static number of non-zero elements to return.
+
+        Returns:
+            tuple[ArrayLikeSpec, ...]: Tuple of index arrays for each dimension.
+        """
+        return nonzero(self, size=size, fill_value=fill_value)
+
+    def prod(
+        self,
+        axis: ArrayLikeSpec = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+        initial: ArrayLikeSpec = None,
+        where: ArrayLikeSpec = None,
+        promote_integers: builtins.bool = True,
+    ) -> ArrayLikeSpec:
+        """Return the product of the array elements over a given axis.
+
+        Args:
+            axis: Axis or axes along which a product is performed.
+            dtype: Optional dtype of the returned array.
+            out: Unused output parameter.
+            keepdims: Whether reduced axes are retained with size 1.
+            initial: Optional starting value for the product.
+            where: Optional boolean mask of elements to include.
+            promote_integers: Whether integer inputs are promoted.
+
+        Returns:
+            ArrayLikeSpec: Product array.
+        """
+        _ = (out, promote_integers)
+        arr = _wrap(ops.where(_to_tensor(where), self._tensor, _to_tensor(1))) if where is not None else self
+        res = prod(arr, axis=axis, dtype=dtype, keepdims=keepdims)
+        if initial is not None:
+            res = multiply(res, initial)
+        return res
+
+    def ptp(
+        self,
+        axis: ArrayLikeSpec = None,
+        out: ArrayLikeSpec = None,
+        keepdims: builtins.bool = False,
+    ) -> ArrayLikeSpec:
+        """Return the peak-to-peak (maximum - minimum) value along a given axis.
+
+        Args:
+            axis: Axis along which to find the peaks.
+            out: Unused output parameter.
+            keepdims: Whether reduced axes are retained with size 1.
+
+        Returns:
+            ArrayLikeSpec: Peak-to-peak array.
+        """
+        return ptp(self, axis=axis, out=out, keepdims=keepdims)
+
+    def repeat(
+        self,
+        repeats: ArrayLikeSpec,
+        axis: int | None = None,
+        *,
+        total_repeat_length: int | None = None,
+        out_sharding: ConfigValue = None,
+    ) -> ArrayLikeSpec:
+        """Repeat elements of an array.
+
+        Args:
+            repeats: Number of repetitions for each element.
+            axis: Axis along which to repeat values.
+            total_repeat_length: Optional static total repeat length.
+            out_sharding: Optional output sharding specification.
+
+        Returns:
+            ArrayLikeSpec: Repeated array.
+        """
+        _ = (total_repeat_length, out_sharding)
+        return repeat(self, repeats=repeats, axis=axis)
+
+    def round(
+        self,
+        decimals: int = 0,
+        out: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Round an array to the given number of decimals.
+
+        Args:
+            decimals: Number of decimal places to round to.
+            out: Unused output parameter.
+
+        Returns:
+            ArrayLikeSpec: Rounded array.
+        """
+        _ = out
+        return round(self, decimals=decimals)
+
+    def searchsorted(
+        self,
+        v: ArrayLikeSpec,
+        side: str = "left",
+        sorter: ArrayLikeSpec = None,
+        *,
+        method: str = "scan",
+    ) -> ArrayLikeSpec:
+        """Find indices where elements should be inserted to maintain order.
+
+        Args:
+            v: Values to insert into ``self``.
+            side: ``"left"`` or ``"right"``.
+            sorter: Optional array of integer indices that sort ``self``.
+            method: Search algorithm name.
+
+        Returns:
+            ArrayLikeSpec: Array of insertion points.
+        """
+        _ = method
+        return searchsorted(self, v, side=side, sorter=sorter)
+
+    def sort(
+        self,
+        axis: int | None = -1,
+        *,
+        kind: str | None = None,
+        order: ConfigValue = None,
+        stable: builtins.bool = True,
+        descending: builtins.bool = False,
+    ) -> ArrayLikeSpec:
+        """Return a sorted copy of an array.
+
+        Args:
+            axis: Axis along which to sort.
+            kind: Sorting algorithm (unused).
+            order: Field order (unused).
+            stable: Whether to use a stable sort.
+            descending: Whether to sort in descending order.
+
+        Returns:
+            ArrayLikeSpec: Sorted array.
+        """
+        _ = stable
+        res = sort(self, axis=axis, kind=kind, order=order)
+        if descending:
+            flip_ax = 0 if axis is None else axis
+            return flip(res, axis=flip_ax)
+        return res
+
+    def std(
+        self,
+        axis: ArrayLikeSpec = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+        ddof: int = 0,
+        keepdims: builtins.bool = False,
+        *,
+        where: ArrayLikeSpec = None,
+        correction: int | float | None = None,
+    ) -> ArrayLikeSpec:
+        """Compute the standard deviation along the specified axis.
+
+        Args:
+            axis: Axis or axes along which the standard deviation is computed.
+            dtype: Optional dtype to use in computing the standard deviation.
+            out: Unused output parameter.
+            ddof: Delta degrees of freedom.
+            keepdims: Whether reduced axes are retained with size 1.
+            where: Optional boolean mask of elements to include.
+            correction: Degrees of freedom adjustment (overrides ``ddof`` if given).
+
+        Returns:
+            ArrayLikeSpec: Standard deviation array.
+        """
+        return sqrt(
+            self.var(
+                axis=axis,
+                dtype=dtype,
+                out=out,
+                ddof=ddof,
+                keepdims=keepdims,
+                where=where,
+                correction=correction,
+            )
+        )
+
+    def swapaxes(self, axis1: int, axis2: int) -> ArrayLikeSpec:
+        """Return a view of the array with ``axis1`` and ``axis2`` interchanged.
+
+        Args:
+            axis1: First axis.
+            axis2: Second axis.
+
+        Returns:
+            ArrayLikeSpec: Array with swapped axes.
+        """
+        return swapaxes(self, axis1, axis2)
+
+    def take(
+        self,
+        indices: ArrayLikeSpec,
+        axis: int | None = None,
+        out: ArrayLikeSpec = None,
+        mode: str | None = None,
+        unique_indices: builtins.bool = False,
+        indices_are_sorted: builtins.bool = False,
+        fill_value: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Take elements from an array along an axis.
+
+        Args:
+            indices: Indices of the values to extract.
+            axis: Axis over which to select values.
+            out: Unused output parameter.
+            mode: Out-of-bounds index handling mode.
+            unique_indices: Whether indices are guaranteed unique.
+            indices_are_sorted: Whether indices are sorted in ascending order.
+            fill_value: Optional fill value for out-of-bounds indices.
+
+        Returns:
+            ArrayLikeSpec: Indexed sub-array.
+        """
+        _ = (out, unique_indices, indices_are_sorted, fill_value)
+        return take(self, indices, axis=axis, mode=mode)
+
+    def to_device(
+        self,
+        device: ConfigValue,
+        stream: ConfigValue = None,
+    ) -> ndarray:
+        """Return a copy of the array transferred to ``device``.
+
+        Args:
+            device: Target device or sharding.
+            stream: Optional device stream.
+
+        Returns:
+            ndarray: Array on ``device``.
+        """
+        _ = (device, stream)
+        return self
+
+    def trace(
+        self,
+        offset: int = 0,
+        axis1: int = 0,
+        axis2: int = 1,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+    ) -> ArrayLikeSpec:
+        """Return the sum along diagonals of the array.
+
+        Args:
+            offset: Offset of the diagonal from the main diagonal.
+            axis1: First axis of the 2-D sub-arrays.
+            axis2: Second axis of the 2-D sub-arrays.
+            dtype: Optional dtype of the returned array.
+            out: Unused output parameter.
+
+        Returns:
+            ArrayLikeSpec: Sum along diagonals.
+        """
+        return trace(self, offset=offset, axis1=axis1, axis2=axis2, dtype=dtype, out=out)
+
+    def var(
+        self,
+        axis: ArrayLikeSpec = None,
+        dtype: DTypeSpec = None,
+        out: ArrayLikeSpec = None,
+        ddof: int = 0,
+        keepdims: builtins.bool = False,
+        *,
+        where: ArrayLikeSpec = None,
+        correction: int | float | None = None,
+    ) -> ArrayLikeSpec:
+        """Compute the variance along the specified axis.
+
+        Args:
+            axis: Axis or axes along which the variance is computed.
+            dtype: Optional dtype to use in computing the variance.
+            out: Unused output parameter.
+            ddof: Delta degrees of freedom.
+            keepdims: Whether reduced axes are retained with size 1.
+            where: Optional boolean mask of elements to include.
+            correction: Degrees of freedom adjustment (overrides ``ddof`` if given).
+
+        Returns:
+            ArrayLikeSpec: Variance array.
+        """
+        _ = (out, where)
+        eff_ddof = int(correction) if correction is not None else ddof
+        return var(self, axis=axis, dtype=dtype, keepdims=keepdims, ddof=eff_ddof)
+
+    def view(
+        self,
+        dtype: DTypeSpec = None,
+        type: ConfigValue = None,
+    ) -> ArrayLikeSpec:
+        """Return a new view of the array with the same data.
+
+        Args:
+            dtype: Optional data-type descriptor of the returned view.
+            type: Unused view container class parameter.
+
+        Returns:
+            ArrayLikeSpec: Array view.
+        """
+        _ = type
+        if dtype is not None:
+            return array(self.__array__().view(dtype))
+        return self
 
     def mean(
         self,
@@ -6398,3 +7057,179 @@ def i0(x: ArrayLikeSpec) -> ArrayLikeSpec:
     """
     arr = asarray(x, dtype=float32)
     return exp(abs(arr)) * _wrap(ops.bessel_i0e(_to_tensor(arr)))
+
+
+def cumulative_prod(
+    x: ArrayLikeSpec,
+    /,
+    *,
+    axis: int | None = None,
+    dtype: DTypeSpec = None,
+    include_initial: builtins.bool = False,
+) -> ArrayLikeSpec:
+    """Return the cumulative product of elements along a given axis.
+
+    Args:
+        x: Input array.
+        axis: Axis along which the cumulative product is computed.
+        dtype: Optional dtype of the returned array.
+        include_initial: Whether to prepend the multiplicative identity ``1`` along ``axis``.
+
+    Returns:
+        ArrayLikeSpec: Cumulative product array.
+    """
+    arr = asarray(x)
+    ax = 0 if axis is None else axis
+    res = cumprod(arr, axis=ax, dtype=dtype)
+    if include_initial:
+        norm_ax = ax if ax >= 0 else arr.ndim + ax
+        init_shape = (*res.shape[:norm_ax], 1, *res.shape[norm_ax + 1 :])
+        return concatenate([ones(init_shape, dtype=res.dtype), res], axis=norm_ax)
+    return res
+
+
+def matvec(x1: ArrayLikeSpec, x2: ArrayLikeSpec, /) -> ArrayLikeSpec:
+    """Compute matrix-vector product of ``x1`` and ``x2``.
+
+    Args:
+        x1: Matrix array of shape ``(..., M, N)``.
+        x2: Vector array of shape ``(..., N)``.
+
+    Returns:
+        ArrayLikeSpec: Matrix-vector product of shape ``(..., M)``.
+    """
+    return einsum("...ij,...j->...i", asarray(x1), asarray(x2))
+
+
+def vecmat(x1: ArrayLikeSpec, x2: ArrayLikeSpec, /) -> ArrayLikeSpec:
+    """Compute vector-matrix product of ``x1`` and ``x2``.
+
+    Args:
+        x1: Vector array of shape ``(..., M)``.
+        x2: Matrix array of shape ``(..., M, N)``.
+
+    Returns:
+        ArrayLikeSpec: Vector-matrix product of shape ``(..., N)``.
+    """
+    return einsum("...i,...ij->...j", asarray(x1), asarray(x2))
+
+
+def minmax(
+    a: ArrayLikeSpec,
+    axis: ArrayLikeSpec = None,
+    keepdims: builtins.bool = False,
+    initial: ArrayLikeSpec = None,
+    where: ArrayLikeSpec = None,
+    out: ArrayLikeSpec = None,
+) -> tuple[ArrayLikeSpec, ArrayLikeSpec]:
+    """Simultaneously compute the minimum and maximum of ``a`` along ``axis``.
+
+    Args:
+        a: Input array.
+        axis: Axis or axes along which to operate.
+        keepdims: Whether reduced axes are retained with size 1.
+        initial: Optional initial ``(min_init, max_init)`` tuple or scalar.
+        where: Optional boolean mask of elements to compare.
+        out: Unused output parameter.
+
+    Returns:
+        tuple[ArrayLikeSpec, ArrayLikeSpec]: Tuple ``(minimums, maximums)``.
+    """
+    _ = out
+    arr = asarray(a)
+    min_init = initial[0] if isinstance(initial, tuple) else initial
+    max_init = initial[1] if isinstance(initial, tuple) else initial
+    return (
+        arr.min(axis=axis, keepdims=keepdims, initial=min_init, where=where),
+        arr.max(axis=axis, keepdims=keepdims, initial=max_init, where=where),
+    )
+
+
+def put_along_axis(
+    arr: ArrayLikeSpec,
+    indices: ArrayLikeSpec,
+    values: ArrayLikeSpec,
+    axis: int | None,
+    inplace: builtins.bool = False,
+    *,
+    mode: str | None = None,
+) -> ArrayLikeSpec:
+    """Put ``values`` into the destination array ``arr`` by matching 1D index and data slices.
+
+    Args:
+        arr: Destination array.
+        indices: Indices along each 1D slice of ``arr``.
+        values: Values to insert at those indices.
+        axis: Axis along which to index (or ``None`` for flattened indexing).
+        inplace: Must be ``False`` for immutable JAX arrays.
+        mode: Out-of-bounds index handling mode.
+
+    Returns:
+        ArrayLikeSpec: Updated copy of ``arr``.
+    """
+    _ = (inplace, mode)
+    arr_obj = asarray(arr)
+    base = arr_obj.__array__().copy()
+    idx_np = asarray(indices).__array__()
+    val_np = asarray(values).__array__()
+    if axis is None:
+        flat = base.ravel()
+        flat[idx_np.ravel()] = val_np.ravel()
+        return array(flat.reshape(base.shape), dtype=arr_obj.dtype)
+    norm_ax = axis if axis >= 0 else arr_obj.ndim + axis
+    moved_base = swapaxes(arr_obj, norm_ax, -1).__array__().copy()
+    moved_idx = swapaxes(asarray(indices), norm_ax, -1).__array__()
+    moved_val = swapaxes(asarray(values), norm_ax, -1).__array__()
+    flat_base = moved_base.reshape(-1, moved_base.shape[-1])
+    flat_idx = moved_idx.reshape(-1, moved_idx.shape[-1])
+    flat_val = moved_val.reshape(-1, moved_val.shape[-1])
+    for row_i in builtins.range(flat_base.shape[0]):
+        for col_j in builtins.range(flat_idx.shape[1]):
+            flat_base[row_i, int(flat_idx[row_i, col_j])] = flat_val[row_i, col_j % flat_val.shape[1]]
+    restored = array(flat_base.reshape(moved_base.shape), dtype=arr_obj.dtype)
+    return swapaxes(restored, norm_ax, -1)
+
+
+def spacing(x: ArrayLikeSpec, /) -> ArrayLikeSpec:
+    """Return the distance between ``x`` and the nearest adjacent number.
+
+    Args:
+        x: Input array or scalar.
+
+    Returns:
+        ArrayLikeSpec: Elementwise ULPs (spacing) of ``x``.
+    """
+    arr = asarray(x, dtype=float32)
+    return abs(nextafter(arr, float("inf")) - arr)
+
+
+def top_k(
+    a: ArrayLikeSpec,
+    k: int,
+    /,
+    *,
+    axis: int = -1,
+    mode: str = "largest",
+    sorted: builtins.bool = True,
+) -> tuple[ArrayLikeSpec, ArrayLikeSpec]:
+    """Return the ``k`` largest (or smallest) elements and their indices along ``axis``.
+
+    Args:
+        a: Input array.
+        k: Number of top elements to extract.
+        axis: Axis along which to find the top-k elements.
+        mode: ``"largest"`` or ``"smallest"``.
+        sorted: Whether the returned elements are sorted in order.
+
+    Returns:
+        tuple[ArrayLikeSpec, ArrayLikeSpec]: Tuple ``(values, indices)``.
+    """
+    _ = sorted
+    arr = asarray(a)
+    descending = mode != "smallest"
+    order_idx = arr.argsort(axis=axis, descending=descending)
+    norm_ax = axis if axis >= 0 else arr.ndim + axis
+    slc = tuple(builtins.slice(0, int(k)) if i == norm_ax else builtins.slice(None) for i in builtins.range(arr.ndim))
+    top_idx = order_idx[slc]
+    top_vals = take_along_axis(arr, top_idx, axis=norm_ax)
+    return top_vals, top_idx

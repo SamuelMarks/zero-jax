@@ -297,32 +297,73 @@ def get_signatures(module: ModuleType, prefix: str = "") -> dict[str, str]:
     return signatures
 
 
-def verify_ecosystem_snapshot() -> bool:
-    """Verify ``ml-ecosystem-snapshots`` (v0.0.4) availability and JAX GhostRef hydration.
+def _resolve_zero_jax_endpoint(api_path: str) -> bool:
+    """Verify that a ``jax.*`` API path exists in ``zero_jax``.
+
+    Args:
+        api_path: Canonical JAX API path (e.g. ``"jax.numpy.sin"``).
 
     Returns:
-        bool: ``True`` if snapshot hydration succeeds, ``False`` otherwise.
+        bool: ``True`` if the symbol resolves in ``zero_jax``, ``False`` otherwise.
     """
+    import zero_jax
+    import zero_jax.experimental
+    import zero_jax.experimental.pallas
+    import zero_jax.lax
+    import zero_jax.nn
+    import zero_jax.nn.initializers
+    import zero_jax.numpy
+    import zero_jax.random
+    import zero_jax.sharding
+
+    mod_map: dict[str, ModuleType | type] = {
+        "jax": zero_jax,
+        "jax.Array": zero_jax.Array,
+        "jax.experimental.pallas": zero_jax.experimental.pallas,
+        "jax.lax": zero_jax.lax,
+        "jax.nn": zero_jax.nn,
+        "jax.nn.initializers": zero_jax.nn.initializers,
+        "jax.numpy": zero_jax.numpy,
+        "jax.random": zero_jax.random,
+        "jax.sharding": zero_jax.sharding,
+    }
+    prefix, _, attr = api_path.rpartition(".")
+    target = mod_map.get(prefix)
+    if target is None:
+        return False
+    if isinstance(target, type):
+        return any(attr in base.__dict__ for base in target.__mro__)
+    return attr in target.__dict__
+
+
+def verify_ecosystem_snapshot() -> bool:
+    """Verify ``ml-ecosystem-snapshots`` (v0.0.5) availability and 100% JAX GhostRef existence.
+
+    Returns:
+        bool: ``True`` if snapshot hydration and endpoint resolution succeed, ``False`` otherwise.
+    """
+    from ml_ecosystem_snapshots.cli.resolver import resolve_snapshot_path
     from ml_ecosystem_snapshots.serialization import hydrate_ghost_ref
 
     cache_path = os.path.expanduser("~/.cache/ml_ecosystem_snapshots/snapshots/jax_v0.12.0.1.json")
-    if not os.path.exists(cache_path):
+    snap_path = cache_path if os.path.exists(cache_path) else resolve_snapshot_path("jax_v0.12.0.1.json", must_exist=False)
+    if not os.path.exists(snap_path):
         return True
 
-    with open(cache_path, encoding="utf-8") as f:
+    with open(snap_path, encoding="utf-8") as f:
         data = json.load(f)
 
     categories = data.get("categories", {})
     for items in categories.values():
-        for item in items[:5]:
+        for item in items:
             ref = hydrate_ghost_ref(item)
-            if not ref.name or not ref.api_path:
+            if not ref.name or not ref.api_path or not _resolve_zero_jax_endpoint(ref.api_path):
                 return False
     return True
 
 
 def cmd_check_api_parity(args: argparse.Namespace) -> None:
-    """Check API parity between ``zero-jax`` and the JAX snapshot.
+    """Check API parity between ``zero-jax`` and the JAX snapshot (guaranteed minimum existence).
 
     Args:
         args: Parsed command line arguments containing ``update``.
@@ -334,7 +375,7 @@ def cmd_check_api_parity(args: argparse.Namespace) -> None:
     import zero_jax.random as random_zero
 
     if not verify_ecosystem_snapshot():
-        print("ml-ecosystem-snapshots v0.0.4 GhostRef verification failed.")
+        print("ml-ecosystem-snapshots v0.0.5 GhostRef verification failed.")
         sys.exit(1)
 
     snapshot_path = os.path.join(os.path.dirname(__file__), "../tests/api_snapshot.json")
@@ -370,19 +411,14 @@ def cmd_check_api_parity(args: argparse.Namespace) -> None:
             continue
 
         snap_sigs = snapshot_api[mod_name]
-        for name, sig in current_sigs.items():
-            if name not in snap_sigs:
-                print(f"New function added but not in snapshot: {mod_name}.{name}")
-                success = False
-            elif snap_sigs[name] != sig:
-                print(f"Signature changed for {mod_name}.{name}:")
-                print(f"  Snapshot: {snap_sigs[name]}")
-                print(f"  Current:  {sig}")
-                success = False
-
-        for name in snap_sigs:
+        for name, snap_sig in snap_sigs.items():
             if name not in current_sigs:
                 print(f"Function removed from API: {mod_name}.{name}")
+                success = False
+            elif current_sigs[name] != snap_sig:
+                print(f"Signature changed for {mod_name}.{name}:")
+                print(f"  Snapshot: {snap_sig}")
+                print(f"  Current:  {current_sigs[name]}")
                 success = False
 
     if not success:

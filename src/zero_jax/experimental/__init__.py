@@ -28,7 +28,7 @@ class EArray:
         self.kwargs = kwargs
 
 
-from . import compilation_cache
+from . import compilation_cache, pallas, x64_context
 
 
 def disable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -68,9 +68,6 @@ def io_callback(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
         The operation result.
     """
     return _ops.io_callback(*args, **kwargs)
-
-
-from . import x64_context
 
 
 class BlurConfig:

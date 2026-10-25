@@ -50,31 +50,45 @@ def _to_dtype(dtype: ArrayLikeSpec) -> DType:
     return DType(str(dtype))
 
 
-def zeros(key: KeyArray, shape: Shape, dtype: ArrayLikeSpec = float) -> Array:
+def zeros(
+    key: KeyArray,
+    shape: Shape,
+    dtype: ArrayLikeSpec = float,
+    out_sharding: ArrayLikeSpec = None,
+) -> Array:
     """Initialize an array with all zeros.
 
     Args:
         key: PRNG key (unused, kept for API parity).
         shape: Desired shape of the output array.
         dtype: Desired data type.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         Array: An array of zeros with the specified shape and dtype.
     """
+    _ = (key, out_sharding)
     return _wrap(creation.zeros(shape=shape, dtype=_to_dtype(dtype)))
 
 
-def ones(key: KeyArray, shape: Shape, dtype: ArrayLikeSpec = float) -> Array:
+def ones(
+    key: KeyArray,
+    shape: Shape,
+    dtype: ArrayLikeSpec = float,
+    out_sharding: ArrayLikeSpec = None,
+) -> Array:
     """Initialize an array with all ones.
 
     Args:
         key: PRNG key (unused, kept for API parity).
         shape: Desired shape of the output array.
         dtype: Desired data type.
+        out_sharding: Optional output sharding specification.
 
     Returns:
         Array: An array of ones with the specified shape and dtype.
     """
+    _ = (key, out_sharding)
     return _wrap(creation.ones(shape=shape, dtype=_to_dtype(dtype)))
 
 

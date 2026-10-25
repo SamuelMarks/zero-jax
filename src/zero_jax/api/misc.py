@@ -100,8 +100,11 @@ def named_scope(name: str) -> contextlib.AbstractContextManager[None]:
 
 def remat(
     fun: VariadicCallable[R] | None = None,
-    *args: ConfigValue,
-    **kwargs: ConfigValue,
+    *,
+    prevent_cse: bool = True,
+    policy: ConfigValue = None,
+    static_argnums: int | Sequence[int] = (),
+    static_argnames: str | Sequence[str] = (),
 ) -> VariadicCallable[R]:
     """Recompute ``fun`` during the backward pass instead of storing intermediates.
 
@@ -110,12 +113,15 @@ def remat(
 
     Args:
         fun: Function to rematerialize, or ``None`` when used with keyword arguments.
-        *args: Additional configuration positional arguments.
-        **kwargs: Additional configuration keyword arguments.
+        prevent_cse: Whether to prevent common subexpression elimination across the boundary.
+        policy: Optional rematerialization policy callable.
+        static_argnums: Optional positional argument indices treated as static.
+        static_argnames: Optional keyword argument names treated as static.
 
     Returns:
         VariadicCallable[R]: The rematerialized function or decorator.
     """
+    _ = (prevent_cse, policy, static_argnums, static_argnames)
     if fun is None:
 
         def _decorator(inner_fun: VariadicCallable[R]) -> VariadicCallable[R]:

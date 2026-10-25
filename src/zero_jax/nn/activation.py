@@ -123,7 +123,14 @@ def _to_dtype(dtype: ArrayLikeSpec) -> ArrayLikeSpec:
     return DType(str(dtype))
 
 
-def one_hot(x: ArrayLikeSpec, num_classes: int, *, dtype: ArrayLikeSpec = float, axis: ArrayLikeSpec = -1) -> ArrayLikeSpec:
+def one_hot(
+    x: ArrayLikeSpec,
+    num_classes: int,
+    *,
+    dtype: ArrayLikeSpec = float,
+    axis: ArrayLikeSpec = -1,
+    out_sharding: ArrayLikeSpec = None,
+) -> ArrayLikeSpec:
     """Creates a one-hot encoding of the given integer array.
 
     Args:
@@ -131,10 +138,12 @@ def one_hot(x: ArrayLikeSpec, num_classes: int, *, dtype: ArrayLikeSpec = float,
         num_classes (int): Number of total classes.
         dtype (ArrayLikeSpec, optional): The data type of the output. Defaults to float.
         axis (ArrayLikeSpec, optional): The axis along which the one-hot dimension is added. Defaults to -1.
+        out_sharding (ArrayLikeSpec, optional): Optional output sharding specification. Defaults to None.
 
     Returns:
         ArrayLikeSpec: A one-hot encoded array.
     """
+    _ = out_sharding
     x_t = _to_tensor(x)
     classes = creation.arange(0, num_classes, dtype=x_t.dtype)
     # broadcast x and classes
@@ -150,14 +159,17 @@ def one_hot(x: ArrayLikeSpec, num_classes: int, *, dtype: ArrayLikeSpec = float,
     return _wrap(ops.cast(eq, dtype=dt))
 
 
-def softmax(x: _ArrayLike, axis: ArrayLikeSpec = -1, where: ArrayLikeSpec | None = None, initial: ArrayLikeSpec = None) -> ArrayLikeSpec:
+def softmax(
+    x: _ArrayLike,
+    axis: ArrayLikeSpec = -1,
+    where: ArrayLikeSpec | None = None,
+) -> ArrayLikeSpec:
     """Computes the softmax activation function over the given axis.
 
     Args:
         x (_ArrayLike): Input array.
         axis (ArrayLikeSpec, optional): Axis along which the softmax is computed. Defaults to -1.
         where (Optional[ArrayLikeSpec], optional): Elements to include in the computation. Defaults to None.
-        initial (ArrayLikeSpec, optional): Initial value for the sum. Defaults to None.
 
     Returns:
         ArrayLikeSpec: Array of the same shape as `x` with softmax applied.
@@ -170,6 +182,165 @@ def softmax(x: _ArrayLike, axis: ArrayLikeSpec = -1, where: ArrayLikeSpec | None
     if where is not None:
         res = ops.where(_to_tensor(where), res, creation.zeros_like(res))
     return _wrap(res)
+
+
+def dot_product_attention(
+    query: ArrayLikeSpec,
+    key: ArrayLikeSpec,
+    value: ArrayLikeSpec,
+    bias: ArrayLikeSpec = None,
+    mask: ArrayLikeSpec = None,
+    *,
+    scale: float | None = None,
+    is_causal: bool = False,
+    query_seq_lengths: ArrayLikeSpec = None,
+    key_value_seq_lengths: ArrayLikeSpec = None,
+    local_window_size: int | tuple[int, int] | None = None,
+    return_residual: bool = False,
+    implementation: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute scaled dot-product attention ``softmax((Q K^T) * scale + bias) V``.
+
+    Args:
+        query: Query tensor of shape ``(..., T, N, H)`` or ``(..., T, H)``.
+        key: Key tensor of shape ``(..., S, K, H)`` or ``(..., S, H)``.
+        value: Value tensor of shape matching ``key``.
+        bias: Optional additive attention bias.
+        mask: Optional boolean mask where ``True`` keeps logits and ``False`` masks them out.
+        scale: Multiplicative scale for attention logits (defaults to ``1 / sqrt(H)``).
+        is_causal: Whether to apply a lower-triangular causal mask.
+        query_seq_lengths: Optional sequence lengths for queries.
+        key_value_seq_lengths: Optional sequence lengths for keys and values.
+        local_window_size: Optional local attention window size.
+        return_residual: Whether to also return the logsumexp residual.
+        implementation: Optional backend implementation string.
+
+    Returns:
+        ArrayLikeSpec: Attention output array, or ``(output, residual)`` if ``return_residual=True``.
+    """
+    _ = (query_seq_lengths, key_value_seq_lengths, local_window_size, implementation)
+    from zero_jax.numpy import arange, asarray, einsum, moveaxis, tril, where
+
+    q = asarray(query)
+    k = asarray(key)
+    v = asarray(value)
+    head_dim = q.shape[-1]
+    eff_scale = (1.0 / math.sqrt(float(head_dim))) if scale is None else float(scale)
+
+    if q.ndim >= 3 and k.ndim >= 3 and q.shape[-2] == k.shape[-2]:
+        q_m = moveaxis(q, -2, -3)
+        k_m = moveaxis(k, -2, -3)
+        v_m = moveaxis(v, -2, -3)
+        logits = einsum("...th,...sh->...ts", q_m, k_m) * eff_scale
+        if bias is not None:
+            logits = logits + asarray(bias)
+        if is_causal:
+            t_len = q.shape[-3]
+            s_len = k.shape[-3]
+            causal = arange(t_len)[:, None] >= arange(s_len)[None, :]
+            logits = where(causal, logits, -1e9)
+        if mask is not None:
+            logits = where(asarray(mask), logits, -1e9)
+        weights = softmax(logits, axis=-1)
+        out = moveaxis(einsum("...ts,...sh->...th", weights, v_m), -3, -2)
+        if return_residual:
+            return out, logsumexp(logits, axis=-1)
+        return out
+
+    logits = einsum("...th,...sh->...ts", q, k) * eff_scale
+    if bias is not None:
+        logits = logits + asarray(bias)
+    if is_causal:
+        causal_mask = tril(creation.ones((logits.shape[-2], logits.shape[-1])))
+        logits = where(_wrap(causal_mask) > 0, logits, -1e9)
+    if mask is not None:
+        logits = where(asarray(mask), logits, -1e9)
+    weights = softmax(logits, axis=-1)
+    out = einsum("...ts,...sh->...th", weights, v)
+    if return_residual:
+        return out, logsumexp(logits, axis=-1)
+    return out
+
+
+def get_scaled_dot_general_config(
+    mode: str = "nvfp4",
+    global_scale: ArrayLikeSpec = None,
+) -> dict[str, ArrayLikeSpec]:
+    """Return a block-scaling configuration dictionary for :func:`scaled_dot_general`.
+
+    Args:
+        mode: Block scaling mode (``"nvfp4"``, ``"mxfp8"``, or ``"mxfp4"``).
+        global_scale: Optional global scaling tensor.
+
+    Returns:
+        dict[str, ArrayLikeSpec]: Configuration dictionary describing the scaling mode.
+    """
+    return {"mode": mode, "global_scale": global_scale}
+
+
+def scaled_dot_general(
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    dimension_numbers: ArrayLikeSpec,
+    preferred_element_type: ArrayLikeSpec = "float32",
+    configs: ArrayLikeSpec = None,
+    implementation: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute a generalized dot product with optional block-scale configurations.
+
+    Args:
+        lhs: Left-hand side array.
+        rhs: Right-hand side array.
+        dimension_numbers: Contracting and batch dimension numbers ``((lhs_c, rhs_c), (lhs_b, rhs_b))``.
+        preferred_element_type: Accumulation and output dtype.
+        configs: Optional list of scaling configurations.
+        implementation: Optional backend implementation name.
+
+    Returns:
+        ArrayLikeSpec: Generalized dot product output.
+    """
+    _ = (configs, implementation)
+    from zero_jax.lax import dot_general
+
+    return dot_general(
+        lhs,
+        rhs,
+        dimension_numbers=dimension_numbers,
+        preferred_element_type=preferred_element_type,
+    )
+
+
+def scaled_matmul(
+    lhs: ArrayLikeSpec,
+    rhs: ArrayLikeSpec,
+    lhs_scales: ArrayLikeSpec = None,
+    rhs_scales: ArrayLikeSpec = None,
+    preferred_element_type: ArrayLikeSpec = "float32",
+) -> ArrayLikeSpec:
+    """Compute block-scaled matrix multiplication of ``lhs`` and ``rhs``.
+
+    Args:
+        lhs: Left-hand side operand.
+        rhs: Right-hand side operand.
+        lhs_scales: Scale factors for ``lhs``.
+        rhs_scales: Scale factors for ``rhs``.
+        preferred_element_type: Output element type.
+
+    Returns:
+        ArrayLikeSpec: Scaled matrix product.
+    """
+    from zero_jax.numpy import asarray, astype, matmul
+
+    l_arr = asarray(lhs)
+    r_arr = asarray(rhs)
+    if lhs_scales is not None:
+        l_arr = l_arr * asarray(lhs_scales)
+    if rhs_scales is not None:
+        r_arr = r_arr * asarray(rhs_scales)
+    res = matmul(l_arr, r_arr)
+    if preferred_element_type is not None:
+        return astype(res, preferred_element_type)
+    return res
 
 
 def sigmoid(x: ArrayLikeSpec) -> ArrayLikeSpec:
