@@ -12,6 +12,12 @@ from ml_switcheroo_compiler.ops.base import OpDef, get_op
 from ml_switcheroo_compiler.ops.shape import dynamic_slicing as _dynamic_slicing
 from ml_switcheroo_compiler.ops.shape.utils import _emit_shape_node
 
+import zero_jax._proxy as _proxy
+from zero_jax._proxy.linalg_ops import *
+from zero_jax._proxy.math_ops import *
+from zero_jax._proxy.nn_ops import *
+from zero_jax._proxy.random_ops import *
+from zero_jax._proxy.scipy_ops import *
 from zero_jax._types import VariadicCallable
 
 
@@ -44,72 +50,10 @@ def _make_unimplemented_op(name: str) -> VariadicCallable[TensorOrScalar]:
     return _stub
 
 
-def broadcast_to(x: Tensor, shape: Sequence[int]) -> TensorOrScalar:
-    """Broadcast a tensor to a new target shape.
-
-    Args:
-        x: Input tensor to broadcast.
-        shape: Target shape sequence.
-
-    Returns:
-        TensorOrScalar: Broadcasted tensor.
-    """
-    target_shape = tuple(int(s) for s in shape)
-    if _core_config.eager_mode:
-        return get_op("BroadcastTo")()(x, target_shape)
-    out_shape = get_op("BroadcastTo")().infer_shape(x.shape, target_shape)
-    return _emit_shape_node("BroadcastTo", [x], {"shape": target_shape}, out_shape, x.dtype)
-
-
-def dynamic_slice(
-    operand: Tensor,
-    start_indices: Sequence[Tensor],
-    slice_sizes: Sequence[int],
-) -> TensorOrScalar:
-    """Extract a dynamic slice from a tensor.
-
-    Args:
-        operand: Input tensor to slice.
-        start_indices: Starting indices per dimension.
-        slice_sizes: Slice lengths per dimension.
-
-    Returns:
-        TensorOrScalar: Extracted slice tensor.
-    """
-    return _dynamic_slicing.dynamic_slice(operand, start_indices, slice_sizes)
-
-
-def update_slice(
-    operand: Tensor,
-    update: Tensor,
-    start_indices: Sequence[Tensor],
-) -> TensorOrScalar:
-    """Update a dynamic slice in a tensor.
-
-    Args:
-        operand: Input tensor to be updated.
-        update: Replacement slice tensor.
-        start_indices: Starting indices per dimension.
-
-    Returns:
-        TensorOrScalar: Updated tensor.
-    """
-    return _dynamic_slicing.update_slice(operand, update, start_indices)
-
-
-def rrelu(x: Tensor, lower: float = 0.125, upper: float = 1.0 / 3.0) -> TensorOrScalar:
-    """Compute the Randomized Leaky ReLU activation function.
-
-    Args:
-        x: Input tensor.
-        lower: Lower bound for negative slope.
-        upper: Upper bound for negative slope.
-
-    Returns:
-        TensorOrScalar: Activated tensor.
-    """
-    slope = (lower + upper) / 2.0
-    return get_op("Where")()(_original_ops.greater(x, 0.0), x, _original_ops.multiply(x, slope))
+broadcast_to = _proxy.math_ops.broadcast_to
+dynamic_slice = _proxy.math_ops.dynamic_slice
+update_slice = _proxy.math_ops.update_slice
+rrelu = _proxy.nn_ops.rrelu
 
 
 abs = _original_ops.abs

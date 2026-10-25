@@ -13,14 +13,26 @@ from zero_jax._types import ArrayLikeSpec
 
 
 def test_api_jit(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_api_jit``."""
+    """Execute ``test_api_jit``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_ref.sin(x) * 2.0
 
     def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_z``."""
+        """Execute ``f_z``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_zero.sin(x) * 2.0
 
     x = np.array([1.0, 2.0])
@@ -31,14 +43,26 @@ def test_api_jit(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_api_grad(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_api_grad``."""
+    """Execute ``test_api_grad``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_ref.sum(x * x)
 
     def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_z``."""
+        """Execute ``f_z``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0, 3.0])
@@ -52,14 +76,26 @@ def test_api_grad(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_api_value_and_grad(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_api_value_and_grad``."""
+    """Execute ``test_api_value_and_grad``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_ref.sum(x * x)
 
     def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_z``."""
+        """Execute ``f_z``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_zero.sum(x * x)
 
     x = np.array([1.0, 2.0])
@@ -73,10 +109,18 @@ def test_api_value_and_grad(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_api_vmap(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_api_vmap``."""
+    """Execute ``test_api_vmap``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1.0
 
     x = np.array([1.0, 2.0])
@@ -96,10 +140,18 @@ def test_api_disable_jit() -> None:
 
 
 def test_api_pmap(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_api_pmap``."""
+    """Execute ``test_api_pmap``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1.0
 
     x = np.array([[1.0, 2.0]])
@@ -116,11 +168,19 @@ def test_api_eval_shape() -> None:
     """Execute ``test_api_eval_shape``."""
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_ref.sin(x)
 
     def f_z(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_z``."""
+        """Execute ``f_z``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return jnp_zero.sin(x)
 
     x = np.array([1.0, 2.0])

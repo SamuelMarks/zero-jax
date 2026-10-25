@@ -13,21 +13,19 @@ from ml_switcheroo_compiler.backends.eager_registry import (
 )
 from ml_switcheroo_compiler.backends.numpy.eager import as_ndarray
 from ml_switcheroo_compiler.backends.protocols import BackendModuleProtocol
-from ml_switcheroo_compiler.core.tensor import Tensor
 
 
 def _seed_from_key(backend_module: BackendModuleProtocol, key_arg: EagerValue) -> int:
     """Derive a deterministic 32-bit unsigned integer seed from a PRNG key.
 
     Args:
-        backend_module: Active NumPy backend module.
+        backend_module: Active backend module.
         key_arg: Input PRNG key value or array.
 
     Returns:
         int: Deterministic non-negative integer seed in ``[0, 2**32 - 1]``.
     """
-    raw = key_arg.data if isinstance(key_arg, Tensor) else key_arg
-    arr = backend_module.asarray(raw).reshape(-1)
+    arr = backend_module.asarray(key_arg).reshape(-1)
     if arr.size == 0:
         return 0
     total = 0
@@ -38,10 +36,10 @@ def _seed_from_key(backend_module: BackendModuleProtocol, key_arg: EagerValue) -
 
 
 def _np_lstsq(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
-    """Evaluate least-squares solution using ``numpy.linalg.lstsq``.
+    """Evaluate least-squares solution using the active backend's ``linalg.lstsq``.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments ``(a, b)``.
         **kwargs: Keyword arguments ``rcond``.
 
@@ -53,10 +51,10 @@ def _np_lstsq(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs
 
 
 def _np_matrix_norm(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
-    """Evaluate matrix norm using ``numpy.linalg.norm``.
+    """Evaluate matrix norm using the active backend's ``linalg.norm``.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments.
         **kwargs: Keyword arguments.
 
@@ -67,10 +65,10 @@ def _np_matrix_norm(backend_module: BackendModuleProtocol, *args: EagerValue, **
 
 
 def _np_matrix_rank(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
-    """Evaluate matrix rank using ``numpy.linalg.matrix_rank``.
+    """Evaluate matrix rank using the active backend's ``linalg.matrix_rank``.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments.
         **kwargs: Keyword arguments.
 
@@ -81,10 +79,10 @@ def _np_matrix_rank(backend_module: BackendModuleProtocol, *args: EagerValue, **
 
 
 def _np_vector_norm(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
-    """Evaluate vector norm using ``numpy.linalg.norm``.
+    """Evaluate vector norm using the active backend's ``linalg.norm``.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments.
         **kwargs: Keyword arguments.
 
@@ -105,58 +103,91 @@ def _np_random_normal(backend_module: BackendModuleProtocol, *args: EagerValue, 
     """Evaluate deterministic normal distribution sampling seeded by PRNG key.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments where ``args[0]`` is the PRNG key.
         **kwargs: Keyword arguments ``shape`` and ``dtype``.
 
     Returns:
         EagerValue: Sampled normal array.
     """
+    import math
+    import random as _py_random
+
     shape = as_shape(kwargs.get("shape", ()))
     seed = _seed_from_key(backend_module, args[0]) if args else 0
-    rng = backend_module.random.RandomState(seed)
-    return as_ndarray(rng.standard_normal(size=shape))
+    rng = _py_random.Random(seed)
+    count = math.prod(shape) if shape else 1
+    samples = [rng.gauss(0.0, 1.0) for _ in range(count)]
+    return as_ndarray(backend_module.asarray(samples).reshape(shape))
 
 
 def _np_random_randint(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
     """Evaluate deterministic uniform integer sampling seeded by PRNG key.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments where ``args[0]`` is the PRNG key.
         **kwargs: Keyword arguments ``minval``, ``maxval``, and ``shape``.
 
     Returns:
         EagerValue: Sampled integer array.
     """
+    import math
+    import random as _py_random
+
     low = as_int(kwargs.get("minval", 0))
     high = as_int(kwargs.get("maxval", 10))
     shape = as_shape(kwargs.get("shape", ()))
     seed = _seed_from_key(backend_module, args[0]) if args else 0
-    rng = backend_module.random.RandomState(seed)
-    return as_ndarray(rng.randint(low, high, size=shape))
+    rng = _py_random.Random(seed)
+    count = math.prod(shape) if shape else 1
+    samples = [rng.randrange(low, high) for _ in range(count)]
+    return as_ndarray(backend_module.asarray(samples).reshape(shape))
 
 
 def _np_random_bernoulli(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
     """Evaluate deterministic Bernoulli distribution sampling seeded by PRNG key.
 
     Args:
-        backend_module: Active NumPy module.
+        backend_module: Active backend module.
         *args: Positional arguments where ``args[0]`` is the PRNG key.
         **kwargs: Keyword arguments ``p`` and ``shape``.
 
     Returns:
         EagerValue: Sampled boolean array.
     """
+    import math
+    import random as _py_random
+
     p = as_float(kwargs.get("p", 0.5))
     shape = as_shape(kwargs.get("shape", ()))
     seed = _seed_from_key(backend_module, args[0]) if args else 0
-    rng = backend_module.random.RandomState(seed)
-    return as_ndarray(rng.uniform(0.0, 1.0, size=shape) < p)
+    rng = _py_random.Random(seed)
+    count = math.prod(shape) if shape else 1
+    samples = [rng.random() < p for _ in range(count)]
+    return as_ndarray(backend_module.asarray(samples).reshape(shape))
+
+
+def _np_lgamma(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
+    """Evaluate elementwise log-abs-gamma ``lgamma(x)``.
+
+    Args:
+        backend_module: Active backend module.
+        *args: Positional arguments where ``args[0]`` is ``x``.
+        **kwargs: Unused keyword arguments.
+
+    Returns:
+        EagerValue: Log-abs-gamma evaluated elementwise.
+    """
+    import math
+
+    v_lgamma = backend_module.vectorize(lambda val: math.lgamma(float(val)))
+    return as_ndarray(v_lgamma(as_ndarray(args[0])))
 
 
 def register_compiler_patches() -> None:
-    """Register all NumPy eager fallback handlers into ``numpy_eager_registry``."""
+    """Register all eager fallback handlers into ``numpy_eager_registry``."""
+    numpy_eager_registry.register("Lgamma")(_np_lgamma)
     numpy_eager_registry.register("Lstsq")(_np_lstsq)
     numpy_eager_registry.register("MatrixNorm")(_np_matrix_norm)
     numpy_eager_registry.register("MatrixRank")(_np_matrix_rank)
@@ -170,6 +201,7 @@ register_compiler_patches()
 
 __all__ = [
     "_linalg_advanced",
+    "_np_lgamma",
     "_np_lstsq",
     "_np_matrix_norm",
     "_np_matrix_rank",

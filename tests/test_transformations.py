@@ -11,7 +11,11 @@ def test_jit() -> None:
 
     @jit
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1
 
     assert f(1) == 2
@@ -22,7 +26,11 @@ def test_grad() -> None:
 
     @grad
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x * x
 
     assert f(2) == 4
@@ -33,7 +41,11 @@ def test_value_and_grad() -> None:
 
     @value_and_grad
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x * 2
 
     val, g = f(2)
@@ -46,7 +58,11 @@ def test_vmap() -> None:
 
     @vmap
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x
 
     assert f(5) == 5
@@ -63,7 +79,11 @@ def test_pmap() -> None:
 
     @pmap
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x
 
     assert f(5) == 5

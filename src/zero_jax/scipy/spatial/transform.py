@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Sized
 
 from ml_switcheroo_compiler.ops.registry import get_op
 
-from zero_jax._types import ArrayLikeSpec
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+from zero_jax._types import ArrayLikeSpec, ArrayProtocol
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, ndarray, sqrt, where
+from zero_jax.numpy.lax_numpy import sum as _sum
 
 
 class Rotation:
@@ -23,8 +24,11 @@ class Rotation:
             quat: The quaternions representing the rotation.
             normalize: Whether to normalize the quaternions.
         """
-        self._quat = quat
-        # Normalization omitted in shell init unless strictly necessary
+        if normalize and isinstance(quat, ndarray) and quat.ndim >= 1:
+            norm = sqrt(_sum(quat * quat, axis=-1, keepdims=True))
+            self._quat = where(norm > 0.0, quat / where(norm == 0.0, 1.0, norm), quat)
+        else:
+            self._quat = quat
         self._normalize = normalize
 
     @classmethod
@@ -150,10 +154,9 @@ class Rotation:
         Returns:
             True if single, False otherwise.
         """
-        try:
-            return self._quat.ndim == 1
-        except AttributeError:
-            return True
+        if isinstance(self._quat, ArrayProtocol):
+            return len(self._quat.shape) == 1
+        return True
 
     def as_quat(self) -> ArrayLikeSpec:
         """Represent as quaternions.
@@ -271,10 +274,9 @@ class Rotation:
         Returns:
             The number of rotations.
         """
-        try:
+        if isinstance(self._quat, (ndarray, Sized)):
             return len(self._quat)
-        except TypeError:
-            return 1
+        return 1
 
     @classmethod
     def concatenate(cls, rotations: Sequence[Rotation]) -> Rotation:

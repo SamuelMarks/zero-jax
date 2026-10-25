@@ -53,6 +53,7 @@ def test_all_ops_executed() -> None:
     assert t_lin.shape == (5,)
 
     assert proxy_ops.rrelu(t_o).shape == (2, 2)
+    assert proxy_ops.permute(t_o, axes=[1, 0]).shape == (2, 2)
 
     with pytest.raises(AttributeError):
         proxy_ops.AbstractedAxesSpec()
@@ -102,7 +103,11 @@ def test_api_ad_and_misc_and_transformations_branches() -> None:
     assert r1.shape == (2,) and r3.shape == (2,)
 
     def dup_out(x: zero_jax.Array) -> tuple[zero_jax.Array, zero_jax.Array]:
-        """Return the same tensor twice to exercise duplicate output ID branch."""
+        """Return the same tensor twice to exercise duplicate output ID branch.
+
+        Args:
+            x: Parameter ``x``.
+        """
         y = x + 1.0
         return y, y
 
@@ -168,12 +173,12 @@ def test_experimental_export_extend_and_flatten_util() -> None:
     assert x64_prof is not None
 
     # export
-    assert export_mod.DisabledSafetyCheck.apply() is None
-    assert export_mod.Exported.apply() is None
-    assert export_mod.SymbolicScope.apply() is None
-    assert export_mod.default_export_platform() is None
-    assert export_mod.deserialize(b"") is None
-    assert export_mod.export(lambda x: x) is None
+    assert isinstance(export_mod.DisabledSafetyCheck.apply(), export_mod.DisabledSafetyCheck)
+    assert isinstance(export_mod.Exported.apply(), export_mod.Exported)
+    assert isinstance(export_mod.SymbolicScope.apply(), export_mod.SymbolicScope)
+    assert export_mod.default_export_platform() == "cpu"
+    assert isinstance(export_mod.deserialize(b""), export_mod.Exported)
+    assert callable(export_mod.export(lambda x: x))
 
     # extend
     assert ext_backend.stub() is None
@@ -263,7 +268,12 @@ def test_lax_nn_random_scipy_tree_util_branches() -> None:
         """Custom PyTree node for testing registration."""
 
         def __init__(self, x: int, y: int) -> None:
-            """Initialize _CustomNode."""
+            """Initialize _CustomNode.
+
+            Args:
+                x: Parameter ``x``.
+                y: Parameter ``y``.
+            """
             self.x = x
             self.y = y
 
@@ -421,24 +431,22 @@ def test_numpy_constants_fft_linalg_and_lax_numpy_branches() -> None:
     assert jnp.uint(3) is not None
     assert jnp.uint4(3) is not None
     assert jnp.average(jnp.array([1.0, 2.0]), weights=jnp.array([1.0, 1.0])) is not None
-    with pytest.raises(AttributeError):
-        jnp.modf(jnp.array([1.5, 2.5]))
+    frac, integ = jnp.modf(jnp.array([1.5, 2.5]))
+    assert frac.shape == (2,) and integ.shape == (2,)
+    with pytest.raises(ValueError):
+        jnp.modf(jnp.array([1.5]), out=jnp.array([0.0]))
     with pytest.raises(AttributeError):
         jnp.stable_unique(jnp.array([2, 1, 2]))
-    from unittest.mock import patch
-
     from zero_jax.numpy.lax_numpy import _safe_bool
 
     assert _safe_bool(True) is True
     assert jnp.unravel_index(2, (2, 2)) is not None
-    with patch("zero_jax._compiler_proxy_ops.vectorize", return_value=lambda *args, **kwargs: args[0]):
-        vec_fn = jnp.vectorize(lambda x: x + 1)
-        assert vec_fn(jnp.array([1, 2])) is not None
-        from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
-        from ml_switcheroo_ir import DType
-
-        vec_fn._vec = Tensor(lambda *args, **kwargs: args[0], TensorConfig((), DType("float32"), "cpu"))
-        assert vec_fn(jnp.array([1, 2])) is not None
+    vec_fn = jnp.vectorize(lambda x: x + 1, excluded={1})
+    assert vec_fn(jnp.array([1, 2])).shape == (2,)
+    vec_tuple_fn = jnp.vectorize(lambda x: (x, x + 1))
+    assert len(vec_tuple_fn(jnp.array([1, 2]))) == 2
+    with pytest.raises(TypeError):
+        jnp.vectorize(None)(jnp.array([1, 2]))
 
 
 def test_config_internal_mock_p_and_ndarray_methods_coverage() -> None:
@@ -539,7 +547,11 @@ def test_config_internal_mock_p_and_ndarray_methods_coverage() -> None:
             self.w = jnp.array(1.0)
 
         def __call__(self, x: float) -> float:
-            """Call _WithMixedAttrs."""
+            """Call _WithMixedAttrs.
+
+            Args:
+                x: Parameter ``x``.
+            """
             return x
 
     zero_jax.closure_convert(_WithMixedAttrs())
@@ -557,3 +569,373 @@ def test_config_internal_mock_p_and_ndarray_methods_coverage() -> None:
 
     # api_util.rebase_donate_argnums when donated arg is also in static_argnums
     assert zero_jax.api_util.rebase_donate_argnums((0, 1), (0,)) == (0,)
+    assert zero_jax.api.misc.getattr_safe_dict(jnp.array(1.0)) != {}
+
+
+def test_extended_numpy_linalg_fft_and_window_branches(tmp_path: zero_jax._types.ConfigValue) -> None:
+    """Cover newly implemented numpy window, histogram, creation, bitwise, linalg, and fft branches.
+
+    Args:
+        tmp_path: Temporary directory path fixture.
+    """
+    arr = jnp.array([1.0, 2.0, 3.0])
+    mask = jnp.array([True, False, True])
+    assert arr.sum(initial=1.0, dtype="float32") == 7.0
+    assert arr.mean(where=mask, dtype="float32") == 2.0
+    assert arr.min(where=mask, initial=5.0) == 1.0
+    assert str(arr.__array__(dtype="int32").dtype) == "int32"
+
+    i_arr = jnp.array([1, 2], dtype="int32")
+    b_arr = jnp.array([True, False])
+    assert (i_arr & i_arr).shape == (2,)
+    assert (i_arr | i_arr).shape == (2,)
+    assert (b_arr | b_arr).shape == (2,)
+    assert (i_arr ^ i_arr).shape == (2,)
+    assert (b_arr ^ b_arr).shape == (2,)
+    assert (~i_arr).shape == (2,)
+    assert (~b_arr).shape == (2,)
+
+    for win_fn in (jnp.bartlett, jnp.blackman, jnp.hamming, jnp.hanning):
+        assert win_fn(0).shape == (0,)
+        assert win_fn(1).shape == (1,)
+        assert win_fn(5).shape == (5,)
+    assert jnp.kaiser(0, 5.0).shape == (0,)
+    assert jnp.kaiser(1, 5.0).shape == (1,)
+    assert jnp.kaiser(5, 5.0).shape == (5,)
+
+    assert jnp.frombuffer(b"\x01\x02\x03", dtype="int32", count=2).shape == (2,)
+    assert jnp.frombuffer(b"\x01\x02\x03", dtype="int32").shape == (3,)
+    assert jnp.frombuffer([1.0, 2.0], dtype="float32").shape == (2,)
+    assert jnp.diff(jnp.array([1.0, 2.0, 4.0]), prepend=jnp.array([0.0]), append=jnp.array([5.0])).shape == (4,)
+    assert jnp.indices((2, 2), sparse=True)[0].shape == (2, 1)
+    assert jnp.nonzero(jnp.array([1, 0, 2]))[0].shape == (2,)
+    with pytest.raises(TypeError):
+        jnp.nonzero(jnp.array([1, 0, 2]), size=1)
+
+    assert jnp.apply_over_axes(lambda x, ax: jnp.sum(x, axis=ax), jnp.ones((2, 2)), [0, 1]).shape == (1, 1)
+    assert jnp.apply_over_axes(lambda x, ax: x, jnp.ones((2, 2)), 0).shape == (2, 2)
+    assert jnp.argwhere(jnp.array(1.0)).shape == (1, 0)
+    assert jnp.argwhere(jnp.ones((2, 2))).shape == (4, 2)
+
+    txt_file = tmp_path / "nums.txt"
+    txt_file.write_text("1.0 2.0 3.0", encoding="utf-8")
+    assert jnp.fromfile(str(txt_file), sep=" ", count=2).shape == (2,)
+    bin_file = tmp_path / "nums.bin"
+    bin_file.write_bytes(b"\x01\x02\x03")
+    assert jnp.fromfile(str(bin_file), count=2).shape == (2,)
+
+    with pytest.raises(TypeError):
+        jnp.fromfunction(None, (2,))
+    assert (arr % 2.0).shape == (3,)
+    assert (10.0 % arr).shape == (3,)
+    assert jnp.fromiter([1.0, 2.0, 3.0], dtype="float32", count=2).shape == (2,)
+    assert jnp.fromstring("1.0,2.0,3.0", sep=",", count=2).shape == (2,)
+    assert jnp.fromstring(b"\x01\x02", count=1).shape == (1,)
+    assert jnp.geomspace(1.0, 100.0, num=3, dtype="float32").shape == (3,)
+    assert jnp.gradient(jnp.array([1.0])).shape == (1,)
+    assert jnp.gradient(jnp.array([1.0, 3.0])).shape == (2,)
+    assert jnp.gradient(jnp.array([1.0, 2.0, 4.0]), 0.5).shape == (3,)
+
+    assert jnp.histogram_bin_edges(jnp.array([1.0, 1.0]), bins=2).shape == (3,)
+    assert jnp.histogram_bin_edges(jnp.array([1.0, 2.0]), bins=[0.0, 1.0, 2.0]).shape == (3,)
+    assert jnp.histogram_bin_edges(jnp.array([1.0, 2.0]), bins=2, range=(0.0, 2.0)).shape == (3,)
+    h_d, _ = jnp.histogram(jnp.array([1.0, 2.0, 3.0]), bins=2, density=True, weights=jnp.array([1.0, 1.0, 1.0]))
+    assert h_d.shape == (2,)
+    h2, _, _ = jnp.histogram2d(jnp.array([0.0, 1.0]), jnp.array([0.0, 1.0]), bins=(2, 2), range=((0.0, 1.0), (0.0, 1.0)))
+    assert h2.shape == (2, 2)
+    hdd1, _ = jnp.histogramdd(jnp.array([1.0, 2.0]), bins=2)
+    assert hdd1.shape == (2,)
+    hdd2, _ = jnp.histogramdd(jnp.ones((3, 2)), bins=2)
+    assert hdd2.shape == (2, 2)
+    hdd3, _ = jnp.histogramdd(jnp.ones((3, 3)), bins=2)
+    assert hdd3.shape == (2,)
+
+    # numpy.fft & numpy.linalg branches
+    assert jnp.fft.fftfreq(4, dtype="float32").shape == (4,)
+    assert jnp.fft.rfftfreq(4, dtype="float32").shape == (3,)
+    eye2 = jnp.eye(2)
+    assert jnp.linalg.cholesky(eye2, upper=True, symmetrize_input=False).shape == (2, 2)
+    assert jnp.linalg.eigh(eye2, symmetrize_input=False)[0].shape == (2,)
+    assert jnp.linalg.qr(eye2, mode="r").shape == (2, 2)
+    assert jnp.linalg.svd(eye2, compute_uv=False).shape == (2,)
+    assert len(jnp.linalg.svd(jnp.eye(3, 2), full_matrices=False)) == 3
+    assert jnp.linalg.matmul(eye2, eye2, preferred_element_type="float32").shape == (2, 2)
+    assert jnp.linalg.tensordot(eye2, eye2, axes=1, preferred_element_type="float32").shape == (2, 2)
+    assert jnp.linalg.trace(eye2, dtype="float32").shape == ()
+    assert jnp.linalg.vecdot(jnp.array([1.0, 2.0]), jnp.array([3.0, 4.0]), preferred_element_type="float32").shape == ()
+
+
+def test_scipy_special_stats_and_submodules_execution() -> None:
+    """Execute all scipy.special, scipy.stats, scipy.linalg, fft, integrate, ndimage, signal, sparse, cluster, ops, image, dlpack, util, monitoring, profiler, distributed, and xla_bridge functions with real inputs."""
+    import zero_jax.distributed as dist_mod
+    import zero_jax.dlpack as dlpack_mod
+    import zero_jax.image as image_mod
+    import zero_jax.lib.xla_bridge as xb_mod
+    import zero_jax.monitoring as mon_mod
+    import zero_jax.ops as ops_mod
+    import zero_jax.profiler as prof_mod
+    import zero_jax.scipy as sp_mod
+    import zero_jax.util as util_mod
+
+    x = jnp.array([0.5, 1.5])
+    a = jnp.array([1.0, 2.0])
+    b = jnp.array([2.0, 3.0])
+
+    # scipy.special
+    assert sp_mod.special.bernoulli(4).shape == (5,)
+    assert sp_mod.special.gammaln(a).shape == (2,)
+    assert sp_mod.special.gamma(a).shape == (2,)
+    assert sp_mod.special.betaln(a, b).shape == (2,)
+    assert sp_mod.special.beta(a, b).shape == (2,)
+    assert sp_mod.special.betainc(a, b, jnp.array([0.2, 0.8])).shape == (2,)
+    assert sp_mod.special.digamma(a).shape == (2,)
+    assert sp_mod.special.entr(x).shape == (2,)
+    assert sp_mod.special.erf(x).shape == (2,)
+    assert sp_mod.special.erfc(x).shape == (2,)
+    assert sp_mod.special.erfinv(jnp.array([0.1, 0.5])).shape == (2,)
+    assert sp_mod.special.exp1(x).shape == (2,)
+    assert sp_mod.special.expi(x).shape == (2,)
+    assert sp_mod.special.expit(x).shape == (2,)
+    assert sp_mod.special.expn(a, x).shape == (2,)
+    assert sp_mod.special.factorial(a).shape == (2,)
+    assert sp_mod.special.gammainc(a, x).shape == (2,)
+    assert sp_mod.special.gammaincc(a, x).shape == (2,)
+    assert sp_mod.special.gammasgn(jnp.array([-1.5, 1.5])).shape == (2,)
+    assert sp_mod.special.hyp1f1(a, b, x).shape == (2,)
+    assert sp_mod.special.i0(x).shape == (2,)
+    assert sp_mod.special.i0e(x).shape == (2,)
+    assert sp_mod.special.i1(x).shape == (2,)
+    assert sp_mod.special.i1e(x).shape == (2,)
+    assert sp_mod.special.kl_div(x, a).shape == (2,)
+    assert sp_mod.special.ndtr(x).shape == (2,)
+    assert sp_mod.special.log_ndtr(x).shape == (2,)
+    assert sp_mod.special.logit(jnp.array([0.2, 0.8])).shape == (2,)
+    assert sp_mod.special.logsumexp(x).shape == ()
+    assert len(sp_mod.special.lpmn(1, 2, x)) == 2
+    assert sp_mod.special.lpmn_values(1, 2, x, True).shape == (2,)
+    assert sp_mod.special.multigammaln(jnp.array([3.0, 4.0]), 2).shape == (2,)
+    assert sp_mod.special.ndtri(jnp.array([0.2, 0.8])).shape == (2,)
+    assert sp_mod.special.poch(a, b).shape == (2,)
+    assert sp_mod.special.polygamma(jnp.array([1, 1]), a).shape == (2,)
+    assert sp_mod.special.rel_entr(x, a).shape == (2,)
+    assert sp_mod.special.spence(x).shape == (2,)
+    assert sp_mod.special.sph_harm(jnp.array([0]), jnp.array([0]), jnp.array([0.5]), jnp.array([0.5])).shape == (1,)
+    assert sp_mod.special.xlog1py(x, a).shape == (2,)
+    assert sp_mod.special.xlogy(x, a).shape == (2,)
+    assert sp_mod.special.zeta(jnp.array([2.0, 3.0]), jnp.array([1.0, 1.0])).shape == (2,)
+
+    # scipy.stats distributions
+    q = jnp.array([0.25, 0.75])
+    for dist in (sp_mod.stats.norm, sp_mod.stats.cauchy):
+        assert dist.pdf(x).shape == (2,)
+        assert dist.logpdf(x).shape == (2,)
+        assert dist.cdf(x).shape == (2,)
+        assert dist.logcdf(x).shape == (2,)
+        assert dist.sf(x).shape == (2,)
+        assert dist.logsf(x).shape == (2,)
+        assert dist.ppf(q).shape == (2,)
+        assert dist.isf(q).shape == (2,)
+
+    assert sp_mod.stats.uniform.pdf(q).shape == (2,)
+    assert sp_mod.stats.uniform.logpdf(q).shape == (2,)
+    assert sp_mod.stats.uniform.cdf(q).shape == (2,)
+    assert sp_mod.stats.uniform.ppf(q).shape == (2,)
+    assert sp_mod.stats.expon.pdf(x).shape == (2,)
+    assert sp_mod.stats.expon.logpdf(x).shape == (2,)
+    assert sp_mod.stats.laplace.pdf(x).shape == (2,)
+    assert sp_mod.stats.laplace.logpdf(x).shape == (2,)
+    assert sp_mod.stats.laplace.cdf(x).shape == (2,)
+    assert sp_mod.stats.logistic.pdf(x).shape == (2,)
+    assert sp_mod.stats.logistic.logpdf(x).shape == (2,)
+    assert sp_mod.stats.logistic.cdf(x).shape == (2,)
+    assert sp_mod.stats.logistic.sf(x).shape == (2,)
+    assert sp_mod.stats.logistic.ppf(q).shape == (2,)
+    assert sp_mod.stats.logistic.isf(q).shape == (2,)
+
+    for ab_dist in (sp_mod.stats.beta, sp_mod.stats.truncnorm):
+        assert ab_dist.pdf(q, 1.0, 2.0).shape == (2,)
+        assert ab_dist.logpdf(q, 1.0, 2.0).shape == (2,)
+        assert ab_dist.cdf(q, 1.0, 2.0).shape == (2,)
+        assert ab_dist.logcdf(q, 1.0, 2.0).shape == (2,)
+        assert ab_dist.sf(q, 1.0, 2.0).shape == (2,)
+        assert ab_dist.logsf(q, 1.0, 2.0).shape == (2,)
+
+    for a_dist in (sp_mod.stats.gamma, sp_mod.stats.chi2):
+        assert a_dist.pdf(x, 2.0).shape == (2,)
+        assert a_dist.logpdf(x, 2.0).shape == (2,)
+        assert a_dist.cdf(x, 2.0).shape == (2,)
+        assert a_dist.logcdf(x, 2.0).shape == (2,)
+        assert a_dist.sf(x, 2.0).shape == (2,)
+        assert a_dist.logsf(x, 2.0).shape == (2,)
+
+    assert sp_mod.stats.gennorm.pdf(x, 2.0).shape == (2,)
+    assert sp_mod.stats.gennorm.logpdf(x, 2.0).shape == (2,)
+    assert sp_mod.stats.gennorm.cdf(x, 2.0).shape == (2,)
+    assert sp_mod.stats.t.pdf(x, 3.0).shape == (2,)
+    assert sp_mod.stats.t.logpdf(x, 3.0).shape == (2,)
+    assert sp_mod.stats.pareto.pdf(jnp.array([1.5, 2.5]), 2.0).shape == (2,)
+    assert sp_mod.stats.pareto.logpdf(jnp.array([1.5, 2.5]), 2.0).shape == (2,)
+    assert sp_mod.stats.vonmises.pdf(x, 1.0).shape == (2,)
+    assert sp_mod.stats.vonmises.logpdf(x, 1.0).shape == (2,)
+    assert sp_mod.stats.wrapcauchy.pdf(x, 0.5).shape == (2,)
+    assert sp_mod.stats.wrapcauchy.logpdf(x, 0.5).shape == (2,)
+    assert sp_mod.stats.dirichlet.pdf(jnp.array([0.4, 0.6]), jnp.array([1.0, 2.0])).shape == ()
+    assert sp_mod.stats.dirichlet.logpdf(jnp.array([0.4, 0.6]), jnp.array([1.0, 2.0])).shape == ()
+    assert sp_mod.stats.multivariate_normal.pdf(jnp.array([0.0, 0.0]), jnp.array([0.0, 0.0]), jnp.eye(2)).shape == ()
+    assert sp_mod.stats.multivariate_normal.logpdf(jnp.array([0.0, 0.0]), jnp.array([0.0, 0.0]), jnp.eye(2)).shape == ()
+
+    k_arr = jnp.array([0.0, 1.0])
+    assert sp_mod.stats.bernoulli.pmf(k_arr, 0.5).shape == (2,)
+    assert sp_mod.stats.bernoulli.logpmf(k_arr, 0.5).shape == (2,)
+    assert sp_mod.stats.bernoulli.cdf(k_arr, 0.5).shape == (2,)
+    assert sp_mod.stats.bernoulli.ppf(q, 0.5).shape == (2,)
+    assert sp_mod.stats.binom.pmf(k_arr, 2.0, 0.5).shape == (2,)
+    assert sp_mod.stats.binom.logpmf(k_arr, 2.0, 0.5).shape == (2,)
+    assert sp_mod.stats.betabinom.pmf(k_arr, 2.0, 1.0, 1.0).shape == (2,)
+    assert sp_mod.stats.betabinom.logpmf(k_arr, 2.0, 1.0, 1.0).shape == (2,)
+    assert sp_mod.stats.geom.pmf(jnp.array([1.0, 2.0]), 0.5).shape == (2,)
+    assert sp_mod.stats.geom.logpmf(jnp.array([1.0, 2.0]), 0.5).shape == (2,)
+    assert sp_mod.stats.multinomial.pmf(jnp.array([1.0, 1.0]), 2.0, jnp.array([0.5, 0.5])).shape == ()
+    assert sp_mod.stats.multinomial.logpmf(jnp.array([1.0, 1.0]), 2.0, jnp.array([0.5, 0.5])).shape == ()
+    assert sp_mod.stats.nbinom.pmf(k_arr, 2.0, 0.5).shape == (2,)
+    assert sp_mod.stats.nbinom.logpmf(k_arr, 2.0, 0.5).shape == (2,)
+    assert sp_mod.stats.poisson.pmf(k_arr, 1.5).shape == (2,)
+    assert sp_mod.stats.poisson.logpmf(k_arr, 1.5).shape == (2,)
+    assert sp_mod.stats.poisson.cdf(k_arr, 1.5).shape == (2,)
+
+    # scipy.linalg, fft, integrate, ndimage, signal, sparse.linalg, cluster.vq
+    m2 = jnp.eye(2)
+    cf = sp_mod.linalg.cho_factor(m2, lower=True)
+    assert sp_mod.linalg.cho_solve(cf, jnp.array([1.0, 2.0])).shape == (2,)
+    assert len(sp_mod.linalg.expm_frechet(m2, m2)) == 2
+    assert sp_mod.linalg.funm(m2, lambda w: w).shape == (2, 2)
+    assert sp_mod.linalg.hilbert(3).shape == (3, 3)
+    luf = sp_mod.linalg.lu_factor(m2)
+    assert sp_mod.linalg.lu_solve(luf, jnp.array([1.0, 2.0])).shape == (2,)
+    assert len(sp_mod.linalg.rsf2csf(m2, m2)) == 2
+    assert sp_mod.linalg.solve_triangular(m2, jnp.array([1.0, 2.0]), lower=True).shape == (2,)
+    assert sp_mod.linalg.solve_triangular(m2, jnp.array([1.0, 2.0]), trans="T").shape == (2,)
+    assert sp_mod.linalg.toeplitz(jnp.array([1.0, 2.0])).shape == (2, 2)
+
+    assert sp_mod.fft.dct(x).shape == (2,)
+    assert sp_mod.fft.dctn(x).shape == (2,)
+    assert sp_mod.fft.idct(x).shape == (2,)
+    assert sp_mod.fft.idctn(x).shape == (2,)
+    assert sp_mod.integrate.trapezoid(jnp.array([1.0, 2.0, 3.0])).shape == ()
+    assert sp_mod.integrate.trapezoid(jnp.array([1.0, 2.0, 3.0]), jnp.array([0.0, 1.0, 3.0])).shape == ()
+    assert sp_mod.ndimage.map_coordinates(jnp.ones((3, 3)), [jnp.array([0.5]), jnp.array([0.5])], order=1).shape == (1,)
+
+    assert sp_mod.signal.convolve(x, x).shape == (3,)
+    assert sp_mod.signal.convolve2d(m2, m2).shape == (3, 3)
+    assert sp_mod.signal.correlate(x, x).shape == (3,)
+    assert sp_mod.signal.correlate2d(m2, m2).shape == (3, 3)
+    assert len(sp_mod.signal.csd(jnp.ones((16,)), jnp.ones((16,)))) == 2
+    assert sp_mod.signal.detrend(jnp.array([1.0, 2.0, 3.0]), type="constant").shape == (3,)
+    assert sp_mod.signal.detrend(jnp.array([1.0, 2.0, 3.0]), type="linear").shape == (3,)
+    assert sp_mod.signal.fftconvolve(x, x).shape == (3,)
+    assert sp_mod.signal.fftconvolve(m2, m2).shape == (3, 3)
+    _f_s, _t_s, zxx = sp_mod.signal.stft(jnp.ones((16,)), nperseg=4)
+    assert zxx is not None
+    assert sp_mod.signal.istft(zxx, nperseg=4)[1] is not None
+    assert len(sp_mod.signal.welch(jnp.ones((16,)))) == 2
+
+    lin_op = sp_mod.sparse.linalg.LinearOperator((2, 2), matvec=lambda v: v * 2.0)
+    assert lin_op.matvec(jnp.array([1.0, 2.0])).shape == (2,)
+    assert (lin_op @ jnp.array([1.0, 2.0])).shape == (2,)
+    empty_op = sp_mod.sparse.linalg.LinearOperator((2, 2))
+    assert empty_op.matvec(jnp.array([1.0, 2.0])).shape == (2,)
+    assert (empty_op @ jnp.array([1.0, 2.0])).shape == (2,)
+    sol_cg, _ = sp_mod.sparse.linalg.cg(lin_op, jnp.array([2.0, 4.0]))
+    assert sol_cg.shape == (2,)
+    sol_fn, _ = sp_mod.sparse.linalg.cg(lambda v: v * 2.0, jnp.array([2.0, 4.0]))
+    assert sol_fn.shape == (2,)
+    sol_mat, _ = sp_mod.sparse.linalg.cg(jnp.array([[2.0, 0.0], [0.0, 3.0]]), jnp.array([2.0, 6.0]), jnp.array([0.0, 0.0]), maxiter=1)
+    assert sol_mat.shape == (2,)
+    sol_mat2, _ = sp_mod.sparse.linalg.cg(jnp.array([[2.0, 0.0], [0.0, 3.0]]), jnp.array([2.0, 6.0]), jnp.array([0.0, 0.0]), maxiter=5)
+    assert sol_mat2.shape == (2,)
+    sol_zero, _ = sp_mod.sparse.linalg.cg(jnp.zeros((2, 2)), jnp.array([1.0, 1.0]))
+    assert sol_zero.shape == (2,)
+    sol_tol, _ = sp_mod.sparse.linalg.cg(m2, jnp.array([0.0, 0.0]))
+    assert sol_tol.shape == (2,)
+    assert sp_mod.sparse.linalg.bicgstab(m2, jnp.array([1.0, 2.0]))[0].shape == (2,)
+    assert sp_mod.sparse.linalg.gmres(m2, jnp.array([1.0, 2.0]))[0].shape == (2,)
+
+    codes, dists = sp_mod.cluster.vq.vq(jnp.array([[1.0, 1.0], [5.0, 5.0]]), jnp.array([[0.0, 0.0], [6.0, 6.0]]))
+    assert codes.shape == (2,) and dists.shape == (2,)
+
+    # ops, image, dlpack, util, monitoring, profiler, distributed, xla_bridge
+    seg_data = jnp.array([1.0, 2.0, 3.0])
+    seg_ids = jnp.array([0, 0, 1], dtype="int32")
+    assert ops_mod.segment_sum(seg_data, seg_ids, 2).shape == (2,)
+    assert ops_mod.segment_prod(seg_data, seg_ids, 2).shape == (2,)
+    assert ops_mod.segment_max(seg_data, seg_ids, 2).shape == (2,)
+    assert ops_mod.segment_min(seg_data, seg_ids, 2).shape == (2,)
+
+    assert image_mod.resize(jnp.ones((2, 2)), (4, 4), "linear").shape == (4, 4)
+    assert image_mod.scale_and_translate(jnp.ones((2, 2)), (4, 4), (0, 1), jnp.array([1.0, 1.0]), jnp.array([0.0, 0.0]), "linear").shape == (4, 4)
+    assert dlpack_mod.to_dlpack(x).shape == (2,)
+    assert dlpack_mod.from_dlpack(x).shape == (2,)
+
+    hf = util_mod.as_hashable_function(lambda v: v + 1, ())
+    assert hf(3) == 4
+    assert util_mod.HashableFunction()(3) is None
+    cached_fn = util_mod.cache(lambda v: v * 2)
+    assert cached_fn(3) == 6
+    assert util_mod.safe_map(lambda u, v: u + v, [1, 2], [3, 4]) == [4, 6]
+    with pytest.raises(ValueError):
+        util_mod.safe_map(lambda u, v: u + v, [1], [1, 2])
+    assert util_mod.safe_zip([1, 2], [3, 4]) == [(1, 3), (2, 4)]
+    with pytest.raises(ValueError):
+        util_mod.safe_zip([1], [1, 2])
+    assert util_mod.split_dict({"a": 1, "b": 2}, [["a"], ["b"]]) == ([1], [2])
+    assert util_mod.split_list([1, 2, 3], [1, 1]) == [[1], [2], [3]]
+    assert util_mod.split_list_checked([1, 2], [1, 1]) == [[1], [2]]
+    lhs_m, rhs_m, merge_fn = util_mod.split_merge([True, False], [10, 20])
+    assert merge_fn(lhs_m, rhs_m) == [10, 20]
+    assert util_mod.subvals((1, 2, 3), [(1, 99)]) == (1, 99, 3)
+    assert util_mod.toposort([1, 2]) == [1, 2]
+    assert util_mod.unzip2([(1, "a"), (2, "b")]) == ((1, 2), ("a", "b"))
+    assert util_mod.wrap_name("fn", "jit") == "jit(fn)"
+    assert callable(util_mod.wraps(lambda v: v)(lambda v: v))
+
+    events: list[str] = []
+    mon_mod.register_event_listener(lambda ev: events.append(str(ev)))
+    mon_mod.record_event("my_ev")
+    assert events == ["my_ev"]
+    durs: list[float] = []
+    mon_mod.register_event_duration_secs_listener(lambda ev, d: durs.append(float(d)))
+    mon_mod.record_event_duration_secs("my_ev", 1.5)
+    assert durs == [1.5]
+    mon_mod.clear_event_listeners()
+    mon_mod.clear_event_listeners("extra")
+
+    with prof_mod.StepTraceAnnotation("step", step_num=1) as sta:
+        assert sta.name == "step"
+    with prof_mod.TraceAnnotation("trace") as ta:
+        assert ta.name == "trace"
+    assert prof_mod.annotate_function(lambda v: v)(5) == 5
+    assert prof_mod.device_memory_profile("cpu") == b""
+    assert prof_mod.save_device_memory_profile("mem.prof") is None
+    assert prof_mod.start_server(9999) is None
+    assert prof_mod.stop_server(9999) is None
+    assert prof_mod.start_trace("/tmp") is None
+    assert prof_mod.stop_trace("/tmp") is None
+    with prof_mod.trace("/tmp"):
+        pass
+
+    dist_mod.initialize()
+    assert dist_mod.is_initialized() is True
+    dist_mod.initialize("addr")
+    dist_mod.shutdown()
+    assert dist_mod.is_initialized() is False
+    dist_mod.shutdown("addr")
+
+    assert xb_mod.default_backend() == "cpu"
+    assert xb_mod.get_backend().platform == "cpu"
+    assert xb_mod.get_compile_options() == {}
+    with pytest.raises(AttributeError):
+        xb_mod.default_backend("cpu")
+    with pytest.raises(AttributeError):
+        xb_mod.get_backend("cpu")
+    with pytest.raises(AttributeError):
+        xb_mod.get_compile_options("cpu")

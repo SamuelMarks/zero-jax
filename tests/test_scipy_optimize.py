@@ -39,7 +39,11 @@ def test_OptimizeResults() -> None:
 
 @mock.patch("zero_jax.scipy.optimize.get_op")
 def test_minimize(mock_get_op: mock.MagicMock) -> None:
-    """Test minimize function routes correctly."""
+    """Test minimize function routes correctly.
+
+    Args:
+        mock_get_op: Parameter ``mock_get_op``.
+    """
     mock_op_instance = mock.MagicMock()
     mock_get_op.return_value = mock_op_instance
 
@@ -57,7 +61,11 @@ def test_minimize(mock_get_op: mock.MagicMock) -> None:
     )
 
     def dummy_fun(x: jnp.ndarray) -> jnp.ndarray:
-        """Execute ``dummy_fun``."""
+        """Execute ``dummy_fun``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x**2
 
     x0 = jnp.array([0.5])

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 
 from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 from .pytree import (
     PyTreeDef,
+    _HasFieldsProtocol,
+    _is_namedtuple_instance,
     _pytree_registry,
     _pytree_with_keys_registry,
     register_pytree_node,
@@ -311,8 +314,8 @@ def register_dataclass(
     if not isinstance(nodetype, type):
         return nodetype
 
-    ann_fields = list(nodetype.__annotations__.keys()) if "__annotations__" in nodetype.__dict__ else []
-    resolved_data = list(data_fields) if data_fields is not None else ann_fields
+    dc_fields = [f.name for f in dataclasses.fields(nodetype)] if dataclasses.is_dataclass(nodetype) else []
+    resolved_data = list(data_fields) if data_fields is not None else dc_fields
     resolved_meta = list(meta_fields) if meta_fields is not None else []
 
     def _flatten_with_keys(obj: ArrayLikeSpec) -> tuple[list[tuple[GetAttrKey, ArrayLikeSpec]], tuple[tuple[str, ArrayLikeSpec], ...]]:
@@ -324,9 +327,9 @@ def register_dataclass(
         Returns:
             tuple[list[tuple[GetAttrKey, ArrayLikeSpec]], tuple[tuple[str, ArrayLikeSpec], ...]]: Keyed children and static metadata.
         """
-        obj_dict = obj.__dict__
-        key_children = [(GetAttrKey(f), obj_dict[f]) for f in resolved_data if f in obj_dict]
-        meta = tuple((f, obj_dict[f]) for f in resolved_meta if f in obj_dict)
+        obj_map = dataclasses.asdict(obj) if dataclasses.is_dataclass(obj) else {}
+        key_children = [(GetAttrKey(f), obj_map[f]) for f in resolved_data if f in obj_map]
+        meta = tuple((f, obj_map[f]) for f in resolved_meta if f in obj_map)
         return key_children, meta
 
     def _unflatten(meta: tuple[tuple[str, ArrayLikeSpec], ...], children: list[ArrayLikeSpec]) -> ArrayLikeSpec:
@@ -406,6 +409,15 @@ def _flatten_with_path_recursive(
             path_leaves.extend(c_leaves)
             children_defs.append(c_def)
         return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
+
+    if _is_namedtuple_instance(tree) and isinstance(tree, _HasFieldsProtocol):
+        path_leaves = []
+        children_defs = []
+        for field_name, child in zip(tree._fields, tree):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, GetAttrKey(field_name)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs)
 
     if isinstance(tree, tuple):
         path_leaves = []

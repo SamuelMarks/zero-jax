@@ -318,7 +318,11 @@ def scatter(
     if dimension_numbers is None:
         return _wrap(ops.scatter(t_op, 0, t_idx, t_up))
 
-    return _wrap(ops.scatter_nd(t_idx, t_up, t_op.shape))
+    from zero_jax.numpy.lax_numpy import ones_like
+
+    scattered = ops.scatter_nd(t_idx, t_up, t_op.shape)
+    mask = ops.scatter_nd(t_idx, _to_tensor(ones_like(_wrap(t_up))), t_op.shape)
+    return _wrap(ops.where(ops.not_equal(mask, _to_tensor(0)), scattered, t_op))
 
 
 def scatter_add(

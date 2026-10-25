@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax.numpy.lax_numpy import asarray
 
 
 class SUPPORTED_DTYPES:
@@ -28,6 +29,8 @@ def from_dlpack(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
+    if args:
+        return asarray(args[0])
     return _ops.from_dlpack(*args, **kwargs)
 
 
@@ -41,4 +44,6 @@ def to_dlpack(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
+    if args:
+        return asarray(args[0])
     return _ops.to_dlpack(*args, **kwargs)

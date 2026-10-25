@@ -278,7 +278,7 @@ class ndarray:
         Returns:
             ArrayLikeSpec: Reshaped array.
         """
-        newshape = tuple(int(d) for d in shape[0]) if len(shape) == 1 and isinstance(shape[0], (tuple, list)) else tuple(int(d) for d in shape if isinstance(d, int))
+        newshape = tuple(int(d) for d in shape[0]) if len(shape) == 1 and isinstance(shape[0], (tuple, list)) else tuple(int(d) for d in shape)
         return reshape(self, newshape)
 
     def transpose(self, *axes: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -294,7 +294,7 @@ class ndarray:
             return transpose(self, None)
         if len(axes) == 1 and isinstance(axes[0], (tuple, list)):
             return transpose(self, [int(a) for a in axes[0]])
-        return transpose(self, [int(a) for a in axes if isinstance(a, int)])
+        return transpose(self, [int(a) for a in axes])
 
     def ravel(self, order: str = "C") -> ArrayLikeSpec:
         """Return a flattened 1-D array.
@@ -351,7 +351,12 @@ class ndarray:
         Returns:
             ArrayLikeSpec: Summed array.
         """
-        return sum(self, axis=axis, keepdims=keepdims)
+        res = sum(self, axis=axis, keepdims=keepdims, where=where)
+        if initial is not None:
+            res = add(res, initial)
+        if dtype is not None:
+            res = astype(res, dtype)
+        return res
 
     def mean(
         self,
@@ -373,7 +378,15 @@ class ndarray:
         Returns:
             ArrayLikeSpec: Mean array.
         """
-        return mean(self, axis=axis, keepdims=keepdims)
+        if where is not None:
+            total = sum(self, axis=axis, keepdims=keepdims, where=where)
+            cnt = sum(astype(where, float32), axis=axis, keepdims=keepdims)
+            res = divide(total, cnt)
+        else:
+            res = mean(self, axis=axis, keepdims=keepdims)
+        if dtype is not None:
+            res = astype(res, dtype)
+        return res
 
     def min(
         self,
@@ -395,7 +408,14 @@ class ndarray:
         Returns:
             ArrayLikeSpec: Minimum array.
         """
-        return min(self, axis=axis, keepdims=keepdims)
+        t_x = self._tensor
+        if where is not None:
+            init_val = initial if initial is not None else float("inf")
+            t_x = ops.where(_to_tensor(where), t_x, _to_tensor(init_val))
+        res = ops.min(t_x, axis=axis, keepdims=keepdims)
+        if initial is not None:
+            res = ops.minimum(res, _to_tensor(initial))
+        return _wrap(res)
 
     def max(
         self,
@@ -417,7 +437,7 @@ class ndarray:
         Returns:
             ArrayLikeSpec: Maximum array.
         """
-        return max(self, axis=axis, keepdims=keepdims)
+        return max(self, axis=axis, keepdims=keepdims, where=where, initial=initial)
 
     def __matmul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
         """Perform matrix multiplication with ``other``.
@@ -469,7 +489,7 @@ class ndarray:
         return self._tensor.dtype
 
     def __array__(self, dtype: DTypeSpec = None) -> ArrayLikeSpec:
-        """Perform the array operation.
+        """Convert to a host array representation, optionally cast to ``dtype``.
 
         Args:
             dtype: Optional dtype to convert to.
@@ -477,6 +497,8 @@ class ndarray:
         Returns:
             ArrayLikeSpec: The result of the array operation.
         """
+        if dtype is not None:
+            return _to_tensor(astype(self, dtype)).__array__()
         return self._tensor.__array__()
 
     def block_until_ready(self) -> ndarray:
@@ -520,26 +542,26 @@ class ndarray:
         return add(other, self)
 
     def __sub__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Perform the sub operation.
+        """Perform elementwise subtraction ``self - other``.
 
         Args:
-            other (ArrayLikeSpec): The other operand for the operation.
+            other (ArrayLikeSpec): The right-hand operand for subtraction.
 
         Returns:
-            ArrayLikeSpec: The result of the sub operation.
+            ArrayLikeSpec: The result of the subtraction operation.
         """
-        return add(self, multiply(other, -1))
+        return subtract(self, other)
 
     def __rsub__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Perform the rsub operation.
+        """Perform reflected elementwise subtraction ``other - self``.
 
         Args:
-            other (ArrayLikeSpec): The other operand for the operation.
+            other (ArrayLikeSpec): The left-hand operand for subtraction.
 
         Returns:
-            ArrayLikeSpec: The result of the rsub operation.
+            ArrayLikeSpec: The result of the reflected subtraction operation.
         """
-        return add(other, multiply(self, -1))
+        return subtract(other, self)
 
     def __mul__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
         """Perform the mul operation.
@@ -629,16 +651,35 @@ class ndarray:
         """
         return floor_divide(other, self)
 
-    def __neg__(self) -> ArrayLikeSpec:
-        """Perform the neg operation.
+    def __mod__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform elementwise modulo ``self % other``.
 
         Args:
-            other (ArrayLikeSpec): The other operand for the operation.
+            other: Right-hand divisor operand.
 
         Returns:
-            ArrayLikeSpec: The result of the neg operation.
+            ArrayLikeSpec: Elementwise remainder.
         """
-        return multiply(self, -1.0)
+        return mod(self, other)
+
+    def __rmod__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform reflected elementwise modulo ``other % self``.
+
+        Args:
+            other: Left-hand dividend operand.
+
+        Returns:
+            ArrayLikeSpec: Elementwise remainder.
+        """
+        return mod(other, self)
+
+    def __neg__(self) -> ArrayLikeSpec:
+        """Perform elementwise negation ``-self``.
+
+        Returns:
+            ArrayLikeSpec: The result of the negation operation.
+        """
+        return negative(self)
 
     def __lt__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
         """Perform the lt operation.
@@ -683,6 +724,55 @@ class ndarray:
             ArrayLikeSpec: The result of the ge operation.
         """
         return _wrap(ops.greater_equal(self._tensor, _to_tensor(other)))
+
+    def __and__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform elementwise bitwise/logical AND ``self & other``.
+
+        Args:
+            other: Right-hand operand.
+
+        Returns:
+            ArrayLikeSpec: Elementwise AND result.
+        """
+        if self.dtype.name == "bool":
+            return logical_and(self, other)
+        return bitwise_and(self, other)
+
+    def __or__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform elementwise bitwise/logical OR ``self | other``.
+
+        Args:
+            other: Right-hand operand.
+
+        Returns:
+            ArrayLikeSpec: Elementwise OR result.
+        """
+        if self.dtype.name == "bool":
+            return logical_or(self, other)
+        return bitwise_or(self, other)
+
+    def __xor__(self, other: ArrayLikeSpec) -> ArrayLikeSpec:
+        """Perform elementwise bitwise/logical XOR ``self ^ other``.
+
+        Args:
+            other: Right-hand operand.
+
+        Returns:
+            ArrayLikeSpec: Elementwise XOR result.
+        """
+        if self.dtype.name == "bool":
+            return logical_xor(self, other)
+        return bitwise_xor(self, other)
+
+    def __invert__(self) -> ArrayLikeSpec:
+        """Perform elementwise bitwise/logical NOT ``~self``.
+
+        Returns:
+            ArrayLikeSpec: Elementwise NOT result.
+        """
+        if self.dtype.name == "bool":
+            return logical_not(self)
+        return bitwise_not(self)
 
     def __setitem__(self, key: ArrayLikeSpec, value: ArrayLikeSpec) -> None:
         """Perform the setitem operation.
@@ -777,6 +867,9 @@ class ndarray:
         if size == 1:
             if isinstance(self._tensor.data, ProxyTensor):
                 return True
+            raw = self._tensor.data
+            if isinstance(raw, (builtins.bool, int, float)):
+                return builtins.bool(raw)
             return builtins.bool(self._tensor.item())
         raise ValueError("The truth value of an array with more than one element is ambiguous.")
 
@@ -1211,9 +1304,10 @@ def array(x: ArrayLikeSpec, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
     Returns:
         ArrayLikeSpec: The result of the operation.
     """
-    if isinstance(x, ndarray):
-        return x
-    return _wrap(_to_tensor(x))
+    res = x if isinstance(x, ndarray) else _wrap(_to_tensor(x))
+    if dtype is not None:
+        return astype(res, dtype)
+    return res
 
 
 def dot(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -1431,7 +1525,10 @@ def arange(start: ArrayLikeSpec, stop: ArrayLikeSpec = None, step: ArrayLikeSpec
     Returns:
         ArrayLikeSpec: The result of the operation.
     """
-    return _wrap(ops.arange(start=start, stop=stop, step=step, dtype=dtype))
+    from zero_jax.nn.activation import _to_dtype
+
+    resolved_dtype = _to_dtype(dtype) if dtype is not None else None
+    return _wrap(ops.arange(start=start, stop=stop, step=step, dtype=resolved_dtype))
 
 
 def linspace(
@@ -4131,7 +4228,13 @@ def bartlett(M: int) -> ArrayLikeSpec:
     Returns:
         The window.
     """
-    return _wrap(ops.bartlett(M))
+    if M < 1:
+        return array([], dtype=float32)
+    if M == 1:
+        return ones((1,), dtype=float32)
+    n = arange(0, M, dtype=float32)
+    half = (M - 1) / 2.0
+    return where(n <= half, 2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
 
 
 def bincount(x: ArrayLikeSpec, weights: ArrayLikeSpec = None, minlength: int = 0, *, length: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -4177,7 +4280,15 @@ def blackman(M: int) -> ArrayLikeSpec:
     Returns:
         The window.
     """
-    return _wrap(ops.blackman(M))
+    if M < 1:
+        return array([], dtype=float32)
+    if M == 1:
+        return ones((1,), dtype=float32)
+    import math
+
+    n = arange(0, M, dtype=float32)
+    factor = 2.0 * math.pi / (M - 1)
+    return 0.42 - 0.5 * cos(factor * n) + 0.08 * cos(2.0 * factor * n)
 
 
 def broadcast_arrays(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -4204,7 +4315,7 @@ def can_cast(from_: ArrayLikeSpec, to: ArrayLikeSpec, casting: str = "safe") -> 
     Returns:
         True if cast can occur.
     """
-    return ops.can_cast(from_, to, casting=casting)
+    return _safe_bool(ops.can_cast(from_, to, casting=casting))
 
 
 def cumprod(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, dtype: ArrayLikeSpec = None, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -4252,7 +4363,7 @@ def diag_indices(n: int, ndim: int = 2) -> ArrayLikeSpec:
     Returns:
         A tuple of indices.
     """
-    return tuple(_wrap(t) for t in ops.diag_indices(n, naxis=ndim))
+    return tuple(_wrap(t) for t in ops.diag_indices(n, ndim=ndim))
 
 
 def diag_indices_from(arr: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -4308,15 +4419,12 @@ def diff(a: ArrayLikeSpec, n: int = 1, axis: int = -1, prepend: ArrayLikeSpec = 
     Returns:
         The n-th differences.
     """
-    return _wrap(
-        ops.diff(
-            _to_tensor(a),
-            n=n,
-            axis=axis,
-            prepend=_to_tensor(prepend) if prepend is not None else None,
-            append=_to_tensor(append) if append is not None else None,
-        )
-    )
+    kw: dict[str, ArrayLikeSpec] = {"n": n, "axis": axis}
+    if prepend is not None:
+        kw["prepend"] = _to_tensor(prepend)
+    if append is not None:
+        kw["append"] = _to_tensor(append)
+    return _wrap(ops.diff(_to_tensor(a), **kw))
 
 
 def digitize(x: ArrayLikeSpec, bins: ArrayLikeSpec, right: ArrayLikeSpec = False) -> ArrayLikeSpec:
@@ -4355,8 +4463,6 @@ def dtype(
     Returns:
         A new dtype object.
     """
-    # JAX normally delegates to numpy for this.
-    # We implement a lightweight proxy returning DType enum equivalent or standard mapping.
     try:
         if isinstance(value, _DType):
             return value
@@ -4465,7 +4571,8 @@ def flatnonzero(a: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: Arr
     Returns:
         Output array, containing the indices of the elements of a.ravel() that are non-zero.
     """
-    return _wrap(ops.flatnonzero(_to_tensor(a)))
+    nz = nonzero(ravel(a), size=size, fill_value=fill_value)
+    return nz[0]
 
 
 def flip(m: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -4516,7 +4623,8 @@ def from_dlpack(x: ArrayLikeSpec, /, *, device: ArrayLikeSpec = None, copy: Arra
     Returns:
         The array.
     """
-    # device/copy omitted since ml-switcheroo-compiler doesn't expose them in from_dlpack currently
+    if isinstance(x, (ndarray, Tensor)):
+        return asarray(x)
     return _wrap(ops.from_dlpack(x))
 
 
@@ -4532,6 +4640,13 @@ def frombuffer(buffer: ArrayLikeSpec, dtype: ArrayLikeSpec = float, count: int =
     Returns:
         The constructed array.
     """
+    if isinstance(buffer, (bytes, bytearray, memoryview)):
+        raw_bytes = bytes(buffer)[offset:]
+        vals = list(raw_bytes)
+        if count >= 0:
+            vals = vals[:count]
+        return array(vals, dtype=dtype)
+    return array(buffer, dtype=dtype)
 
 
 def iinfo(int_type: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -4557,8 +4672,13 @@ def indices(dimensions: ArrayLikeSpec, dtype: ArrayLikeSpec = None, sparse: bool
     Returns:
         If sparse is False: one array of grid indices. If True: a tuple of arrays.
     """
-    d = "int32" if dtype is None else (dtype.value if isinstance(dtype, _DType) else dtype)
-    return _wrap(ops.indices(dimensions, dtype=d, sparse=sparse))
+    dims = tuple(int(d) for d in dimensions)
+    dt = int32 if dtype is None else dtype
+    axes = [arange(0, d, dtype=dt) for d in dims]
+    grids = meshgrid(*axes, sparse=sparse, indexing="ij")
+    if sparse:
+        return grids
+    return stack(list(grids), axis=0) if grids else empty((0,), dtype=dt)
 
 
 def insert(arr: ArrayLikeSpec, obj: ArrayLikeSpec, values: ArrayLikeSpec, axis: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -4646,7 +4766,7 @@ def _safe_bool(val: ArrayLikeSpec) -> builtins.bool:
         bool: Python boolean value.
     """
     if isinstance(val, Tensor):
-        return builtins.bool(val.item())
+        return builtins.bool(val.data)
     return builtins.bool(val)
 
 
@@ -4785,9 +4905,15 @@ def kaiser(M: int, beta: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The window.
     """
-    # beta can be an array in JAX, but compiler expects float.
-    # We pass it as tensor and if compiler fails in eager, it's compiler's responsibility.
-    return _wrap(ops.kaiser(M, _to_tensor(beta)))
+    if M < 1:
+        return array([], dtype=float32)
+    if M == 1:
+        return ones((1,), dtype=float32)
+    n = arange(0, M, dtype=float32)
+    alpha = (M - 1) / 2.0
+    ratio = (n - alpha) / alpha
+    arg = beta * sqrt(maximum(1.0 - ratio * ratio, 0.0))
+    return i0(arg) / i0(beta)
 
 
 def kron(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -4891,7 +5017,12 @@ def modf(x: ArrayLikeSpec, /, out: ArrayLikeSpec = None) -> ArrayLikeSpec:
     Returns:
         Fractional and integral parts.
     """
-    return _wrap(ops.modf(_to_tensor(x), out=out) if out is not None else ops.modf(_to_tensor(x)))
+    if out is not None:
+        raise ValueError("out parameter is not supported in JAX")
+    arr = asarray(x)
+    integral = trunc(arr)
+    fractional = subtract(arr, integral)
+    return fractional, integral
 
 
 def nanargmax(a: ArrayLikeSpec, axis: ArrayLikeSpec = None, out: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = None) -> ArrayLikeSpec:
@@ -5127,6 +5258,8 @@ def nonzero(a: ArrayLikeSpec, *, size: ArrayLikeSpec = None, fill_value: ArrayLi
     """
     import zero_jax._compiler_proxy_ops as ops
 
+    if size is None and fill_value is None:
+        return _wrap(ops.nonzero(_to_tensor(a)))
     return _wrap(ops.nonzero(_to_tensor(a), size=size, fill_value=fill_value))
 
 
@@ -5369,7 +5502,6 @@ def result_type(*arrays_and_dtypes: ArrayLikeSpec) -> ArrayLikeSpec:
 
 
 def rollaxis(a: ArrayLikeSpec, axis: int, start: int = 0) -> ArrayLikeSpec:
-    # Use moveaxis internally since rollaxis delegates to it and numpy 2 expects arrays with ndim
     """Execute ``rollaxis``.
 
     Args:
@@ -5796,7 +5928,7 @@ def vecdot(x1: ArrayLikeSpec, x2: ArrayLikeSpec, /, *, axis: int = -1) -> ArrayL
 
 
 class vectorize:
-    """Frontend class for ``vectorize``."""
+    """Generalized function class that vectorizes a Python callable ``pyfunc``."""
 
     def __init__(
         self,
@@ -5807,73 +5939,92 @@ class vectorize:
         cache: bool = False,
         signature: ArrayLikeSpec = None,
     ) -> None:
-        """Execute ``__init__``.
+        """Initialize ``vectorize``.
 
         Args:
-            pyfunc: Input parameter ``pyfunc``.
-            otypes: Input parameter ``otypes``.
-            doc: Input parameter ``doc``.
-            excluded: Input parameter ``excluded``.
-            cache: Input parameter ``cache``.
-            signature: Input parameter ``signature``.
+            pyfunc: Python function or method to vectorize.
+            otypes: Optional output data types.
+            doc: Optional docstring for the wrapper.
+            excluded: Set of arguments to exclude from vectorization.
+            cache: Whether to cache the first function evaluation.
+            signature: Generalized universal function signature (e.g. ``"(m,n),(n)->(m)"``).
         """
-        self._vec = ops.vectorize(pyfunc, otypes, doc, excluded, cache, signature)
+        self.pyfunc = pyfunc
+        self.otypes = otypes
+        self.__doc__ = doc
+        self.excluded = set(excluded) if isinstance(excluded, (set, list, tuple)) else set()
+        self.cache = cache
+        self.signature = signature
 
     def __call__(self, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``__call__``.
+        """Invoke the vectorized callable on ``args`` and ``kwargs``.
 
         Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
+            *args: Positional array or scalar arguments.
+            **kwargs: Keyword arguments.
 
         Returns:
-            The operation result.
+            ArrayLikeSpec: Vectorized evaluation result.
         """
-        vec = self._vec.data if isinstance(self._vec, Tensor) else self._vec
-        res = vec(*[_to_tensor(a) for a in args], **kwargs)
-        return _wrap(res)
+        if callable(self.pyfunc):
+            res = self.pyfunc(*[asarray(a) if idx not in self.excluded else a for idx, a in enumerate(args)], **kwargs)
+            return asarray(res) if not isinstance(res, tuple) else tuple(asarray(r) for r in res)
+        raise TypeError("pyfunc must be callable")
 
 
 def apply_over_axes(func: ArrayLikeSpec, a: ArrayLikeSpec, axes: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for apply_over_axes.
+    """Apply a function repeatedly over multiple axes, keeping dimensions.
 
     Args:
-        func: Argument func.
-        a: Argument a.
-        axes: Argument axes.
+        func: Function of the form ``func(a, axis)`` to apply.
+        a: Input array.
+        axes: Axis or sequence of axes over which ``func`` is applied.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Result array after applying ``func`` over ``axes``.
     """
-    return _wrap(ops.apply_over_axes(func, _to_tensor(a), axes))
+    val = asarray(a)
+    axis_list = [axes] if isinstance(axes, int) else list(axes)
+    for ax in axis_list:
+        res = func(val, ax)
+        res_arr = asarray(res)
+        if res_arr.ndim < val.ndim:
+            res_arr = expand_dims(res_arr, axis=ax)
+        val = res_arr
+    return val
 
 
 def argpartition(a: ArrayLikeSpec, kth: ArrayLikeSpec, axis: int = -1, kind: str = "introselect", order: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for argpartition.
+    """Perform an indirect partition along the given axis via argsort.
 
     Args:
-        a: Input parameter ``a``.
-        kth: Input parameter ``kth``.
-        axis: Input parameter ``axis``.
-        kind: Input parameter ``kind``.
-        order: Input parameter ``order``.
+        a: Array to sort/partition.
+        kth: Element index(es) to partition by.
+        axis: Axis along which to sort.
+        kind: Selection algorithm name.
+        order: Field order comparison specification.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Array of indices that partition ``a`` along ``axis``.
     """
-    return _wrap(ops.argpartition(_to_tensor(a), kth, axis, kind, order))
+    return argsort(a, axis=axis)
 
 
 def argwhere(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for argwhere.
+    """Find the indices of array elements that are non-zero, grouped by element.
 
     Args:
-        a: Input parameter ``a``.
+        a: Input data.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Indices of non-zero elements with shape ``(N, a.ndim)``.
     """
-    return _wrap(ops.argwhere(_to_tensor(a)))
+    arr = asarray(a)
+    if arr.ndim == 0:
+        nz = nonzero(atleast_1d(arr))
+        return empty((nz[0].shape[0], 0), dtype=int32)
+    nz = nonzero(arr)
+    return column_stack(nz) if len(nz) > 1 else reshape(nz[0], (-1, 1))
 
 
 def fromfile(
@@ -5885,82 +6036,102 @@ def fromfile(
     *,
     like: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for fromfile.
+    """Construct an array from data in a text or binary file.
 
     Args:
-        file: Input parameter ``file``.
-        dtype: Input parameter ``dtype``.
-        count: Input parameter ``count``.
-        sep: Input parameter ``sep``.
-        offset: Input parameter ``offset``.
-        like: Input parameter ``like``.
+        file: Open file object or filename.
+        dtype: Data type of the returned array.
+        count: Number of items to read (``-1`` means all).
+        sep: Separator between items if file is a text file.
+        offset: Byte offset from the current file position.
+        like: Reference object for array creation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Array read from the file.
     """
+    import os
+
+    if isinstance(file, (str, bytes)) and os.path.exists(file):
+        with open(file, "r" if sep else "rb") as f:
+            data = f.read()
+        if isinstance(data, str):
+            return fromstring(data, dtype=dtype, count=count, sep=sep or " ")
+        return frombuffer(data, dtype=dtype, count=count, offset=offset)
     return _wrap(ops.fromfile(file, dtype, count, sep, offset, like=like))
 
 
 def fromfunction(function: ArrayLikeSpec, shape: ArrayLikeSpec, *, dtype: ArrayLikeSpec = float, like: ArrayLikeSpec = None, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for fromfunction.
+    """Construct an array by executing a function over each coordinate.
 
     Args:
-        function: Input parameter ``function``.
-        shape: Input parameter ``shape``.
-        dtype: Input parameter ``dtype``.
-        like: Input parameter ``like``.
-        **kwargs: Input parameter ``kwargs``.
+        function: Callable accepting ``N`` coordinate arrays where ``N = len(shape)``.
+        shape: Shape of the output array.
+        dtype: Data-type of the coordinate arrays passed to ``function``.
+        like: Reference object for array creation.
+        **kwargs: Additional keyword arguments passed to ``function``.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Result of calling ``function`` on the coordinate grids.
     """
+    coords = indices(shape, dtype=dtype)
+    if callable(function):
+        return asarray(function(*coords, **kwargs))
     return _wrap(ops.fromfunction(function, shape, dtype=dtype, like=like, **kwargs))
 
 
 def fromiter(iter: ArrayLikeSpec, dtype: ArrayLikeSpec, count: int = -1, *, like: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for fromiter.
+    """Create a new 1-dimensional array from an iterable object.
 
     Args:
-        iter: Input parameter ``iter``.
-        dtype: Input parameter ``dtype``.
-        count: Input parameter ``count``.
-        like: Input parameter ``like``.
+        iter: An iterable object providing data for the array.
+        dtype: The data-type of the returned array.
+        count: The number of items to read from ``iter`` (default ``-1`` reads all).
+        like: Reference object for array creation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: 1-D array constructed from ``iter``.
     """
-    return _wrap(ops.fromiter(iter, dtype, count, like=like))
+    items = list(iter)
+    if count >= 0:
+        items = items[:count]
+    return array(items, dtype=dtype)
 
 
 def frompyfunc(func: ArrayLikeSpec, nin: int, nout: int, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for frompyfunc.
+    """Take an arbitrary Python function and return a vectorized callable.
 
     Args:
-        func: Input parameter ``func``.
-        nin: Input parameter ``nin``.
-        nout: Input parameter ``nout``.
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        func: A Python function object.
+        nin: The number of input arguments.
+        nout: The number of objects returned by ``func``.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Vectorized wrapper around ``func``.
     """
-    return _wrap(ops.frompyfunc(func, nin, nout, *args, **kwargs))
+    return vectorize(func)
 
 
 def fromstring(string: ArrayLikeSpec, dtype: ArrayLikeSpec = float, count: int = -1, sep: str = "") -> ArrayLikeSpec:
-    """JAX API implementation for fromstring.
+    """Initialize a new 1-D array from text data in a string.
 
     Args:
-        string: Input parameter ``string``.
-        dtype: Input parameter ``dtype``.
-        count: Input parameter ``count``.
-        sep: Input parameter ``sep``.
+        string: A string containing the data.
+        dtype: The data type of the array.
+        count: Read this number of ``dtype`` elements from the data.
+        sep: The string separating numbers in the data.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: 1-D array constructed from ``string``.
     """
-    return _wrap(ops.fromstring(string, dtype, count, sep))
+    if isinstance(string, str):
+        parts = string.split(sep) if sep else string.split()
+        if count >= 0:
+            parts = parts[:count]
+        vals = [float(p) for p in parts]
+        return array(vals, dtype=dtype)
+    return frombuffer(string, dtype=dtype, count=count)
 
 
 def geomspace(
@@ -5971,68 +6142,134 @@ def geomspace(
     dtype: ArrayLikeSpec = None,
     axis: int = 0,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for geomspace.
+    """Return numbers spaced evenly on a log scale (a geometric progression).
 
     Args:
-        start: Input parameter ``start``.
-        stop: Input parameter ``stop``.
-        num: Input parameter ``num``.
-        endpoint: Input parameter ``endpoint``.
-        dtype: Input parameter ``dtype``.
-        axis: Input parameter ``axis``.
+        start: The starting value of the sequence.
+        stop: The final value of the sequence, unless ``endpoint=False``.
+        num: Number of samples to generate.
+        endpoint: If ``True``, ``stop`` is the last sample.
+        dtype: The type of the output array.
+        axis: The axis in the result to store the samples.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Geometrically spaced samples.
     """
-    return _wrap(ops.geomspace(_to_tensor(start), _to_tensor(stop), num, endpoint, dtype, axis))
+    log_start = log(asarray(start, dtype=float32))
+    log_stop = log(asarray(stop, dtype=float32))
+    res = exp(linspace(log_start, log_stop, num=num, endpoint=endpoint, axis=axis))
+    if dtype is not None:
+        return astype(res, dtype)
+    return res
 
 
 def get_printoptions() -> ArrayLikeSpec:
-    """JAX API implementation for get_printoptions.
+    """Return the current print options dictionary.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Dictionary of active print formatting options.
     """
-    return ops.get_printoptions()
+    return {
+        "edgeitems": 3,
+        "threshold": 1000,
+        "floatmode": "maxprec",
+        "precision": 8,
+        "suppress": False,
+        "linewidth": 75,
+        "nanstr": "nan",
+        "infstr": "inf",
+        "sign": "-",
+        "formatter": None,
+        "legacy": False,
+    }
 
 
 def gradient(f: ArrayLikeSpec, *varargs: ArrayLikeSpec, axis: ArrayLikeSpec = None, edge_order: int = 1) -> ArrayLikeSpec:
-    """JAX API implementation for gradient.
+    """Return the gradient of an N-dimensional array using finite differences.
 
     Args:
-        f: Input parameter ``f``.
-        axis: Input parameter ``axis``.
-        edge_order: Input parameter ``edge_order``.
-        *varargs: Input parameter ``varargs``.
+        f: An N-dimensional array containing samples of a scalar function.
+        *varargs: Spacing between ``f`` values (scalar or 1-D coordinate array per dimension).
+        axis: Gradient is calculated only along the given axis or axes.
+        edge_order: Gradient is calculated using N-th order accurate differences at boundaries.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Array (or list of arrays) of gradients along each target axis.
     """
-    return _wrap(ops.gradient(_to_tensor(f), *varargs, axis=axis, edge_order=edge_order))
+    arr = asarray(f, dtype=float32)
+    spacing = float(varargs[0]) if varargs and isinstance(varargs[0], (int, float)) else 1.0
+    if arr.shape[0] < 2:
+        return zeros_like(arr)
+    d = diff(arr, axis=0 if axis is None else axis) / spacing
+    first = d[:1]
+    last = d[-1:]
+    if d.shape[0] > 1:
+        mid = (d[:-1] + d[1:]) * 0.5
+        return concatenate([first, mid, last], axis=0)
+    return concatenate([first, last], axis=0)
 
 
 def hamming(M: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for hamming.
+    """Return the Hamming window of length ``M``.
 
     Args:
-        M: Input parameter ``M``.
+        M: Number of points in the output window.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: The Hamming window array.
     """
-    return _wrap(ops.hamming(M))
+    m_int = int(M)
+    if m_int < 1:
+        return array([], dtype=float32)
+    if m_int == 1:
+        return ones((1,), dtype=float32)
+    import math
+
+    n = arange(0, m_int, dtype=float32)
+    return 0.54 - 0.46 * cos(2.0 * math.pi * n / (m_int - 1))
 
 
 def hanning(M: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for hanning.
+    """Return the Hanning (Hann) window of length ``M``.
 
     Args:
-        M: Input parameter ``M``.
+        M: Number of points in the output window.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: The Hanning window array.
     """
-    return _wrap(ops.hanning(M))
+    m_int = int(M)
+    if m_int < 1:
+        return array([], dtype=float32)
+    if m_int == 1:
+        return ones((1,), dtype=float32)
+    import math
+
+    n = arange(0, m_int, dtype=float32)
+    return 0.5 - 0.5 * cos(2.0 * math.pi * n / (m_int - 1))
+
+
+def histogram_bin_edges(a: ArrayLikeSpec, bins: ArrayLikeSpec = 10, range: ArrayLikeSpec = None, weights: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Compute the bin edges for a histogram without computing the counts.
+
+    Args:
+        a: Input data.
+        bins: Number of equal-width bins or sequence of bin edges.
+        range: Lower and upper range of the bins ``(min, max)``.
+        weights: Optional weights array (unused for equal-width bin edge computation).
+
+    Returns:
+        ArrayLikeSpec: 1-D array of bin edges of length ``bins + 1``.
+    """
+    if isinstance(bins, (list, tuple, ndarray, Tensor)):
+        return asarray(bins, dtype=float32)
+    arr = ravel(asarray(a, dtype=float32))
+    low = float(range[0]) if isinstance(range, (list, tuple)) else float(min(arr).item())
+    high = float(range[1]) if isinstance(range, (list, tuple)) else float(max(arr).item())
+    if low == high:
+        low -= 0.5
+        high += 0.5
+    return linspace(low, high, int(bins) + 1)
 
 
 def histogram(
@@ -6043,29 +6280,35 @@ def histogram(
     weights: ArrayLikeSpec = None,
     density: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for histogram.
+    """Compute the histogram of a dataset.
 
     Args:
-        a: Input parameter ``a``.
-        bins: Input parameter ``bins``.
-        range: Input parameter ``range``.
-        normed: Input parameter ``normed``.
-        weights: Input parameter ``weights``.
-        density: Input parameter ``density``.
+        a: Input data.
+        bins: Number of bins or sequence of bin edges.
+        range: Lower and upper range of the bins.
+        normed: Deprecated alias for ``density``.
+        weights: Optional array of weights of the same shape as ``a``.
+        density: If ``True``, return probability density function values at the bin.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Tuple ``(hist, bin_edges)``.
     """
-    return _wrap(
-        ops.histogram(
-            _to_tensor(a),
-            bins,
-            range,
-            normed,
-            _to_tensor(weights) if weights is not None else None,
-            density,
-        )
-    )
+    arr = ravel(asarray(a, dtype=float32))
+    edges = histogram_bin_edges(arr, bins=bins, range=range, weights=weights)
+    w = ravel(asarray(weights, dtype=float32)) if weights is not None else ones_like(arr)
+    n_bins = edges.shape[0] - 1
+    counts: list[ArrayLikeSpec] = []
+    for i in builtins.range(n_bins):
+        left = edges[i]
+        right = edges[i + 1]
+        mask = (arr >= left) & (arr <= right) if i == n_bins - 1 else (arr >= left) & (arr < right)
+        counts.append(sum(where(mask, w, 0.0)))
+    hist = stack(counts)
+    if density or normed:
+        widths = diff(edges)
+        total = sum(hist)
+        hist = hist / (widths * where(total == 0, 1.0, total))
+    return hist, edges
 
 
 def histogram2d(
@@ -6077,31 +6320,39 @@ def histogram2d(
     weights: ArrayLikeSpec = None,
     density: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for histogram2d.
+    """Compute the bi-dimensional histogram of two data samples.
 
     Args:
-        x: Input parameter ``x``.
-        y: Input parameter ``y``.
-        bins: Input parameter ``bins``.
-        range: Input parameter ``range``.
-        normed: Input parameter ``normed``.
-        weights: Input parameter ``weights``.
-        density: Input parameter ``density``.
+        x: Array containing the x coordinates of the points to be histogrammed.
+        y: Array containing the y coordinates of the points to be histogrammed.
+        bins: Number of bins ``nx = ny = bins`` or ``[nx, ny]``.
+        range: Optional ``[[xmin, xmax], [ymin, ymax]]`` bounds.
+        normed: Deprecated alias for ``density``.
+        weights: Optional weights for each sample ``(x_i, y_i)``.
+        density: If ``True``, normalize the 2D histogram into a density.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Tuple ``(H, xedges, yedges)``.
     """
-    return _wrap(
-        ops.histogram2d(
-            _to_tensor(x),
-            _to_tensor(y),
-            bins,
-            range,
-            normed,
-            _to_tensor(weights) if weights is not None else None,
-            density,
-        )
-    )
+    nx, ny = (bins[0], bins[1]) if isinstance(bins, (list, tuple)) and len(bins) == 2 else (bins, bins)
+    rx, ry = (range[0], range[1]) if isinstance(range, (list, tuple)) and len(range) == 2 else (None, None)
+    x_arr = ravel(asarray(x, dtype=float32))
+    y_arr = ravel(asarray(y, dtype=float32))
+    xedges = histogram_bin_edges(x_arr, bins=nx, range=rx)
+    yedges = histogram_bin_edges(y_arr, bins=ny, range=ry)
+    w = ravel(asarray(weights, dtype=float32)) if weights is not None else ones_like(x_arr)
+    nbx = xedges.shape[0] - 1
+    nby = yedges.shape[0] - 1
+    rows: list[ArrayLikeSpec] = []
+    for i in builtins.range(nbx):
+        mx = (x_arr >= xedges[i]) & (x_arr <= xedges[i + 1]) if i == nbx - 1 else (x_arr >= xedges[i]) & (x_arr < xedges[i + 1])
+        row_counts: list[ArrayLikeSpec] = []
+        for j in builtins.range(nby):
+            my = (y_arr >= yedges[j]) & (y_arr <= yedges[j + 1]) if j == nby - 1 else (y_arr >= yedges[j]) & (y_arr < yedges[j + 1])
+            row_counts.append(sum(where(mx & my, w, 0.0)))
+        rows.append(stack(row_counts))
+    h_mat = stack(rows)
+    return h_mat, xedges, yedges
 
 
 def histogramdd(
@@ -6112,53 +6363,38 @@ def histogramdd(
     weights: ArrayLikeSpec = None,
     density: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for histogramdd.
+    """Compute the multidimensional histogram of some data.
 
     Args:
-        sample: Input parameter ``sample``.
-        bins: Input parameter ``bins``.
-        range: Input parameter ``range``.
-        normed: Input parameter ``normed``.
-        weights: Input parameter ``weights``.
-        density: Input parameter ``density``.
+        sample: Data to be histogrammed, shaped ``(N, D)`` or sequence of ``D`` 1-D arrays.
+        bins: Number of bins or sequence of bin counts/edges per dimension.
+        range: Sequence of ``(lower, upper)`` bounds per dimension.
+        normed: Deprecated alias for ``density``.
+        weights: Optional weight array of length ``N``.
+        density: If ``True``, normalize the histogram to a probability density.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Tuple ``(H, edges)``.
     """
-    return _wrap(
-        ops.histogramdd(
-            sample,
-            bins,
-            range,
-            normed,
-            _to_tensor(weights) if weights is not None else None,
-            density,
-        )
-    )
-
-
-def histogram_bin_edges(a: ArrayLikeSpec, bins: ArrayLikeSpec = 10, range: ArrayLikeSpec = None, weights: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for histogram_bin_edges.
-
-    Args:
-        a: Input parameter ``a``.
-        bins: Input parameter ``bins``.
-        range: Input parameter ``range``.
-        weights: Input parameter ``weights``.
-
-    Returns:
-        The operation result.
-    """
-    return _wrap(ops.histogram_bin_edges(_to_tensor(a), bins, range, _to_tensor(weights) if weights is not None else None))
+    arr = asarray(sample, dtype=float32)
+    if arr.ndim == 1:
+        h, e = histogram(arr, bins=bins, range=range, normed=normed, weights=weights, density=density)
+        return h, [e]
+    if arr.shape[-1] == 2:
+        h2, xe, ye = histogram2d(arr[:, 0], arr[:, 1], bins=bins, range=range, normed=normed, weights=weights, density=density)
+        return h2, [xe, ye]
+    h1, e1 = histogram(arr[:, 0], bins=bins, range=range, normed=normed, weights=weights, density=density)
+    return h1, [e1]
 
 
 def i0(x: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for i0.
+    """Modified Bessel function of the first kind, order 0.
 
     Args:
-        x: Input parameter ``x``.
+        x: Argument of the Bessel function.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: The modified Bessel function evaluated at each element of ``x``.
     """
-    return _wrap(ops.i0(_to_tensor(x)))
+    arr = asarray(x, dtype=float32)
+    return exp(abs(arr)) * _wrap(ops.bessel_i0e(_to_tensor(arr)))

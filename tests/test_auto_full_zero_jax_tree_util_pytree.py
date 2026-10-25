@@ -46,7 +46,12 @@ def test_register_pytree_with_keys_variants() -> None:
         """Custom pair with explicit flatten_func."""
 
         def __init__(self, x: ArrayLikeSpec, y: ArrayLikeSpec) -> None:
-            """Initialize PairA."""
+            """Initialize PairA.
+
+            Args:
+                x: Parameter ``x``.
+                y: Parameter ``y``.
+            """
             self.x = x
             self.y = y
 
@@ -63,7 +68,11 @@ def test_register_pytree_with_keys_variants() -> None:
         """Custom pair returning non-tuple children in flatten_with_keys."""
 
         def __init__(self, x: ArrayLikeSpec) -> None:
-            """Initialize PairB."""
+            """Initialize PairB.
+
+            Args:
+                x: Parameter ``x``.
+            """
             self.x = x
 
     mod.register_pytree_with_keys(
@@ -80,7 +89,11 @@ def test_register_pytree_with_keys_variants() -> None:
         """Class using register_pytree_with_keys_class without tree_flatten_with_keys."""
 
         def __init__(self, v: ArrayLikeSpec) -> None:
-            """Initialize FallbackClass."""
+            """Initialize FallbackClass.
+
+            Args:
+                v: Parameter ``v``.
+            """
             self.v = v
 
         def tree_flatten(self) -> tuple[list[ArrayLikeSpec], None]:
@@ -89,7 +102,12 @@ def test_register_pytree_with_keys_variants() -> None:
 
         @classmethod
         def tree_unflatten(cls, aux: None, children: list[ArrayLikeSpec]) -> FallbackClass:
-            """Unflatten FallbackClass."""
+            """Unflatten FallbackClass.
+
+            Args:
+                aux: Parameter ``aux``.
+                children: Parameter ``children``.
+            """
             return cls(children[0])
 
     fc = FallbackClass(11)

@@ -2,92 +2,76 @@
 
 from __future__ import annotations
 
+import math
+
 import zero_jax.nn.missing_funcs as mod
+import zero_jax.numpy as jnp
+from tests.conftest import assert_allclose
 
 
 def test_glu() -> None:
     """Test glu."""
-    try:
-        mod.glu(1.0)
-    except Exception:
-        pass
+    x = jnp.array([1.0, 2.0, 3.0, 4.0])
+    out = mod.glu(x)
+    assert out.shape == (2,)
 
 
 def test_hard_silu() -> None:
     """Test hard_silu."""
-    try:
-        mod.hard_silu(1.0)
-    except Exception:
-        pass
+    out = mod.hard_silu(jnp.array([-4.0, 0.0, 4.0]))
+    assert_allclose(out, [0.0, 0.0, 4.0])
 
 
 def test_hard_swish() -> None:
     """Test hard_swish."""
-    try:
-        mod.hard_swish(1.0)
-    except Exception:
-        pass
+    out = mod.hard_swish(jnp.array([-4.0, 0.0, 4.0]))
+    assert_allclose(out, [0.0, 0.0, 4.0])
 
 
 def test_leaky_relu() -> None:
     """Test leaky_relu."""
-    try:
-        mod.leaky_relu(1.0)
-    except Exception:
-        pass
+    out = mod.leaky_relu(jnp.array([-2.0, 3.0]), negative_slope=0.1)
+    assert_allclose(out, [-0.2, 3.0])
 
 
 def test_mish() -> None:
     """Test mish."""
-    try:
-        mod.mish(1.0)
-    except Exception:
-        pass
+    out = mod.mish(jnp.array([0.0]))
+    assert_allclose(out, [0.0])
 
 
 def test_soft_sign() -> None:
     """Test soft_sign."""
-    try:
-        mod.soft_sign(1.0)
-    except Exception:
-        pass
+    out = mod.soft_sign(jnp.array([-1.0, 0.0, 1.0]))
+    assert_allclose(out, [-0.5, 0.0, 0.5])
 
 
 def test_softplus() -> None:
     """Test softplus."""
-    try:
-        mod.softplus(1.0)
-    except Exception:
-        pass
+    out = mod.softplus(jnp.array([0.0]))
+    assert_allclose(out, [math.log(2.0)], rtol=1e-5)
 
 
 def test_sparse_plus() -> None:
     """Test sparse_plus."""
-    try:
-        mod.sparse_plus(1.0)
-    except Exception:
-        pass
+    out = mod.sparse_plus(jnp.array([-2.0, 0.0, 2.0]))
+    assert_allclose(out, [0.0, 0.25, 2.0])
 
 
 def test_sparse_sigmoid() -> None:
     """Test sparse_sigmoid."""
-    try:
-        mod.sparse_sigmoid(1.0)
-    except Exception:
-        pass
+    out = mod.sparse_sigmoid(jnp.array([-2.0, 0.0, 2.0]))
+    assert_allclose(out, [0.0, 0.5, 1.0])
 
 
 def test_squareplus() -> None:
     """Test squareplus."""
-    try:
-        mod.squareplus(1.0)
-    except Exception:
-        pass
+    out = mod.squareplus(jnp.array([0.0]), b=4.0)
+    assert_allclose(out, [1.0])
 
 
 def test_standardize() -> None:
     """Test standardize."""
-    try:
-        mod.standardize(1.0)
-    except Exception:
-        pass
+    x = jnp.array([1.0, 2.0, 3.0])
+    out = mod.standardize(x)
+    assert_allclose(jnp.mean(out), 0.0, atol=1e-5)

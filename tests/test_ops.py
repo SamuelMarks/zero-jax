@@ -39,4 +39,5 @@ def test_Transpose_exists() -> None:
     """Test Transpose exists in ml_switcheroo_compiler."""
     import zero_jax._compiler_proxy_ops as ops
 
-    assert hasattr(ops, "Transpose")
+    assert ops.Transpose is not None
+    assert "Transpose" in ops.__all__

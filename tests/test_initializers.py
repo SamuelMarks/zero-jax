@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 from ml_switcheroo_ir import DType
 
 import zero_jax.numpy as jnp
+from tests.conftest import assert_allclose
 from zero_jax.nn import initializers
 
 
@@ -32,13 +32,13 @@ def test_to_dtype_variants() -> None:
 def test_zeros_ones_constant() -> None:
     """Test zeros, ones, constant."""
     z = initializers.zeros(123, (2, 2))
-    assert np.all(np.asarray(z) == 0)
+    assert_allclose(z, [[0.0, 0.0], [0.0, 0.0]])
 
     o = initializers.ones(123, (2, 2))
-    assert np.all(np.asarray(o) == 1)
+    assert_allclose(o, [[1.0, 1.0], [1.0, 1.0]])
 
     c = initializers.constant(5)(123, (2, 2))
-    assert np.all(np.asarray(c) == 5)
+    assert_allclose(c, [[5.0, 5.0], [5.0, 5.0]])
 
 
 def test_uniform_normal() -> None:
@@ -88,14 +88,14 @@ def test_orthogonal() -> None:
     """Test orthogonal initializers verify Q^T Q = I."""
     o = initializers.orthogonal()(123, (3, 3))
     assert o.shape == (3, 3)
-    arr = np.asarray(o)
-    np.testing.assert_allclose(arr.T @ arr, np.eye(3), atol=1e-5)
+    arr = jnp.asarray(o)
+    assert_allclose(jnp.matmul(arr.T, arr), jnp.eye(3), atol=1e-5)
 
     # Test rectangular (rows < cols)
     o_rect = initializers.orthogonal()(123, (3, 4))
     assert o_rect.shape == (3, 4)
-    arr_rect = np.asarray(o_rect)
-    np.testing.assert_allclose(arr_rect @ arr_rect.T, np.eye(3), atol=1e-5)
+    arr_rect = jnp.asarray(o_rect)
+    assert_allclose(jnp.matmul(arr_rect, arr_rect.T), jnp.eye(3), atol=1e-5)
 
     # Test other column axis
     o_axis = initializers.orthogonal(column_axis=0)(123, (3, 4))
@@ -109,12 +109,10 @@ def test_delta_orthogonal() -> None:
     """Test delta orthogonal convolutional kernel initialization."""
     do = initializers.delta_orthogonal()(123, (3, 3, 2, 2))
     assert do.shape == (3, 3, 2, 2)
-    arr = np.asarray(do)
-    # Non-central spatial locations must be zero
-    np.testing.assert_allclose(arr[0, 0], np.zeros((2, 2)), atol=1e-6)
-    # Central spatial location must be orthogonal
-    center = arr[1, 1]
-    np.testing.assert_allclose(center.T @ center, np.eye(2), atol=1e-5)
+    arr = jnp.asarray(do)
+    assert_allclose(arr[0, 0], jnp.zeros((2, 2)), atol=1e-6)
+    center = jnp.asarray(arr[1, 1])
+    assert_allclose(jnp.matmul(center.T, center), jnp.eye(2), atol=1e-5)
 
     with pytest.raises(ValueError, match="requires a 3D, 4D, or 5D shape"):
         initializers.delta_orthogonal()(123, (3,))

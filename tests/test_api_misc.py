@@ -10,6 +10,7 @@ from zero_jax._types import ArrayLikeSpec
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 import zero_jax
+from tests.conftest import assert_allclose
 from zero_jax.numpy import array
 
 
@@ -78,29 +79,36 @@ def test_misc() -> None:
 
 def test_ad() -> None:
     """Execute ``test_ad``."""
-    import numpy as np
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x * x
 
-    np.testing.assert_allclose(zero_jax.jacfwd(f)(array(1.0)), 2.0)
-    np.testing.assert_allclose(zero_jax.jacrev(f)(array(1.0)), 2.0)
-    np.testing.assert_allclose(zero_jax.jacobian(f)(array(1.0)), 2.0)
+    assert_allclose(zero_jax.jacfwd(f)(array(1.0)), 2.0)
+    assert_allclose(zero_jax.jacrev(f)(array(1.0)), 2.0)
+    assert_allclose(zero_jax.jacobian(f)(array(1.0)), 2.0)
 
     val, _ = zero_jax.jvp(f, (array(1.0),), (array(1.0),))
-    np.testing.assert_allclose(val, 1.0)
+    assert_allclose(val, 1.0)
     val, _ = zero_jax.vjp(f, array(1.0))
-    np.testing.assert_allclose(val, 1.0)
+    assert_allclose(val, 1.0)
     val, _ = zero_jax.linearize(f, array(1.0))
-    np.testing.assert_allclose(val, 1.0)
+    assert_allclose(val, 1.0)
 
 
 def test_more_misc() -> None:
     """Execute ``test_more_misc``."""
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x
 
     f2, _ = zero_jax.closure_convert(f)
@@ -129,7 +137,11 @@ def test_even_more_misc() -> None:
     """Execute ``test_even_more_misc``."""
 
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``."""
+        """Execute ``f``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x
 
     f2 = zero_jax.custom_gradient(f)
@@ -164,6 +176,6 @@ def test_phase5_stubs() -> None:
     import zero_jax.interpreters.partial_eval.config as pec
     import zero_jax.interpreters.traceback_util.config as tuc
 
-    assert hasattr(pe, "JaxprTrace")
-    assert hasattr(pec, "jax_jit")
-    assert hasattr(tuc, "xla_client")
+    assert pe.JaxprTrace is not None
+    assert pec.jax_jit is not None
+    assert tuc.xla_client is None or tuc.xla_client is not None

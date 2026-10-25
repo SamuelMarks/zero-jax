@@ -36,4 +36,4 @@ def test_new_ops() -> None:
         "shifted_chebyshev_polynomial_w",
     ]
     for op in ops_to_check:
-        assert hasattr(ops, op)
+        assert op in ops.__all__

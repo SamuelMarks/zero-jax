@@ -116,13 +116,24 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
+    "ml_switcheroo_compiler",
+    "ml_switcheroo_compiler.*",
+    "ml_switcheroo_ir",
+    "ml_switcheroo_ir.*",
+    "numpy",
     "numpy.*",
+    "jax",
     "jax.*",
+    "jaxlib",
     "jaxlib.*",
+    "pytest",
     "pytest.*",
+    "_pytest",
     "_pytest.*",
+    "ml_ecosystem_snapshots",
     "ml_ecosystem_snapshots.*",
-    "hypothesis.*",
+    "cdd",
+    "cdd.*",
 ]
 ignore_missing_imports = true
 follow_imports = "skip"

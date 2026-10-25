@@ -46,10 +46,7 @@ def hard_swish(x: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    import zero_jax._compiler_proxy_ops as ops
-    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
-
-    return _wrap(ops.hard_swish(_to_tensor(x)))
+    return hard_silu(x)
 
 
 def leaky_relu(x: ArrayLikeSpec, negative_slope: float = 0.01) -> ArrayLikeSpec:
@@ -119,10 +116,10 @@ def sparse_plus(x: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    import zero_jax._compiler_proxy_ops as ops
-    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    from zero_jax.numpy import asarray, float32, where
 
-    return _wrap(ops.sparse_plus(_to_tensor(x)))
+    arr = asarray(x, dtype=float32)
+    return where(arr <= -1.0, 0.0, where(arr >= 1.0, arr, 0.25 * (arr + 1.0) * (arr + 1.0)))
 
 
 def sparse_sigmoid(x: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -134,10 +131,10 @@ def sparse_sigmoid(x: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    import zero_jax._compiler_proxy_ops as ops
-    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    from zero_jax.numpy import asarray, float32, where
 
-    return _wrap(ops.sparse_sigmoid(_to_tensor(x)))
+    arr = asarray(x, dtype=float32)
+    return where(arr <= -1.0, 0.0, where(arr >= 1.0, 1.0, 0.5 * (arr + 1.0)))
 
 
 def squareplus(x: ArrayLikeSpec, b: float = 4.0) -> ArrayLikeSpec:
@@ -150,10 +147,10 @@ def squareplus(x: ArrayLikeSpec, b: float = 4.0) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    import zero_jax._compiler_proxy_ops as ops
-    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    from zero_jax.numpy import asarray, float32, sqrt
 
-    return _wrap(ops.squareplus(_to_tensor(x), b))
+    arr = asarray(x, dtype=float32)
+    return 0.5 * (arr + sqrt(arr * arr + b))
 
 
 def standardize(

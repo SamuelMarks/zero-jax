@@ -1,363 +1,368 @@
-"""Module documentation."""
+"""Linear algebra operations for ``zero_jax.numpy.linalg``."""
 
 from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as ops
 from zero_jax._types import ArrayLikeSpec
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, astype
 
 Deprecated = "Deprecated"
 
 
-def cholesky(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for cholesky.
+def cholesky(a: ArrayLikeSpec, *, upper: bool = False, symmetrize_input: bool = True) -> ArrayLikeSpec:
+    """Compute the Cholesky decomposition of a Hermitian positive-definite matrix.
 
     Args:
-        a: Argument a.
+        a: Input Hermitian positive-definite matrix.
+        upper: If ``True``, return the upper-triangular Cholesky factor.
+        symmetrize_input: Whether to symmetrize ``a`` before decomposition.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Lower (or upper) triangular Cholesky factor.
     """
-    return _wrap(ops.cholesky(_to_tensor(a)))
+    t = _to_tensor(a)
+    if symmetrize_input:
+        t = _to_tensor(0.5 * (_wrap(t) + matrix_transpose(_wrap(t))))
+    res = _wrap(ops.cholesky(t))
+    if upper:
+        return matrix_transpose(res)
+    return res
 
 
 def det(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for det.
+    """Compute the determinant of an array.
 
     Args:
-        a: Argument a.
+        a: Input square matrix or batch of square matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Determinant of ``a``.
     """
     return _wrap(ops.det(_to_tensor(a)))
 
 
 def eigh(a: ArrayLikeSpec, UPLO: str = "L", symmetrize_input: bool = True) -> ArrayLikeSpec:
-    """JAX API implementation for eigh.
+    """Compute the eigenvalues and eigenvectors of a Hermitian or symmetric matrix.
 
     Args:
-        a: Argument a.
-        UPLO: Argument UPLO.
-        symmetrize_input: Argument symmetrize_input.
+        a: Complex Hermitian or real symmetric matrix.
+        UPLO: Specifies whether the calculation uses the lower (``"L"``) or upper (``"U"``) triangle.
+        symmetrize_input: Whether to symmetrize the input matrix before decomposition.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(eigenvalues, eigenvectors)``.
     """
-    return _wrap(ops.eigh(_to_tensor(a)))
+    t = _to_tensor(a)
+    if symmetrize_input:
+        t = _to_tensor(0.5 * (_wrap(t) + matrix_transpose(_wrap(t))))
+    return _wrap(ops.eigh(t))
 
 
 def eigvals(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for eigvals.
+    """Compute the eigenvalues of a general matrix.
 
     Args:
-        a: Argument a.
+        a: Input square matrix or batch of matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Eigenvalues of ``a``.
     """
     return _wrap(ops.eigvals(_to_tensor(a)))
 
 
 def eigvalsh(a: ArrayLikeSpec, UPLO: str = "L") -> ArrayLikeSpec:
-    """JAX API implementation for eigvalsh.
+    """Compute the eigenvalues of a Hermitian or real symmetric matrix.
 
     Args:
-        a: Argument a.
-        UPLO: Argument UPLO.
+        a: Input Hermitian or symmetric matrix.
+        UPLO: Specifies whether the lower (``"L"``) or upper (``"U"``) triangle is used.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Eigenvalues in ascending order.
     """
     return _wrap(ops.eigvalsh(_to_tensor(a)))
 
 
 def inv(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for inv.
+    """Compute the multiplicative inverse of a matrix.
 
     Args:
-        a: Argument a.
+        a: Square matrix to invert.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec:Multiplicative inverse of ``a``.
     """
     return _wrap(ops.inv(_to_tensor(a)))
 
 
 def matrix_power(a: ArrayLikeSpec, n: int) -> ArrayLikeSpec:
-    """JAX API implementation for matrix_power.
+    """Raise a square matrix to the integer power ``n``.
 
     Args:
-        a: Argument a.
-        n: Argument n.
+        a: Input square matrix.
+        n: Integer exponent.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Matrix ``a`` raised to the power ``n``.
     """
     return _wrap(ops.matrix_power(_to_tensor(a), n))
 
 
 def pinv(a: ArrayLikeSpec, rcond: ArrayLikeSpec = None, hermitian: bool = False) -> ArrayLikeSpec:
-    """JAX API implementation for pinv.
+    """Compute the Moore-Penrose pseudoinverse of a matrix.
 
     Args:
-        a: Argument a.
-        rcond: Argument rcond.
-        hermitian: Argument hermitian.
+        a: Matrix or stack of matrices to be pseudo-inverted.
+        rcond: Cutoff for small singular values.
+        hermitian: If ``True``, ``a`` is assumed Hermitian/symmetric.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Pseudoinverse of ``a``.
     """
     return _wrap(ops.pinv(_to_tensor(a)))
 
 
 def qr(a: ArrayLikeSpec, mode: str = "reduced") -> ArrayLikeSpec:
-    """JAX API implementation for qr.
+    """Compute the QR factorization of a matrix.
 
     Args:
-        a: Argument a.
-        mode: Argument mode.
+        a: Matrix to factorize.
+        mode: Factorization mode (``"reduced"``, ``"complete"``, ``"r"``, or ``"raw"``).
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple ``(Q, R)`` or matrix ``R`` when ``mode == "r"``.
     """
-    return _wrap(ops.qr(_to_tensor(a)))
+    res = _wrap(ops.qr(_to_tensor(a)))
+    if mode == "r" and isinstance(res, tuple) and len(res) == 2:
+        return res[1]
+    return res
 
 
 def slogdet(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for slogdet.
+    """Compute the sign and natural logarithm of the determinant of an array.
 
     Args:
-        a: Argument a.
+        a: Input square matrix or batch of square matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(sign, logabsdet)``.
     """
     return _wrap(ops.slogdet(_to_tensor(a)))
 
 
 def solve(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for solve.
+    """Solve a linear matrix equation ``a @ x = b``.
 
     Args:
-        a: Argument a.
-        b: Argument b.
+        a: Coefficient square matrix.
+        b: Ordinate or dependent variable values.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Solution to the system ``a @ x = b``.
     """
     return _wrap(ops.solve(_to_tensor(a), _to_tensor(b)))
 
 
 def svd(a: ArrayLikeSpec, full_matrices: bool = True, compute_uv: bool = True, hermitian: bool = False) -> ArrayLikeSpec:
-    """JAX API implementation for svd.
+    """Compute the Singular Value Decomposition of a matrix.
 
     Args:
-        a: Argument a.
-        full_matrices: Argument full_matrices.
-        compute_uv: Argument compute_uv.
-        hermitian: Argument hermitian.
+        a: Matrix to decompose.
+        full_matrices: Whether ``u`` and ``vh`` have full or reduced shapes.
+        compute_uv: Whether to compute ``u`` and ``vh`` in addition to singular values ``s``.
+        hermitian: Whether ``a`` is known to be Hermitian.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple ``(u, s, vh)`` or singular values ``s`` if ``compute_uv=False``.
     """
-    return _wrap(ops.svd(_to_tensor(a)))
+    if not compute_uv:
+        return svdvals(a)
+    res = _wrap(ops.svd(_to_tensor(a)))
+    if not full_matrices and isinstance(res, tuple) and len(res) == 3:
+        u, s, vh = res
+        k = s.shape[-1]
+        return u[..., :k], s, vh[..., :k, :]
+    return res
 
 
 def cond(x: ArrayLikeSpec, p: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for cond.
+    """Compute the condition number of a matrix.
 
     Args:
-        x: Argument x.
-        p: Argument p.
+        x: Matrix whose condition number is computed.
+        p: Order of the norm used in the condition number computation.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Condition number of the matrix.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
     from ml_switcheroo_compiler.ops.base import get_op
 
     return _wrap(get_op("Cond")()(_to_tensor(x), p))
 
 
 def cross(x1: ArrayLikeSpec, x2: ArrayLikeSpec, axis: ArrayLikeSpec = -1) -> ArrayLikeSpec:
-    """JAX API implementation for cross.
+    """Compute the cross product of two (arrays of) 3D vectors.
 
     Args:
-        x1: Argument x1.
-        x2: Argument x2.
-        axis: Argument axis.
+        x1: First vector array.
+        x2: Second vector array.
+        axis: Axis defining the vectors.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Vector cross product.
     """
     return _wrap(ops.cross(_to_tensor(x1), _to_tensor(x2)))
 
 
 def diagonal(x: ArrayLikeSpec, offset: ArrayLikeSpec = 0) -> ArrayLikeSpec:
-    """JAX API implementation for diagonal.
+    """Extract specified diagonals from a matrix or stack of matrices.
 
     Args:
-        x: Argument x.
-        offset: Argument offset.
+        x: Input array with ``ndim >= 2``.
+        offset: Offset of the diagonal from the main diagonal.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Array of diagonals.
     """
     return _wrap(ops.diagonal(_to_tensor(x), offset=offset))
 
 
 def eig(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for eig.
+    """Compute the eigenvalues and right eigenvectors of a square array.
 
     Args:
-        a: Argument a.
+        a: Matrices for which the eigenvalues and right eigenvectors will be computed.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(eigenvalues, eigenvectors)``.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
     return _wrap(ops.eig(_to_tensor(a)))
 
 
 def lstsq(a: ArrayLikeSpec, b: ArrayLikeSpec, rcond: ArrayLikeSpec = None, numpy_resid: ArrayLikeSpec = False) -> ArrayLikeSpec:
-    """JAX API implementation for lstsq.
+    """Return the least-squares solution to a linear matrix equation.
 
     Args:
-        a: Argument a.
-        b: Argument b.
-        rcond: Argument rcond.
-        numpy_resid: Argument numpy_resid.
+        a: Coefficient matrix.
+        b: Ordinate or dependent variable values.
+        rcond: Cutoff ratio for small singular values.
+        numpy_resid: Whether to compute residuals in NumPy-compatible format.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Least-squares solution.
     """
     return _wrap(ops.lstsq(_to_tensor(a), _to_tensor(b), rcond=rcond))
 
 
 def matmul(x1: ArrayLikeSpec, x2: ArrayLikeSpec, precision: ArrayLikeSpec = None, preferred_element_type: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for matmul.
+    """Compute the matrix product of two arrays.
 
     Args:
-        x1: Argument x1.
-        x2: Argument x2.
-        precision: Argument precision.
-        preferred_element_type: Argument preferred_element_type.
+        x1: First input array.
+        x2: Second input array.
+        precision: Optional XLA precision configuration.
+        preferred_element_type: Optional accumulation/output dtype.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Matrix product of ``x1`` and ``x2``.
     """
-    return _wrap(ops.matmul(_to_tensor(x1), _to_tensor(x2)))
+    res = _wrap(ops.matmul(_to_tensor(x1), _to_tensor(x2)))
+    if preferred_element_type is not None:
+        return astype(res, preferred_element_type)
+    return res
 
 
 def matrix_norm(x: ArrayLikeSpec, keepdims: ArrayLikeSpec = False, ord: ArrayLikeSpec = "fro") -> ArrayLikeSpec:
-    """JAX API implementation for matrix_norm.
+    """Compute the matrix norm of a matrix or stack of matrices.
 
     Args:
-        x: Argument x.
-        keepdims: Argument keepdims.
-        ord: Argument ord.
+        x: Input array with ``ndim >= 2``.
+        keepdims: Whether reduced axes are left with size one.
+        ord: Order of the norm (e.g., ``"fro"``, ``"nuc"``, ``1``, ``2``, ``inf``).
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Norm of the matrix.
     """
     return _wrap(ops.matrix_norm(_to_tensor(x), keepdims=keepdims))
 
 
 def matrix_rank(M: ArrayLikeSpec, rtol: ArrayLikeSpec = None, tol: ArrayLikeSpec = Deprecated) -> ArrayLikeSpec:
-    """JAX API implementation for matrix_rank.
+    """Return matrix rank of array using SVD method.
 
     Args:
-        M: Argument M.
-        rtol: Argument rtol.
-        tol: Argument tol.
+        M: Input vector or matrix.
+        rtol: Relative threshold for singular values.
+        tol: Deprecated alias for ``rtol``.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Rank of ``M``.
     """
-    return _wrap(ops.matrix_rank(_to_tensor(M), tol=rtol))
+    effective_tol = rtol if rtol is not None else (None if tol == Deprecated else tol)
+    return _wrap(ops.matrix_rank(_to_tensor(M), tol=effective_tol))
 
 
 def matrix_transpose(x: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for matrix_transpose.
+    """Transpose each matrix in a stack of matrices (swapping the last two dimensions).
 
     Args:
-        x: Argument x.
+        x: Input array with ``ndim >= 2``.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Matrix-transposed array.
     """
     return _wrap(ops.matrix_transpose(_to_tensor(x)))
 
 
 def multi_dot(arrays: ArrayLikeSpec, precision: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for multi_dot.
+    """Compute the dot product of two or more arrays in a single function call.
 
     Args:
-        arrays: Argument arrays.
-        precision: Argument precision.
+        arrays: Sequence of 2D or 1D arrays to multiply.
+        precision: Optional XLA precision specification.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Chained matrix product.
     """
     return _wrap(ops.multi_dot([_to_tensor(arr) for arr in arrays]))
 
 
 def norm(x: ArrayLikeSpec, ord: ArrayLikeSpec = None, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False) -> ArrayLikeSpec:
-    """JAX API implementation for norm.
+    """Compute a matrix or vector norm.
 
     Args:
-        x: Argument x.
-        ord: Argument ord.
-        axis: Argument axis.
-        keepdims: Argument keepdims.
+        x: Input array.
+        ord: Order of the norm.
+        axis: Axis or tuple of axes along which to compute the norm.
+        keepdims: Whether to keep reduced dimensions as size 1.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Norm of ``x``.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
     return _wrap(ops.norm(_to_tensor(x), ord, axis, keepdims))
 
 
 def outer(x1: ArrayLikeSpec, x2: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for outer.
+    """Compute the outer product of two 1D vectors.
 
     Args:
-        x1: Argument x1.
-        x2: Argument x2.
+        x1: First 1D input vector.
+        x2: Second 1D input vector.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Outer product matrix.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
     return _wrap(ops.outer(_to_tensor(x1), _to_tensor(x2)))
 
 
 def svdvals(x: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for svdvals.
+    """Compute the singular values of a matrix or stack of matrices.
 
     Args:
-        x: Argument x.
+        x: Input matrix or batch of matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Singular values in descending order.
     """
-    # Note: we drop kwargs that ml-switcheroo-compiler might not support yet
-    # by catching TypeError and retrying, or just passing them if possible.
-    # But for a robust API, we just pass what we can.
-    # Actually, JAX's compiler_ops might not have all the args JAX has.
     return _wrap(ops.svdvals(_to_tensor(x)))
 
 
@@ -368,60 +373,66 @@ def tensordot(
     precision: ArrayLikeSpec = None,
     preferred_element_type: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for tensordot.
+    """Compute tensor dot product along specified axes.
 
     Args:
-        x1: Argument x1.
-        x2: Argument x2.
-        axes: Argument axes.
-        precision: Argument precision.
-        preferred_element_type: Argument preferred_element_type.
+        x1: First tensor operand.
+        x2: Second tensor operand.
+        axes: Number of axes to sum over or pair of axis sequences.
+        precision: Optional XLA precision setting.
+        preferred_element_type: Optional output dtype.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Contracted tensor result.
     """
-    return _wrap(ops.tensordot(_to_tensor(x1), _to_tensor(x2), axes=axes))
+    res = _wrap(ops.tensordot(_to_tensor(x1), _to_tensor(x2), axes=axes))
+    if preferred_element_type is not None:
+        return astype(res, preferred_element_type)
+    return res
 
 
 def tensorinv(a: ArrayLikeSpec, ind: ArrayLikeSpec = 2) -> ArrayLikeSpec:
-    """JAX API implementation for tensorinv.
+    """Compute the multiplicative inverse of a tensor.
 
     Args:
-        a: Argument a.
-        ind: Argument ind.
+        a: Tensor to invert.
+        ind: Number of first indices that are involved in the inverse sum.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tensor inverse of ``a``.
     """
     return _wrap(ops.tensorinv(_to_tensor(a), ind))
 
 
 def tensorsolve(a: ArrayLikeSpec, b: ArrayLikeSpec, axes: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for tensorsolve.
+    """Solve the tensor equation ``a x = b`` for ``x``.
 
     Args:
-        a: Argument a.
-        b: Argument b.
-        axes: Argument axes.
+        a: Coefficient tensor.
+        b: Right-hand side tensor.
+        axes: Axes of ``a`` to reorder to the right before inversion.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Solution tensor ``x``.
     """
     return _wrap(ops.tensorsolve(_to_tensor(a), _to_tensor(b), axes))
 
 
 def trace(x: ArrayLikeSpec, offset: ArrayLikeSpec = 0, dtype: ArrayLikeSpec = None) -> ArrayLikeSpec:
-    """JAX API implementation for trace.
+    """Return the sum along diagonals of the array.
 
     Args:
-        x: Argument x.
-        offset: Argument offset.
-        dtype: Argument dtype.
+        x: Input array from which the diagonal is taken.
+        offset: Offset of the diagonal from the main diagonal.
+        dtype: Optional data type of the returned array.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Sum along the diagonal.
     """
-    return _wrap(ops.trace(_to_tensor(x), offset=offset))
+    res = _wrap(ops.trace(_to_tensor(x), offset=offset))
+    if dtype is not None:
+        return astype(res, dtype)
+    return res
 
 
 def vecdot(
@@ -431,32 +442,35 @@ def vecdot(
     precision: ArrayLikeSpec = None,
     preferred_element_type: ArrayLikeSpec = None,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for vecdot.
+    """Compute the (complex-conjugated) vector dot product of two arrays.
 
     Args:
-        x1: Argument x1.
-        x2: Argument x2.
-        axis: Argument axis.
-        precision: Argument precision.
-        preferred_element_type: Argument preferred_element_type.
+        x1: First vector array.
+        x2: Second vector array.
+        axis: Axis along which the dot product is computed.
+        precision: Optional XLA precision setting.
+        preferred_element_type: Optional output dtype.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Vector dot product.
     """
-    return _wrap(ops.vecdot(_to_tensor(x1), _to_tensor(x2), axis=axis))
+    res = _wrap(ops.vecdot(_to_tensor(x1), _to_tensor(x2), axis=axis))
+    if preferred_element_type is not None:
+        return astype(res, preferred_element_type)
+    return res
 
 
 def vector_norm(x: ArrayLikeSpec, axis: ArrayLikeSpec = None, keepdims: ArrayLikeSpec = False, ord: ArrayLikeSpec = 2) -> ArrayLikeSpec:
-    """JAX API implementation for vector_norm.
+    """Compute the vector norm of a vector or batch of vectors.
 
     Args:
-        x: Argument x.
-        axis: Argument axis.
-        keepdims: Argument keepdims.
-        ord: Argument ord.
+        x: Input array.
+        axis: Axis or tuple of axes along which to compute the vector norm.
+        keepdims: Whether reduced axes are retained with size 1.
+        ord: Order of the norm (default ``2``).
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Vector norm of ``x``.
     """
     return _wrap(ops.vector_norm(_to_tensor(x), ord=ord, axis=axis, keepdims=keepdims))
 

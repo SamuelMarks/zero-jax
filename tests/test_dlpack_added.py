@@ -7,4 +7,5 @@ import zero_jax.dlpack as mod
 
 def test_supported_dtypes() -> None:
     """Execute ``test_supported_dtypes``."""
-    assert hasattr(mod, "SUPPORTED_DTYPES")
+    assert mod.SUPPORTED_DTYPES is not None
+    assert "SUPPORTED_DTYPES" in dir(mod)

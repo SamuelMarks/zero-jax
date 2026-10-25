@@ -4055,9 +4055,15 @@ STUBS = [
 
 @pytest.mark.parametrize(("mod_name", "obj_name", "obj_type"), STUBS)
 def test_generated_stubs(mod_name: ArrayLikeSpec, obj_name: ArrayLikeSpec, obj_type: ArrayLikeSpec) -> None:
-    """Execute ``test_generated_stubs``."""
+    """Execute ``test_generated_stubs``.
+
+    Args:
+        mod_name: Parameter ``mod_name``.
+        obj_name: Parameter ``obj_name``.
+        obj_type: Parameter ``obj_type``.
+    """
     mod = importlib.import_module(mod_name)
-    obj = getattr(mod, obj_name)
+    obj = vars(mod)[obj_name]
     if obj_type == "function":
         try:
             obj()

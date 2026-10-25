@@ -16,11 +16,23 @@ from types import ModuleType
 ALLOWED_3RD_PARTY_SRC: set[str] = {"pydantic"}
 ALLOWED_INTERNAL_SRC: set[str] = {
     "ml_switcheroo_compiler",
+    "cdd",
     "cdd_python",
     "ml_switcheroo_ir",
     "ml_ecosystem_snapshots",
     "zero_jax",
 }
+PARITY_TEST_FILES: frozenset[str] = frozenset(
+    {
+        "test_reference_api.py",
+        "test_reference_checkify.py",
+        "test_reference_jnp.py",
+        "test_reference_lax.py",
+        "test_reference_nn.py",
+        "test_reference_random.py",
+        "test_reference_tree_util.py",
+    }
+)
 
 EXCLUDED_SIGNATURE_NAMES: set[str] = {
     "Any",
@@ -136,19 +148,38 @@ def check_file_imports(filepath: str) -> bool:
         return False
 
     stdlib_names = _get_stdlib_names()
-    allowed_all = ALLOWED_3RD_PARTY_SRC | ALLOWED_INTERNAL_SRC | stdlib_names
+    allowed_all = set(ALLOWED_3RD_PARTY_SRC | ALLOWED_INTERNAL_SRC | stdlib_names)
     errors: list[tuple[int, str]] = []
-    parts = filepath.replace("\\", "/").split("/")
-    is_test = "tests" in parts or "scripts" in parts
+    norm_path = filepath.replace("\\", "/")
+    parts = norm_path.split("/")
+    filename = parts[-1]
+    is_script = "scripts" in parts
+    is_test = "tests" in parts
+    is_parity_test = is_test and filename in PARITY_TEST_FILES
 
-    if is_test:
-        return True
+    if is_script:
+        allowed_all.add("scripts")
+    elif is_test:
+        allowed_all.update({"pytest", "tests", "scripts", "conftest", "fuzz_utils"})
+        if is_parity_test:
+            allowed_all.update({"jax", "numpy"})
+
+    def _is_allowed_module(base_mod: str) -> bool:
+        """Check whether a top-level module name is permitted for the current file.
+
+        Args:
+            base_mod: Top-level package or module name.
+
+        Returns:
+            bool: ``True`` if permitted, ``False`` otherwise.
+        """
+        return base_mod in allowed_all or base_mod.startswith("zero_")
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Attribute) and isinstance(node.value.value, ast.Name) and node.value.value.id == "sys" and node.value.attr == "modules":
             if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
                 base_module = node.slice.value.split(".")[0]
-                if base_module not in allowed_all:
+                if not _is_allowed_module(base_module):
                     errors.append((node.lineno, f"Disallowed sys.modules access: '{base_module}'"))
             else:
                 errors.append((node.lineno, "sys.modules access with non-constant is forbidden"))
@@ -165,20 +196,20 @@ def check_file_imports(filepath: str) -> bool:
             if func_name in ("__import__", "importlib.import_module", "sys.modules.get", "sys.modules.pop") or (isinstance(node.func, ast.Attribute) and node.func.attr == "__import__"):
                 if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
                     base_module = node.args[0].value.split(".")[0]
-                    if base_module not in allowed_all:
+                    if not _is_allowed_module(base_module):
                         errors.append((node.lineno, f"Disallowed dynamic import: '{base_module}'"))
-                else:
+                elif not (is_test and filename == "test_stubs.py" and func_name == "importlib.import_module"):
                     errors.append((node.lineno, f"Dynamic import with non-constant argument is forbidden: '{func_name}'"))
 
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 base_module = alias.name.split(".")[0]
-                if base_module not in allowed_all:
+                if not _is_allowed_module(base_module):
                     errors.append((node.lineno, f"Disallowed import: '{base_module}'"))
 
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             base_module = node.module.split(".")[0]
-            if base_module not in allowed_all:
+            if not _is_allowed_module(base_module):
                 errors.append((node.lineno, f"Disallowed import: '{base_module}'"))
 
     if errors:
@@ -212,12 +243,12 @@ def _collect_py_files(paths: Sequence[str], default_dirs: Sequence[str]) -> list
 
 
 def cmd_check_allowed_imports(args: argparse.Namespace) -> None:
-    """Run the allowed imports check on provided files or ``src/zero_jax``.
+    """Run the allowed imports check on provided files or ``src/zero_jax``, ``scripts``, and ``tests``.
 
     Args:
         args: Parsed command line arguments containing ``files``.
     """
-    files = _collect_py_files(args.files, ["src/zero_jax"])
+    files = _collect_py_files(args.files, ["src/zero_jax", "scripts", "tests"])
     success = True
     for filepath in files:
         if not check_file_imports(filepath):
@@ -374,20 +405,35 @@ def cmd_check_ops_coverage(args: argparse.Namespace) -> None:
     all_ops: set[str] = set()
     for filepath in _collect_py_files([], ["src/zero_jax"]):
         with open(filepath, encoding="utf-8") as f:
-            try:
-                tree = ast.parse(f.read(), filename=filepath)
-            except SyntaxError:
-                continue
+            source = f.read()
+        try:
+            tree = ast.parse(source, filename=filepath)
+        except SyntaxError:
+            continue
         for node in ast.walk(tree):
             if isinstance(node, ast.Attribute) and node.attr in compiler_ops:
                 all_ops.add(node.attr)
 
     found_ops: set[str] = set()
     for root, _, files in os.walk("tests"):
-        for file in files:
+        for file in sorted(files):
             if file.startswith("test_") and file.endswith(".py"):
-                with open(os.path.join(root, file), encoding="utf-8") as f:
+                tpath = os.path.join(root, file)
+                with open(tpath, encoding="utf-8") as f:
                     content = f.read()
+                try:
+                    t_tree = ast.parse(content, filename=tpath)
+                    for node in ast.walk(t_tree):
+                        if isinstance(node, ast.Call):
+                            if isinstance(node.func, ast.Attribute) and node.func.attr in all_ops:
+                                found_ops.add(node.func.attr)
+                            elif isinstance(node.func, ast.Name) and node.func.id in all_ops:
+                                found_ops.add(node.func.id)
+                        elif isinstance(node, ast.Attribute) and node.attr in all_ops:
+                            found_ops.add(node.attr)
+                        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value in all_ops:
+                            found_ops.add(node.value)
+                except SyntaxError:
                     for op in all_ops:
                         if op in content:
                             found_ops.add(op)
@@ -481,11 +527,9 @@ def check_file_strict_typing(filepath: str) -> list[str]:
         source = f.read()
 
     violations: list[str] = []
-    norm_path = filepath.replace("\\", "/")
-    is_src = norm_path.startswith("src/") or "/src/" in norm_path
 
     for idx, line in enumerate(source.splitlines(), start=1):
-        if "pragma: no cover" in line and is_src:
+        if ("pragma: " + "no cover") in line:
             violations.append(f"{filepath}:{idx}: Forbidden pragma-no-cover comment")
         if re.search(r"#\s*" + r"type:\s*ignore", line):
             violations.append(f"{filepath}:{idx}: Forbidden type-ignore comment")
@@ -496,20 +540,28 @@ def check_file_strict_typing(filepath: str) -> list[str]:
         violations.append(f"{filepath}:{exc.lineno}: SyntaxError: {exc.msg}")
         return violations
 
+    norm_path = filepath.replace("\\", "/")
+    is_src_file = norm_path.startswith("src/") or "/src/" in norm_path
+    is_test_file = norm_path.startswith("tests/") or "/tests/" in norm_path
+    is_stubs_test = norm_path.endswith("/test_stubs.py") or norm_path == "tests/test_stubs.py"
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            if node.id in ("Any", "object"):
+            if node.id in ("Any", "object", "getattr", "setattr", "delattr", "hasattr"):
                 violations.append(f"{filepath}:{node.lineno}: Forbidden '{node.id}' usage")
-            elif node.id in ("getattr", "setattr", "delattr", "hasattr") and is_src:
-                violations.append(f"{filepath}:{node.lineno}: Forbidden '{node.id}' usage in src/")
-        elif isinstance(node, ast.Attribute) and node.attr in ("Any", "cast") and isinstance(node.value, ast.Name) and node.value.id == "typing":
-            violations.append(f"{filepath}:{node.lineno}: Forbidden 'typing.{node.attr}' usage")
+            elif (is_src_file or (is_test_file and not is_stubs_test)) and node.id == "vars":
+                violations.append(f"{filepath}:{node.lineno}: Forbidden 'vars' usage")
+        elif isinstance(node, ast.Attribute):
+            if node.attr in ("Any", "cast") and isinstance(node.value, ast.Name) and node.value.id == "typing":
+                violations.append(f"{filepath}:{node.lineno}: Forbidden 'typing.{node.attr}' usage")
+            elif is_src_file and node.attr == "__dict__":
+                violations.append(f"{filepath}:{node.lineno}: Forbidden '__dict__' usage in src")
         elif isinstance(node, ast.ImportFrom) and node.module == "typing":
             for alias in node.names:
                 if alias.name in ("Any", "cast"):
                     violations.append(f"{filepath}:{node.lineno}: Forbidden import of '{alias.name}' from typing")
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if is_src and node.name in ("__getattr__", "__setattr__", "__getattribute__"):
+            if node.name in ("__getattr__", "__setattr__", "__getattribute__"):
                 violations.append(f"{filepath}:{node.lineno}: Forbidden dunder '{node.name}' definition")
             if node.returns is None:
                 violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' is missing a return type annotation")
@@ -568,8 +620,9 @@ def check_file_docstrings(filepath: str) -> list[str]:
         violations.append(f"{filepath}:{exc.lineno}: SyntaxError: {exc.msg}")
         return violations
 
-    if not ast.get_docstring(tree):
-        violations.append(f"{filepath}:1: Missing module docstring")
+    mod_doc = ast.get_docstring(tree)
+    if not mod_doc or mod_doc.strip() == "Module documentation.":
+        violations.append(f"{filepath}:1: Missing or placeholder module docstring")
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
@@ -588,7 +641,7 @@ def check_file_docstrings(filepath: str) -> list[str]:
             if node.args.kwarg:
                 param_names.append(node.args.kwarg.arg)
 
-            if param_names and ("/src/" in filepath.replace("\\", "/") or "/scripts/" in filepath.replace("\\", "/") or filepath.startswith(("src/", "scripts/"))):
+            if param_names:
                 if "Args:" not in doc:
                     violations.append(f"{filepath}:{node.lineno}: Function '{node.name}' docstring is missing 'Args:' section")
                 else:
@@ -667,7 +720,7 @@ def get_test_coverage() -> float:
         subprocess.run(["coverage", "json", "-o", "coverage.json"], check=False)
         with open("coverage.json", encoding="utf-8") as f:
             data = json.load(f)
-            return float(data["totals"]["percent_covered"])
+        return float(data["totals"]["percent_covered"])
     except Exception:
         return 100.0
 

@@ -1,4 +1,4 @@
-"""Module documentation."""
+"""Linear algebra primitives for ``zero_jax.lax.linalg``."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
 def cholesky(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for cholesky.
+    """Compute the Cholesky decomposition of a symmetric positive-definite matrix.
 
     Args:
-        a: Argument a.
+        a: Input symmetric/Hermitian positive-definite matrix.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Lower-triangular Cholesky factor of ``a``.
     """
     return _wrap(ops.cholesky(_to_tensor(a)))
 
@@ -24,14 +24,14 @@ cholesky_p = MockPrimitive("cholesky")
 
 
 def eig(x: ArrayLikeSpec, compute_v: bool = True) -> ArrayLikeSpec:
-    """JAX API implementation for eig.
+    """Compute the eigendecomposition of a general square matrix.
 
     Args:
-        x: Argument x.
-        compute_v: Argument compute_v.
+        x: Input square matrix or batch of square matrices.
+        compute_v: Whether to compute right/left eigenvectors in addition to eigenvalues.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Eigenvalues and (optionally) eigenvectors of ``x``.
     """
     res = ops.eig(_to_tensor(x), compute_v=compute_v)
     if isinstance(res, tuple):
@@ -48,16 +48,16 @@ def eigh(
     symmetrize_input: bool = True,
     sort_eigenvalues: bool = True,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for eigh.
+    """Compute the eigendecomposition of a symmetric or Hermitian matrix.
 
     Args:
-        x: Argument x.
-        lower: Argument lower.
-        symmetrize_input: Argument symmetrize_input.
-        sort_eigenvalues: Argument sort_eigenvalues.
+        x: Input symmetric or Hermitian matrix.
+        lower: Whether to use the lower triangle of ``x``.
+        symmetrize_input: Whether to symmetrize ``x`` before decomposition.
+        sort_eigenvalues: Whether to sort eigenvalues in ascending order.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(eigenvectors, eigenvalues)`` or ``(eigenvalues, eigenvectors)``.
     """
     res = ops.eigh(
         _to_tensor(x),
@@ -74,13 +74,13 @@ eigh_p = MockPrimitive("eigh")
 
 
 def hessenberg(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for hessenberg.
+    """Reduce a square matrix to upper Hessenberg form via orthogonal similarity transformations.
 
     Args:
-        a: Argument a.
+        a: Input square matrix.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of Hessenberg matrix and elementary reflector factors ``taus``.
     """
     res = ops.hessenberg(_to_tensor(a))
     if isinstance(res, tuple):
@@ -92,14 +92,14 @@ hessenberg_p = MockPrimitive("hessenberg")
 
 
 def householder_product(a: ArrayLikeSpec, taus: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for householder_product.
+    """Compute the product of elementary Householder reflectors.
 
     Args:
-        a: Argument a.
-        taus: Argument taus.
+        a: Matrix whose lower triangle encodes the Householder reflector vectors.
+        taus: Scalar scale factors for the elementary reflectors.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Orthogonal/unitary matrix ``Q``.
     """
     return _wrap(ops.householder_product(_to_tensor(a), _to_tensor(taus)))
 
@@ -108,13 +108,13 @@ householder_product_p = MockPrimitive("householder_product")
 
 
 def lu(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for lu.
+    """Compute the LU decomposition with partial pivoting.
 
     Args:
-        a: Argument a.
+        a: Input matrix or batch of matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(lu, pivots, permutation)``.
     """
     res = ops.lu(_to_tensor(a))
     if isinstance(res, tuple):
@@ -126,28 +126,28 @@ lu_p = MockPrimitive("lu")
 
 
 def lu_pivots_to_permutation(pivots: ArrayLikeSpec, permutation_size: int) -> ArrayLikeSpec:
-    """JAX API implementation for lu_pivots_to_permutation.
+    """Convert pivot indices from LU factorization into a permutation index vector.
 
     Args:
-        pivots: Argument pivots.
-        permutation_size: Argument permutation_size.
+        pivots: 1D or batched array of swap pivot indices.
+        permutation_size: Length of the output permutation vector.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Permutation index array.
     """
     return _wrap(ops.lu_pivots_to_permutation(_to_tensor(pivots), permutation_size=permutation_size))
 
 
 def qdwh(x: ArrayLikeSpec, is_hermitian: bool = False, max_iterations: int = 100) -> ArrayLikeSpec:
-    """JAX API implementation for qdwh.
+    """Compute the polar decomposition using QR-based dynamically weighted Halley (QDWH) iteration.
 
     Args:
-        x: Argument x.
-        is_hermitian: Argument is_hermitian.
-        max_iterations: Argument max_iterations.
+        x: Input matrix to decompose.
+        is_hermitian: Whether ``x`` is known to be Hermitian.
+        max_iterations: Maximum number of Halley iterations.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Polar decomposition factors ``(u, h, num_iters, is_converged)``.
     """
     res = ops.qdwh(_to_tensor(x), is_hermitian=is_hermitian, max_iterations=max_iterations)
     if isinstance(res, tuple):
@@ -156,14 +156,14 @@ def qdwh(x: ArrayLikeSpec, is_hermitian: bool = False, max_iterations: int = 100
 
 
 def qr(a: ArrayLikeSpec, full_matrices: bool = True) -> ArrayLikeSpec:
-    """JAX API implementation for qr.
+    """Compute the QR decomposition of a matrix.
 
     Args:
-        a: Argument a.
-        full_matrices: Argument full_matrices.
+        a: Input matrix or batch of matrices.
+        full_matrices: Whether to compute full-sized ``Q`` and ``R`` matrices.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(Q, R)``.
     """
     res = ops.qr(_to_tensor(a), full_matrices=full_matrices)
     if isinstance(res, tuple):
@@ -175,13 +175,13 @@ qr_p = MockPrimitive("qr")
 
 
 def schur(a: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for schur.
+    """Compute the Schur decomposition of a square matrix.
 
     Args:
-        a: Argument a.
+        a: Input square matrix.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of Schur form ``T`` and unitary Schur vectors ``Q``.
     """
     res = ops.schur(_to_tensor(a))
     if isinstance(res, tuple):
@@ -193,15 +193,15 @@ schur_p = MockPrimitive("schur")
 
 
 def svd(a: ArrayLikeSpec, full_matrices: bool = True, compute_uv: bool = True) -> ArrayLikeSpec:
-    """JAX API implementation for svd.
+    """Compute the Singular Value Decomposition of a matrix.
 
     Args:
-        a: Argument a.
-        full_matrices: Argument full_matrices.
-        compute_uv: Argument compute_uv.
+        a: Input matrix or batch of matrices.
+        full_matrices: Whether to compute full or reduced singular vector matrices.
+        compute_uv: Whether to compute left and right singular vectors in addition to singular values.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Singular values ``s`` or tuple ``(s, u, vt)``.
     """
     res = ops.svd(_to_tensor(a), full_matrices=full_matrices, compute_uv=compute_uv)
     if isinstance(res, tuple):
@@ -221,19 +221,19 @@ def triangular_solve(
     conjugate_a: bool = False,
     unit_diagonal: bool = False,
 ) -> ArrayLikeSpec:
-    """JAX API implementation for triangular_solve.
+    """Solve a triangular linear system ``op(a) @ x = b`` or ``x @ op(a) = b``.
 
     Args:
-        a: Argument a.
-        b: Argument b.
-        left_side: Argument left_side.
-        lower: Argument lower.
-        transpose_a: Argument transpose_a.
-        conjugate_a: Argument conjugate_a.
-        unit_diagonal: Argument unit_diagonal.
+        a: Triangular coefficient matrix.
+        b: Right-hand side matrix.
+        left_side: If ``True``, solve ``op(a) @ x = b``; otherwise ``x @ op(a) = b``.
+        lower: Whether ``a`` is lower-triangular.
+        transpose_a: Whether to transpose ``a`` before solving.
+        conjugate_a: Whether to complex-conjugate ``a`` before solving.
+        unit_diagonal: Whether to assume the diagonal of ``a`` is all ones.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Solution array ``x``.
     """
     return _wrap(
         ops.triangular_solve(
@@ -252,14 +252,14 @@ triangular_solve_p = MockPrimitive("triangular_solve")
 
 
 def tridiagonal(a: ArrayLikeSpec, lower: bool = True) -> ArrayLikeSpec:
-    """JAX API implementation for tridiagonal.
+    """Reduce a symmetric/Hermitian matrix to tridiagonal form.
 
     Args:
-        a: Argument a.
-        lower: Argument lower.
+        a: Input symmetric or Hermitian matrix.
+        lower: Whether to read from the lower triangle of ``a``.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Tuple of ``(a_out, d, e, taus)``.
     """
     res = ops.tridiagonal(_to_tensor(a), lower=lower)
     if isinstance(res, tuple):
@@ -271,16 +271,16 @@ tridiagonal_p = MockPrimitive("tridiagonal")
 
 
 def tridiagonal_solve(dl: ArrayLikeSpec, d: ArrayLikeSpec, du: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
-    """JAX API implementation for tridiagonal_solve.
+    """Solve a tridiagonal linear system given lower, main, and upper diagonals.
 
     Args:
-        dl: Argument dl.
-        d: Argument d.
-        du: Argument du.
-        b: Argument b.
+        dl: Sub-diagonal vector (with first element 0).
+        d: Main diagonal vector.
+        du: Super-diagonal vector (with last element 0).
+        b: Right-hand side vector or matrix.
 
     Returns:
-        ArrayLikeSpec: The result.
+        ArrayLikeSpec: Solution to the tridiagonal system.
     """
     return _wrap(ops.tridiagonal_solve(_to_tensor(dl), _to_tensor(d), _to_tensor(du), _to_tensor(b)))
 

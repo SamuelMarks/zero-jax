@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 import zero_jax
 import zero_jax.api.misc as mod
 import zero_jax.numpy as jnp
+from tests.conftest import assert_allclose
 from zero_jax._types import PyTree
 
 
@@ -15,12 +14,20 @@ def test_checkpoint_and_remat() -> None:
 
     @mod.checkpoint
     def f1(x: PyTree) -> PyTree:
-        """Direct checkpointed function."""
+        """Direct checkpointed function.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1
 
     @mod.checkpoint(prevent_cse=False, policy=mod.checkpoint_policies.everything_saveable)
     def f2(x: PyTree) -> PyTree:
-        """Parameterized checkpointed function."""
+        """Parameterized checkpointed function.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x * 2
 
     assert f1(3) == 4
@@ -32,22 +39,30 @@ def test_closure_convert_and_make_jaxpr() -> None:
     """Verify closure_convert and make_jaxpr."""
 
     class CallableObj:
-        """Callable object holding an ndarray attribute."""
+        """Callable object holding a state mapping with an ndarray leaf."""
 
         def __init__(self) -> None:
             """Initialize CallableObj."""
             self.w = jnp.array([1.0, 2.0])
+            self.state = {"w": self.w}
 
         def __call__(self, x: PyTree) -> PyTree:
-            """Apply CallableObj."""
+            """Apply CallableObj.
+
+            Args:
+                x: Parameter ``x``.
+            """
             return x + self.w
 
     obj = CallableObj()
     conv_fn, aux = mod.closure_convert(obj, jnp.array([3.0, 4.0]))
     assert len(aux) == 1
-    np.testing.assert_allclose(np.asarray(conv_fn(jnp.array([3.0, 4.0]))), np.array([4.0, 6.0]))
+    assert_allclose(conv_fn(jnp.array([3.0, 4.0])), [4.0, 6.0])
 
-    # Builtin callable without __dict__
+    captured_arr = jnp.array([5.0, 6.0])
+    _, fn_aux = mod.closure_convert(lambda x: x + captured_arr, jnp.array([1.0, 2.0]))
+    assert len(fn_aux) == 1
+
     assert mod.getattr_safe_dict(len) == {}
 
     jaxpr_repr = mod.make_jaxpr(lambda x: x + 1)(jnp.array([1.0, 2.0]))
@@ -93,7 +108,6 @@ def test_ensure_compile_time_eval_and_misc_helpers() -> None:
     with mod.debug_key_reuse():
         pass
 
-    # Exercise jit stage methods and disable_jit
     j_fn = zero_jax.jit(lambda x: x + 1)
     assert j_fn.trace(jnp.array(1.0)) is not None
     assert j_fn.lower(jnp.array(1.0)) is not None

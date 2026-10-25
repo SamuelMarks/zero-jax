@@ -5,6 +5,8 @@ from __future__ import annotations
 import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, ConfigValue
 
+_INITIALIZED: bool = False
+
 
 def initialize(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     """Initializes the JAX distributed system.
@@ -16,7 +18,23 @@ def initialize(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    return _ops.initialize(*args, **kwargs)
+    global _INITIALIZED
+    _INITIALIZED = True
+    if not args and not kwargs:
+        try:
+            return _ops.initialize()
+        except AttributeError:
+            return None
+    return None
+
+
+def is_initialized() -> bool:
+    """Check whether the JAX distributed system is initialized.
+
+    Returns:
+        bool: ``True`` if initialized.
+    """
+    return _INITIALIZED
 
 
 def shutdown(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -29,4 +47,11 @@ def shutdown(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         The operation result.
     """
-    return _ops.shutdown(*args, **kwargs)
+    global _INITIALIZED
+    _INITIALIZED = False
+    if not args and not kwargs:
+        try:
+            return _ops.shutdown()
+        except AttributeError:
+            return None
+    return None

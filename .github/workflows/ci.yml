@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  UV_DYNAMIC_VERSIONING_BYPASS: "2.2.0"
+  PDM_BUILD_SCM_VERSION: "2.2.0"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,8 +29,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install ruff mypy interrogate pytest pytest-cov build
         pip install "ml-ecosystem-snapshots @ https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.4/ml_ecosystem_snapshots-0.0.4-py3-none-any.whl"
-        if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
-        if [ -f "pyproject.toml" ]; then pip install -e ".[test]"; fi
+        pip install --no-deps "griffelib @ git+https://github.com/SamuelMarks/griffe.git@rest#subdirectory=packages/griffelib" "griffecli @ git+https://github.com/SamuelMarks/griffe.git@rest#subdirectory=packages/griffecli"
+        if [ -f "pyproject.toml" ]; then pip install -e ".[test]"; elif [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
 
     - name: Check Code Formatting (Ruff)
       run: ruff format --check .
@@ -44,14 +48,14 @@ jobs:
       run: |
         python scripts/run_checks.py check_strict_typing
         python scripts/run_checks.py check_docstrings
-        python scripts/run_checks.py check_allowed_imports src/zero_jax
+        python scripts/run_checks.py check_allowed_imports src/zero_jax scripts tests
         python scripts/run_checks.py enforce_all_list src/zero_jax
         python scripts/run_checks.py check_api_parity
         python scripts/run_checks.py check_ops_coverage
 
     - name: Test & Branch Coverage (100%)
       run: |
-        pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-report=xml --cov-fail-under=100
+        pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json --cov-fail-under=100
 
     - name: Update Badges
       run: |

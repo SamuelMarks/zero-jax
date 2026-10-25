@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 import zero_jax.nn.initializers as mod
+from tests.conftest import assert_allclose
 
 
 def test_all_initializers_concrete() -> None:
@@ -12,7 +11,7 @@ def test_all_initializers_concrete() -> None:
     key = 42
     assert mod.zeros(key, (2, 3)).shape == (2, 3)
     assert mod.ones(key, (2, 3)).shape == (2, 3)
-    assert np.allclose(np.asarray(mod.constant(2.5)(key, (2, 2))), 2.5)
+    assert_allclose(mod.constant(2.5)(key, (2, 2)), [[2.5, 2.5], [2.5, 2.5]])
     assert mod.uniform(0.05)(key, (2, 3)).shape == (2, 3)
     assert mod.normal(0.05)(key, (2, 3)).shape == (2, 3)
     assert mod.truncated_normal(0.05)(key, (2, 3)).shape == (2, 3)

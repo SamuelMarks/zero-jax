@@ -97,7 +97,11 @@ def test_register_dataclass_and_static() -> None:
         """Static node with zero leaves."""
 
         def __init__(self, lr: float) -> None:
-            """Initialize StaticConfig."""
+            """Initialize StaticConfig.
+
+            Args:
+                lr: Parameter ``lr``.
+            """
             self.lr = lr
 
     cfg = StaticConfig(0.01)
@@ -151,7 +155,11 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
         """Plain custom PyTree node."""
 
         def __init__(self, val: ArrayLikeSpec) -> None:
-            """Initialize Box."""
+            """Initialize Box.
+
+            Args:
+                val: Parameter ``val``.
+            """
             self.val = val
 
         def tree_flatten(self) -> tuple[tuple[ArrayLikeSpec], None]:
@@ -160,7 +168,12 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
 
         @classmethod
         def tree_unflatten(cls, aux: None, children: list[ArrayLikeSpec]) -> Box:
-            """Unflatten Box."""
+            """Unflatten Box.
+
+            Args:
+                aux: Parameter ``aux``.
+                children: Parameter ``children``.
+            """
             return cls(children[0])
 
     b = Box(7)
@@ -171,7 +184,11 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
         """Keyed custom PyTree node."""
 
         def __init__(self, val: ArrayLikeSpec) -> None:
-            """Initialize KeyedBox."""
+            """Initialize KeyedBox.
+
+            Args:
+                val: Parameter ``val``.
+            """
             self.val = val
 
         def tree_flatten_with_keys(self) -> tuple[tuple[tuple[mod.GetAttrKey, ArrayLikeSpec]], None]:
@@ -180,7 +197,12 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
 
         @classmethod
         def tree_unflatten(cls, aux: None, children: list[ArrayLikeSpec]) -> KeyedBox:
-            """Unflatten KeyedBox."""
+            """Unflatten KeyedBox.
+
+            Args:
+                aux: Parameter ``aux``.
+                children: Parameter ``children``.
+            """
             return cls(children[0])
 
     kb = KeyedBox(9)

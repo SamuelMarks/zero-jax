@@ -26,6 +26,7 @@ def test_standalone_script_wrappers() -> None:
     """Verify standalone CLI wrapper modules in ``scripts/``."""
     assert scripts.__all__ == []
     assert generate_todo_plan.generate_plan().startswith("# ml-switcheroo-compiler")
+    assert generate_todo_plan.count_todo_checkboxes(f"# Header{NL}- [x] Done{NL}- [ ] Todo") == (1, 1)
     assert generate_todo_plan2.generate_plan2().startswith("# ml-switcheroo-compiler")
     assert merge_plans.merge_markdown_plans("# A", "# B") == f"# A{NL}{NL}# B"
 
@@ -47,7 +48,11 @@ def test_standalone_script_wrappers() -> None:
 
 
 def test_check_file_imports_and_collect_files(tmp_path: Path) -> None:
-    """Cover ``check_file_imports``, ``_collect_py_files``, and ``cmd_check_allowed_imports``."""
+    """Cover ``check_file_imports``, ``_collect_py_files``, and ``cmd_check_allowed_imports``.
+
+    Args:
+        tmp_path: Parameter ``tmp_path``.
+    """
     valid_py = tmp_path / "valid.py"
     valid_py.write_text(
         NL.join(
@@ -111,7 +116,11 @@ def test_check_file_imports_and_collect_files(tmp_path: Path) -> None:
 
 
 def test_get_signatures_and_api_parity(tmp_path: Path) -> None:
-    """Cover ``get_signatures``, ``verify_ecosystem_snapshot``, and ``cmd_check_api_parity``."""
+    """Cover ``get_signatures``, ``verify_ecosystem_snapshot``, and ``cmd_check_api_parity``.
+
+    Args:
+        tmp_path: Parameter ``tmp_path``.
+    """
     mod = ModuleType("dummy_mod")
     mod.__dict__["valid_fn"] = lambda x: x
     mod.__dict__["_private"] = lambda x: x
@@ -135,8 +144,15 @@ def test_get_signatures_and_api_parity(tmp_path: Path) -> None:
     assert run_checks.get_signatures(mod, prefix="xla_client") == {}
 
     assert run_checks.verify_ecosystem_snapshot() is True
-
     with patch("os.path.exists", return_value=False):
+        assert run_checks.verify_ecosystem_snapshot() is True
+
+    valid_snap = tmp_path / "valid_snap.json"
+    valid_snap.write_text(
+        json.dumps({"categories": {"activation": [{"name": "sin", "api_path": "jax.numpy.sin", "kind": "function", "params": []}]}}),
+        encoding="utf-8",
+    )
+    with patch("os.path.expanduser", return_value=str(valid_snap)):
         assert run_checks.verify_ecosystem_snapshot() is True
 
     fake_snap = tmp_path / "bad_snap.json"
@@ -179,18 +195,22 @@ def test_get_signatures_and_api_parity(tmp_path: Path) -> None:
 
 
 def test_ops_coverage_and_enforce_all_list(tmp_path: Path) -> None:
-    """Cover ``cmd_check_ops_coverage``, ``process_file_enforce_all``, and ``cmd_enforce_all_list``."""
+    """Cover ``cmd_check_ops_coverage``, ``process_file_enforce_all``, and ``cmd_enforce_all_list``.
+
+    Args:
+        tmp_path: Parameter ``tmp_path``.
+    """
     with pytest.raises(SystemExit) as exc_ops:
         run_checks.main(["check_ops_coverage"])
     assert exc_ops.value.code == 0
 
-    bad_py = tmp_path / "bad.py"
-    bad_py.write_text("def (", encoding="utf-8")
+    bad_py = tmp_path / "test_bad.py"
+    bad_py.write_text("def (add", encoding="utf-8")
     assert run_checks.process_file_enforce_all(str(bad_py)) is False
 
     with (
         patch("scripts.run_checks._collect_py_files", return_value=[str(bad_py), "src/zero_jax/lax/primitives.py"]),
-        patch("os.walk", return_value=[]),
+        patch("os.walk", return_value=[(str(tmp_path), [], ["test_bad.py"])]),
         pytest.raises(SystemExit) as exc_ops_fail,
     ):
         run_checks.main(["check_ops_coverage"])
@@ -227,11 +247,18 @@ def test_ops_coverage_and_enforce_all_list(tmp_path: Path) -> None:
 
 
 def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
-    """Cover ``check_file_strict_typing``, ``cmd_check_strict_typing``, ``check_file_docstrings``, and ``cmd_check_docstrings``."""
+    """Cover ``check_file_strict_typing``, ``cmd_check_strict_typing``, ``check_file_docstrings``, and ``cmd_check_docstrings``.
+
+    Args:
+        tmp_path: Parameter ``tmp_path``.
+    """
     src_dir = tmp_path / "src"
     src_dir.mkdir()
 
     assert run_checks.check_file_imports("tests/test_scripts.py") is True
+    assert run_checks.check_file_imports("scripts/run_checks.py") is True
+    assert run_checks.check_file_imports("tests/test_reference_jnp.py") is True
+    assert run_checks.check_file_imports("tests/test_stubs.py") is True
 
     bad_src = src_dir / "bad_mod.py"
     bad_src.write_text(
@@ -239,7 +266,7 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
             [
                 "from typing import " + "Any, cast, List",
                 "import typing",
-                "x = 1  # " + "pragma: no cover",
+                "x = 1  # pragma: " + "no cover",
                 "y = 2  # " + "type: ignore",
                 "class UndocClass:",
                 "    def __init__(self, a, *args, **kwargs):",
@@ -252,6 +279,9 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
                 '        """',
                 "        " + "getattr(self, 'a', None)",
                 "        " + "setattr(self, 'a', a)",
+                "        " + "vars(self)",
+                "        _ = self." + "__dict__",
+                "        _ = self.other_attr",
                 "    def undoc_method(self) -> None:",
                 "        return None",
                 "def __getattr__(name: " + "object) -> typing." + "Any:",
@@ -311,6 +341,10 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
             [
                 '"""Good module."""',
                 "",
+                "def nop() -> None:",
+                '    """No-op."""',
+                "    return None",
+                "",
                 "def add(x: int) -> int:",
                 '    """Add.',
                 "",
@@ -335,7 +369,12 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
 
 
 def test_badges_and_coverage_helpers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Cover ``get_color``, ``format_cov``, ``get_test_coverage``, ``get_doc_coverage``, and ``cmd_update_badges``."""
+    """Cover ``get_color``, ``format_cov``, ``get_test_coverage``, ``get_doc_coverage``, and ``cmd_update_badges``.
+
+    Args:
+        tmp_path: Parameter ``tmp_path``.
+        monkeypatch: Parameter ``monkeypatch``.
+    """
     assert run_checks.get_color(100.0) == "brightgreen"
     assert run_checks.get_color(95.0) == "green"
     assert run_checks.get_color(85.0) == "yellowgreen"

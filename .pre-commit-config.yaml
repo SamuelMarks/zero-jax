@@ -45,9 +45,10 @@ repos:
 
       - id: check-allowed-imports
         name: Check Allowed Imports
-        entry: python3 scripts/run_checks.py check_allowed_imports
+        entry: python3 scripts/run_checks.py check_allowed_imports src/zero_jax scripts tests
         language: system
         types: [python]
+        pass_filenames: false
 
       - id: enforce-all-list
         name: Enforce __all__ List (No append/extend)

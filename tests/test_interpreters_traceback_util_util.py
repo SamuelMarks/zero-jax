@@ -457,6 +457,6 @@ def test_typing_vars() -> None:
     assert mod.T1 is not None
     assert mod.T2 is not None
     assert mod.T3 is not None
-    assert hasattr(mod, "TYPE_CHECKING")
-    assert hasattr(mod, "Sequence")
+    assert "TYPE_CHECKING" in dir(mod)
+    assert mod.Sequence is not None
     assert isinstance(mod.cache_clearing_funs, list)

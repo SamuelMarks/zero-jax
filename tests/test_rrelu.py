@@ -7,4 +7,5 @@ import zero_jax._compiler_proxy_ops as ops
 
 def test_rrelu_exists() -> None:
     """Execute ``test_rrelu_exists``."""
-    assert hasattr(ops, "rrelu")
+    assert callable(ops.rrelu)
+    assert "rrelu" in ops.__all__

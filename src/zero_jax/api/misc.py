@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import contextlib
+import types
 from collections.abc import Iterator, Sequence
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue, PyTree, ShapeSpec, T, VariadicCallable
+from zero_jax._types import ArrayLikeSpec, ConfigValue, PyTree, ShapeSpec, StatefulProtocol, T, VariadicCallable
 from zero_jax.numpy.lax_numpy import ndarray
+from zero_jax.tree_util import tree_flatten
 
 
 def closure_convert(
@@ -33,18 +35,29 @@ def closure_convert(
 
 
 def getattr_safe_dict(obj: ConfigValue) -> dict[str, PyTree]:
-    """Return ``__dict__`` of a callable if it is a standard function or object.
+    """Return residual state mapping of a callable or PyTree-registered object without dunder dict access.
 
     Args:
         obj: Target callable or object.
 
     Returns:
-        dict[str, PyTree]: Attribute dictionary.
+        dict[str, PyTree]: Mapping of captured array leaves and function metadata.
     """
-    try:
-        return dict(obj.__dict__)
-    except AttributeError:
-        return {}
+    result: dict[str, PyTree] = {}
+    if isinstance(obj, StatefulProtocol):
+        for k, v in obj.state.items():
+            result[k] = v
+    if isinstance(obj, types.FunctionType):
+        result["__name__"] = obj.__name__
+        if obj.__closure__:
+            for idx, cell in enumerate(obj.__closure__):
+                result[f"cell_{idx}"] = cell.cell_contents
+        return result
+    leaves, _ = tree_flatten(obj)
+    for idx, leaf in enumerate(leaves):
+        if isinstance(leaf, ndarray):
+            result[f"leaf_{idx}"] = leaf
+    return result
 
 
 def named_call(fun: VariadicCallable[R], name: str | None = None) -> VariadicCallable[R]:

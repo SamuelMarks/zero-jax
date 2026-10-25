@@ -20,7 +20,11 @@ def test_check_and_checkify() -> None:
     """Test check and checkify integration."""
 
     def fn(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Checked function."""
+        """Checked function.
+
+        Args:
+            x: Parameter ``x``.
+        """
         mod.check(x != 0, "zero division")
         return x
 

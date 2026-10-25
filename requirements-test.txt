@@ -1,11 +1,5 @@
--r requirements.txt
-ml-ecosystem-snapshots @ https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.4/ml_ecosystem_snapshots-0.0.4-py3-none-any.whl
 mypy>=1.8.0
 ruff>=0.4.0
 interrogate>=1.7.0
 pytest>=7.0
 pytest-cov>=4.0
-hypothesis>=6.0
-jax[cuda12]; sys_platform == 'linux'
-jax; sys_platform != 'linux'
-jaxlib; sys_platform != 'linux'

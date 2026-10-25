@@ -18,6 +18,13 @@ def default_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeS
     Returns:
         ArrayLikeSpec: Result.
     """
+    if not args and not kwargs:
+        try:
+            return _ops.default_backend()
+        except AttributeError:
+            from zero_jax.api.core import default_backend as _core_default_backend
+
+            return _core_default_backend()
     return _ops.default_backend(*args, **kwargs)
 
 
@@ -31,6 +38,13 @@ def get_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         ArrayLikeSpec: Result.
     """
+    if not args and not kwargs:
+        try:
+            return _ops.get_backend()
+        except AttributeError:
+            from zero_jax.lax import Device
+
+            return Device()
     return _ops.get_backend(*args, **kwargs)
 
 
@@ -44,6 +58,11 @@ def get_compile_options(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayL
     Returns:
         ArrayLikeSpec: Result.
     """
+    if not args and not kwargs:
+        try:
+            return _ops.get_compile_options()
+        except AttributeError:
+            return {}
     return _ops.get_compile_options(*args, **kwargs)
 
 

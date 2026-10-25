@@ -9,7 +9,11 @@ from zero_jax._types import ArrayLikeSpec
 
 
 def test_tree_flatten(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_tree_flatten``."""
+    """Execute ``test_tree_flatten``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
     tree = {"a": 1, "b": [2, 3]}
     leaves_z, treedef_z = tree_zero.tree_flatten(tree)
     leaves_r, treedef_r = tree_ref.tree_flatten(tree)
@@ -23,7 +27,11 @@ def test_tree_flatten(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_tree_unflatten(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_tree_unflatten``."""
+    """Execute ``test_tree_unflatten``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
     tree = [1, (2, 3)]
     leaves_r, treedef_r = tree_ref.tree_flatten(tree)
     leaves_z, treedef_z = tree_zero.tree_flatten(tree)
@@ -35,7 +43,11 @@ def test_tree_unflatten(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_tree_map(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_tree_map``."""
+    """Execute ``test_tree_map``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
     tree = {"a": 1, "b": [2, 3]}
     res_z = tree_zero.tree_map(lambda x: x * 2, tree)
     res_r = tree_ref.tree_map(lambda x: x * 2, tree)
@@ -43,7 +55,11 @@ def test_tree_map(check_allclose: ArrayLikeSpec) -> None:
 
 
 def test_tree_leaves(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_tree_leaves``."""
+    """Execute ``test_tree_leaves``.
+
+    Args:
+        check_allclose: Parameter ``check_allclose``.
+    """
     tree = {"a": 1, "b": [2, 3]}
     res_z = tree_zero.tree_leaves(tree)
     res_r = tree_ref.tree_leaves(tree)

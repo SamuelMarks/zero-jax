@@ -12,11 +12,19 @@ def test_checkify_basic() -> None:
     """Execute ``test_checkify_basic``."""
 
     def f_ref(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_ref``."""
+        """Execute ``f_ref``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1
 
     def f_zero(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_zero``."""
+        """Execute ``f_zero``.
+
+        Args:
+            x: Parameter ``x``.
+        """
         return x + 1
 
     # Checkify returns a function that returns (err, out)
@@ -34,4 +42,4 @@ def test_checkify_check() -> None:
     # checkify, but we just verify it exists and can be called
     """Execute ``test_checkify_check``."""
     checkify_zero.check(True, "msg")
-    assert hasattr(checkify_ref, "check")
+    assert callable(checkify_ref.check)

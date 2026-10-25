@@ -22,7 +22,11 @@ def test_checkify_pass_and_fail() -> None:
 
     @checkify
     def f(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Checked function."""
+        """Checked function.
+
+        Args:
+            x: Parameter ``x``.
+        """
         check(x > 0, "x must be positive, got {}", x)
         return x * 2
 

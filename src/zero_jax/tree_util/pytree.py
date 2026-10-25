@@ -2,13 +2,93 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from collections.abc import Callable, Iterable, Sequence
+from typing import Protocol, runtime_checkable
 
-_pytree_registry: dict[type, tuple[ArrayLikeSpec, ArrayLikeSpec]] = {}
-_pytree_with_keys_registry: dict[type, tuple[ArrayLikeSpec, ArrayLikeSpec]] = {}
+from zero_jax._types import ArrayLikeSpec, ConfigValue, PyTree
 
 
-def register_pytree_node(nodetype: type, flatten_func: ArrayLikeSpec, unflatten_func: ArrayLikeSpec) -> None:
+@runtime_checkable
+class _HasFieldsProtocol(Protocol):
+    """Protocol for ``namedtuple`` instances exposing ``_fields``."""
+
+    _fields: tuple[str, ...]
+
+
+@runtime_checkable
+class _TreeFlattenWithKeysProtocol(Protocol):
+    """Protocol for classes implementing ``tree_flatten_with_keys`` and ``tree_unflatten``."""
+
+    def tree_flatten_with_keys(self) -> tuple[Iterable[ArrayLikeSpec], ArrayLikeSpec]:
+        """Flatten instance into keyed child pairs and auxiliary metadata.
+
+        Returns:
+            tuple[Iterable[ArrayLikeSpec], ArrayLikeSpec]: Keyed children and auxiliary data.
+        """
+        ...
+
+    @classmethod
+    def tree_unflatten(cls, aux: ArrayLikeSpec, children: Sequence[ArrayLikeSpec]) -> PyTree:
+        """Reconstruct instance from auxiliary metadata and flattened children.
+
+        Args:
+            aux: Auxiliary metadata.
+            children: Reconstructed child values.
+
+        Returns:
+            PyTree: Reconstructed instance.
+        """
+        ...
+
+
+class FlattenFunc(Protocol):
+    """Protocol for PyTree flattening callables ``node -> (children_iterable, aux_data)``."""
+
+    def __call__(self, node: PyTree) -> tuple[Iterable[PyTree], ArrayLikeSpec]:
+        """Flatten ``node`` into an iterable of child subtrees and auxiliary metadata.
+
+        Args:
+            node: Custom PyTree node instance.
+
+        Returns:
+            tuple[Iterable[PyTree], ArrayLikeSpec]: ``(children, aux_data)``.
+        """
+        ...
+
+
+class UnflattenFunc(Protocol):
+    """Protocol for PyTree unflattening callables ``(aux_data, children_list) -> node``."""
+
+    def __call__(self, aux: ArrayLikeSpec, children: list[PyTree]) -> PyTree:
+        """Reconstruct a custom PyTree node from auxiliary metadata and child subtrees.
+
+        Args:
+            aux: Auxiliary metadata.
+            children: List of reconstructed child subtrees.
+
+        Returns:
+            PyTree: Reconstructed node.
+        """
+        ...
+
+
+_pytree_registry: dict[type, tuple[FlattenFunc, UnflattenFunc]] = {}
+_pytree_with_keys_registry: dict[type, tuple[FlattenFunc, UnflattenFunc]] = {}
+
+
+def _is_namedtuple_instance(x: PyTree) -> bool:
+    """Check whether ``x`` is a ``namedtuple`` instance.
+
+    Args:
+        x: Candidate object.
+
+    Returns:
+        bool: ``True`` if ``x`` is a tuple subclass defining ``_fields``.
+    """
+    return isinstance(x, tuple) and type(x) is not tuple and isinstance(x, _HasFieldsProtocol)
+
+
+def register_pytree_node(nodetype: type, flatten_func: FlattenFunc, unflatten_func: UnflattenFunc) -> None:
     """Register a custom container type with the PyTree registry.
 
     Args:
@@ -38,9 +118,9 @@ def register_pytree_node_class(cls: type) -> type:
 
 def register_pytree_with_keys(
     nodetype: type,
-    flatten_with_keys: ArrayLikeSpec,
-    unflatten_func: ArrayLikeSpec,
-    flatten_func: ArrayLikeSpec = None,
+    flatten_with_keys: FlattenFunc,
+    unflatten_func: UnflattenFunc,
+    flatten_func: FlattenFunc | None = None,
 ) -> None:
     """Register a custom container type with key-aware flattening in the PyTree registry.
 
@@ -67,7 +147,7 @@ def register_pytree_with_keys(
                 return [child for _, child in items], aux
             return items, aux
 
-        resolved_flatten: ArrayLikeSpec = _plain_flatten
+        resolved_flatten: FlattenFunc = _plain_flatten
     else:
         resolved_flatten = flatten_func
 
@@ -84,7 +164,7 @@ def register_pytree_with_keys_class(cls: type) -> type:
     Returns:
         type: The registered class ``cls``.
     """
-    if "tree_flatten_with_keys" in cls.__dict__:
+    if issubclass(cls, _TreeFlattenWithKeysProtocol):
         register_pytree_with_keys(
             cls,
             lambda obj: obj.tree_flatten_with_keys(),
@@ -123,7 +203,7 @@ class PyTreeDef:
             int: Total number of leaf nodes.
         """
         if not self.children_defs:
-            return 0 if self.node_type in (tuple, list, dict) else 1
+            return 0 if (self.node_type in (tuple, list, dict) or issubclass(self.node_type, tuple)) else 1
         return sum(c.num_leaves for c in self.children_defs)
 
     @property
@@ -172,6 +252,14 @@ def tree_flatten(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> tuple[li
             leaves.extend(child_leaves)
             children_defs.append(child_def)
         return leaves, PyTreeDef(node_type, children_defs, metadata=aux)
+    if _is_namedtuple_instance(tree):
+        leaves = []
+        children_defs = []
+        for child in tree:
+            child_leaves, child_def = tree_flatten(child, is_leaf=is_leaf)
+            leaves.extend(child_leaves)
+            children_defs.append(child_def)
+        return leaves, PyTreeDef(node_type, children_defs)
     if isinstance(tree, tuple):
         leaves = []
         children_defs = []
@@ -216,6 +304,8 @@ def _unflatten_from_iter(treedef: PyTreeDef, leaf_list: list[ArrayLikeSpec]) -> 
         return unflatten_func(treedef.metadata, children)
     if treedef.node_type is tuple:
         return tuple(_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs)
+    if issubclass(treedef.node_type, tuple):
+        return treedef.node_type(*(_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs))
     if treedef.node_type is list:
         return [_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs]
     if treedef.node_type is dict:
@@ -324,7 +414,12 @@ def _patch_pytreedef() -> None:
 
 
 __all__ = [
+    "FlattenFunc",
     "PyTreeDef",
+    "UnflattenFunc",
+    "_HasFieldsProtocol",
+    "_TreeFlattenWithKeysProtocol",
+    "_is_namedtuple_instance",
     "_patch_pytreedef",
     "_pytree_registry",
     "_pytree_with_keys_registry",

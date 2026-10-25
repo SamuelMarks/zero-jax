@@ -15,7 +15,11 @@ def test_module_exists() -> None:
 
 @mock.patch("zero_jax.scipy.spatial.transform.get_op")
 def test_rotation_methods(mock_get_op: mock.MagicMock) -> None:
-    """Test all Rotation methods."""
+    """Test all Rotation methods.
+
+    Args:
+        mock_get_op: Parameter ``mock_get_op``.
+    """
     mock_op_instance = mock.MagicMock()
     mock_get_op.return_value = mock_op_instance
     mock_op_instance.return_value = jnp.array([0.0, 0.0, 0.0, 1.0])
@@ -94,7 +98,11 @@ def test_rotation_methods(mock_get_op: mock.MagicMock) -> None:
 
 @mock.patch("zero_jax.scipy.spatial.transform.get_op")
 def test_slerp(mock_get_op: mock.MagicMock) -> None:
-    """Test Slerp class."""
+    """Test Slerp class.
+
+    Args:
+        mock_get_op: Parameter ``mock_get_op``.
+    """
     mock_op_instance = mock.MagicMock()
     mock_get_op.return_value = mock_op_instance
     mock_op_instance.return_value = jnp.array([0.0, 0.0, 0.0, 1.0])

@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-import numpy as np
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 
+import zero_jax.numpy as jnp
 from zero_jax.random import fold_in, split
 
 
 def test_random_split_eager() -> None:
     """Execute ``test_random_split_eager``."""
-    key = np.array([0, 0])
+    key = jnp.array([0, 0])
     keys = split(key, 2)
     assert keys.shape == (2, 2)
     split(key, 1)
@@ -19,7 +19,7 @@ def test_random_split_eager() -> None:
 
 def test_random_fold_in_eager() -> None:
     """Execute ``test_random_fold_in_eager``."""
-    key = np.array([0, 0])
+    key = jnp.array([0, 0])
     new_key = fold_in(key, 5)
     assert new_key.shape == (2,)
 

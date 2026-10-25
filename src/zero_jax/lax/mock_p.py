@@ -2,7 +2,142 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec, ConfigValue, VariadicCallable
+
+
+def _get_lax_dispatch_table() -> dict[str, VariadicCallable[ArrayLikeSpec]]:
+    """Build an explicit dispatch table mapping primitive base names to ``zero_jax.lax`` functions.
+
+    Returns:
+        dict[str, VariadicCallable[ArrayLikeSpec]]: Mapping from primitive name to callable.
+    """
+    import zero_jax.lax as _lax
+
+    return {
+        "abs": _lax.abs,
+        "acos": _lax.acos,
+        "acosh": _lax.acosh,
+        "add": _lax.add,
+        "after_all": _lax.after_all,
+        "all_gather": _lax.all_gather,
+        "all_to_all": _lax.all_to_all,
+        "approx_top_k": _lax.approx_max_k,
+        "argmax": _lax.argmax,
+        "argmin": _lax.argmin,
+        "asin": _lax.asin,
+        "asinh": _lax.asinh,
+        "atan": _lax.atan,
+        "atan2": _lax.atan2,
+        "atanh": _lax.atanh,
+        "axis_index": _lax.axis_index,
+        "bessel_i0e": _lax.bessel_i0e,
+        "bessel_i1e": _lax.bessel_i1e,
+        "bitcast_convert_type": _lax.bitcast_convert_type,
+        "broadcast_in_dim": _lax.broadcast_in_dim,
+        "cbrt": _lax.cbrt,
+        "ceil": _lax.ceil,
+        "clamp": _lax.clamp,
+        "clz": _lax.clz,
+        "complex": _lax.complex,
+        "concatenate": _lax.concatenate,
+        "cond": _lax.cond,
+        "conj": _lax.conj,
+        "conv_general_dilated": _lax.conv_general_dilated,
+        "convert_element_type": _lax.convert_element_type,
+        "cos": _lax.cos,
+        "cosh": _lax.cosh,
+        "create_token": _lax.create_token,
+        "cumlogsumexp": _lax.cumlogsumexp,
+        "cummax": _lax.cummax,
+        "cummin": _lax.cummin,
+        "cumprod": _lax.cumprod,
+        "cumsum": _lax.cumsum,
+        "digamma": _lax.digamma,
+        "div": _lax.div,
+        "dot_general": _lax.dot_general,
+        "dynamic_slice": _lax.dynamic_slice,
+        "dynamic_update_slice": _lax.dynamic_update_slice,
+        "eq": _lax.eq,
+        "erf": _lax.erf,
+        "erf_inv": _lax.erf_inv,
+        "erfc": _lax.erfc,
+        "exp": _lax.exp,
+        "exp2": _lax.exp2,
+        "expm1": _lax.expm1,
+        "fft": _lax.fft,
+        "floor": _lax.floor,
+        "gather": _lax.gather,
+        "ge": _lax.ge,
+        "gt": _lax.gt,
+        "igamma": _lax.igamma,
+        "igamma_grad_a": _lax.igamma_grad_a,
+        "igammac": _lax.igammac,
+        "imag": _lax.imag,
+        "infeed": _lax.infeed,
+        "integer_pow": _lax.integer_pow,
+        "iota": _lax.iota,
+        "is_finite": _lax.is_finite,
+        "le": _lax.le,
+        "lgamma": _lax.lgamma,
+        "log": _lax.log,
+        "log1p": _lax.log1p,
+        "logistic": _lax.logistic,
+        "lt": _lax.lt,
+        "max": _lax.max,
+        "min": _lax.min,
+        "mul": _lax.mul,
+        "ne": _lax.ne,
+        "neg": _lax.neg,
+        "nextafter": _lax.nextafter,
+        "outfeed": _lax.outfeed,
+        "pad": _lax.pad,
+        "pmax": _lax.pmax,
+        "pmin": _lax.pmin,
+        "polygamma": _lax.polygamma,
+        "population_count": _lax.population_count,
+        "pow": _lax.pow,
+        "ppermute": _lax.ppermute,
+        "psum": _lax.psum,
+        "random_gamma_grad": _lax.random_gamma_grad,
+        "real": _lax.real,
+        "reduce": _lax.reduce,
+        "reduce_precision": _lax.reduce_precision,
+        "reduce_window": _lax.reduce_window,
+        "rem": _lax.rem,
+        "reshape": _lax.reshape,
+        "rev": _lax.rev,
+        "rng_bit_generator": _lax.rng_bit_generator,
+        "rng_uniform": _lax.rng_uniform,
+        "round": _lax.round,
+        "rsqrt": _lax.rsqrt,
+        "scan": _lax.scan,
+        "scatter": _lax.scatter,
+        "scatter_add": _lax.scatter_add,
+        "scatter_apply": _lax.scatter_apply,
+        "scatter_max": _lax.scatter_max,
+        "scatter_min": _lax.scatter_min,
+        "scatter_mul": _lax.scatter_mul,
+        "select": _lax.select,
+        "select_n": _lax.select_n,
+        "shift_left": _lax.shift_left,
+        "shift_right_arithmetic": _lax.shift_right_arithmetic,
+        "shift_right_logical": _lax.shift_right_logical,
+        "sign": _lax.sign,
+        "sin": _lax.sin,
+        "sinh": _lax.sinh,
+        "slice": _lax.slice,
+        "sort": _lax.sort,
+        "sqrt": _lax.sqrt,
+        "square": _lax.square,
+        "squeeze": _lax.squeeze,
+        "stop_gradient": _lax.stop_gradient,
+        "sub": _lax.sub,
+        "tan": _lax.tan,
+        "tanh": _lax.tanh,
+        "top_k": _lax.top_k,
+        "transpose": _lax.transpose,
+        "zeta": _lax.zeta,
+    }
 
 
 class MockPrimitive:
@@ -27,12 +162,10 @@ class MockPrimitive:
         Returns:
             ArrayLikeSpec: Result of the primitive evaluation.
         """
-        import zero_jax.lax as _lax
-
         op_name = self.name[:-2] if self.name.endswith("_p") else self.name
-        lax_dict = _lax.__dict__
-        if op_name in lax_dict and callable(lax_dict[op_name]):
-            return lax_dict[op_name](*args, **params)
+        dispatch = _get_lax_dispatch_table()
+        if op_name in dispatch:
+            return dispatch[op_name](*args, **params)
         return args[0] if args else None
 
 

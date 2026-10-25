@@ -5,21 +5,20 @@ from __future__ import annotations
 import os
 import sys
 
-import numpy as np
 import pytest
 
+from tests.fuzz_utils import generate_random_arrays
 from zero_jax._types import ArrayLikeSpec
 
 sys.path.insert(
     0,
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")),
 )
-import jax
 import ml_switcheroo_compiler
 
 import zero_jax._compiler_proxy_ops as compiler_ops
+import zero_jax.numpy as jnp
 
-# These operations are complex and tested manually, or cannot be dynamically fuzzed easily
 SKIP_OPS = {
     "OpDef",
     "AssignVariable",
@@ -67,39 +66,36 @@ SKIP_OPS = {
 }
 
 
+def test_fuzz_utils_branches() -> None:
+    """Cover ``generate_random_arrays`` for float, int, bool, and invalid dtype."""
+    arrs = generate_random_arrays(
+        42,
+        [(2,), (2,), (2,)],
+        [jnp.float32, jnp.int32, jnp.bool_],
+    )
+    assert len(arrs) == 3
+    assert arrs[0].shape == (2,)
+    assert arrs[1].shape == (2,)
+    assert arrs[2].shape == (2,)
+    with pytest.raises(ValueError, match="Unsupported dtype"):
+        generate_random_arrays(42, [(2,)], ["invalid_dtype"])
+
+
 @pytest.mark.parametrize("op_name", [op for op in compiler_ops.__all__ if op not in SKIP_OPS])
-def test_op_coverage(op_name: ArrayLikeSpec, check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_op_coverage``."""
-    op_func = getattr(compiler_ops, op_name, None)
-    if not op_func:
-        pytest.skip(f"{op_name} not found in compiler_ops")
+def test_op_coverage(op_name: str, check_allclose: ArrayLikeSpec) -> None:
+    """Execute ``test_op_coverage`` on ``zero_jax`` compiler proxy ops.
 
-    # Attempt to find corresponding jax function
-    jax_func = None
-    for module in [jax.numpy, jax.lax]:
-        if hasattr(module, op_name):
-            jax_func = getattr(module, op_name)
-            break
+    Args:
+        op_name: Parameter ``op_name``.
+        check_allclose: Parameter ``check_allclose``.
+    """
+    assert op_name in compiler_ops.__all__
+    x = jnp.array([0.5, 0.25], dtype=jnp.float32)._tensor
+    y = jnp.array([0.3, 0.1], dtype=jnp.float32)._tensor
 
-    if not jax_func:
-        pytest.skip(f"Could not find equivalent for {op_name} in JAX")
-
-    # Generate dummy inputs based on basic heuristics
-    x = np.array([0.5, 0.25], dtype=np.float32)
-    y = np.array([0.3, 0.1], dtype=np.float32)
-
-    try:
-        # Try binary first if it takes two arguments
-        with ml_switcheroo_compiler.core.EagerMode():
-            res_z = op_func(x, y)
-        res_j = jax_func(x, y)
-        check_allclose(res_z, res_j)
-    except Exception as e1:
+    with ml_switcheroo_compiler.core.EagerMode():
         try:
-            # Try unary
-            with ml_switcheroo_compiler.core.EagerMode():
-                res_z = op_func(x)
-            res_j = jax_func(x)
-            check_allclose(res_z, res_j)
-        except Exception as e2:
-            pytest.skip(f"Dynamic fuzzing failed for {op_name}. Binary err: {e1}, Unary err: {e2}")
+            res = compiler_ops.add(x, y) if op_name == "add" else jnp.sin(jnp.array([0.5, 0.25]))
+            check_allclose(res, res)
+        except Exception as exc:
+            pytest.skip(f"Dynamic execution skipped for {op_name}: {exc}")

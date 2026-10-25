@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-import numpy as np
+import math
 
-from zero_jax.nn.activation import gelu, logsumexp, one_hot, softmax
+from tests.conftest import assert_allclose
+from zero_jax import nn
+from zero_jax import numpy as jnp
+from zero_jax.nn.activation import _erf, gelu, log_sigmoid, log_softmax, logsumexp, one_hot, selu, sigmoid, softmax
 
 
 def test_gelu() -> None:
     """Test gelu."""
-    x = np.array([-1.0, 0.0, 1.0])
+    x = jnp.array([-1.0, 0.0, 1.0])
     y_approx = gelu(x, approximate=True)
     y_exact = gelu(x, approximate=False)
     assert y_approx.shape == x.shape
@@ -18,28 +21,26 @@ def test_gelu() -> None:
 
 def test_logsumexp() -> None:
     """Test logsumexp."""
-    x = np.array([1.0, 2.0, 3.0])
+    x = jnp.array([1.0, 2.0, 3.0])
     res = logsumexp(x)
-    assert hasattr(res, "shape") or isinstance(res, float)
+    assert isinstance(res, float) or res.shape is not None
 
-    # Test with b, keepdims, return_sign, where
     _res2, sign2 = logsumexp(
         x,
-        b=np.array([1.0, 1.0, 1.0]),
+        b=jnp.array([1.0, 1.0, 1.0]),
         keepdims=True,
         return_sign=True,
-        where=np.array([True, True, False]),
+        where=jnp.array([True, True, False]),
     )
     assert sign2 == 1.0
 
-    # Test all infs
-    x_inf = np.array([-np.inf, -np.inf])
+    x_inf = jnp.array([-jnp.inf, -jnp.inf])
     logsumexp(x_inf)
 
 
 def test_one_hot() -> None:
     """Test one_hot."""
-    x = np.array([0, 1, 2])
+    x = jnp.array([0, 1, 2])
     y = one_hot(x, num_classes=3)
     assert y.shape == (3, 3)
 
@@ -49,107 +50,70 @@ def test_one_hot() -> None:
 
 def test_softmax() -> None:
     """Test softmax."""
-    x = np.array([1.0, 2.0, 3.0])
+    x = jnp.array([1.0, 2.0, 3.0])
     y = softmax(x)
-    assert np.allclose(np.sum(y), 1.0)
+    assert_allclose(jnp.sum(y), 1.0)
 
-    # Test with where
-    y2 = softmax(x, where=np.array([True, False, True]))
+    y2 = softmax(x, where=jnp.array([True, False, True]))
     assert y2[1] == 0.0
 
 
 def test_sigmoid() -> None:
     """Execute ``test_sigmoid``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import sigmoid
-
-    x = np.array([0.0])
-    assert sigmoid(x) == 0.5
+    x = jnp.array([0.0])
+    assert_allclose(sigmoid(x), [0.5])
 
 
 def test_log_sigmoid() -> None:
     """Execute ``test_log_sigmoid``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import log_sigmoid
-
-    x = np.array([0.0])
+    x = jnp.array([0.0])
     res = log_sigmoid(x)
     assert res < 0.0
 
 
 def test_gelu_eager_non_approx() -> None:
     """Execute ``test_gelu_eager_non_approx``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import gelu
-
-    x = np.array([0.0, 1.0, -1.0])
+    x = jnp.array([0.0, 1.0, -1.0])
     res2 = gelu(x, approximate=False)
     assert res2.shape == (3,)
 
 
 def test_logsumexp_eager_extra() -> None:
     """Execute ``test_logsumexp_eager_extra``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import logsumexp
-
-    x = np.array([0.0, 1.0, 2.0])
-    _res, sign = logsumexp(x, b=np.array([1, 1, 1]), where=np.array([True, True, False]), return_sign=True)
+    x = jnp.array([0.0, 1.0, 2.0])
+    _res, sign = logsumexp(x, b=jnp.array([1, 1, 1]), where=jnp.array([True, True, False]), return_sign=True)
     assert sign > 0
 
 
 def test_softmax_eager_extra() -> None:
     """Execute ``test_softmax_eager_extra``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import softmax
-
-    x = np.array([0.0, 1.0, 2.0])
-    res2 = softmax(x, where=np.array([True, True, False]))
+    x = jnp.array([0.0, 1.0, 2.0])
+    res2 = softmax(x, where=jnp.array([True, True, False]))
     assert res2.shape == (3,)
 
 
 def test_selu() -> None:
     """Execute ``test_selu``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import selu
-
-    x = np.array([0.0, 1.0, -1.0])
+    x = jnp.array([0.0, 1.0, -1.0])
     res = selu(x)
     assert res.shape == x.shape
 
 
 def test_log_softmax() -> None:
     """Execute ``test_log_softmax``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import log_softmax
-
-    x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    x = jnp.array([[1.0, 2.0], [3.0, 4.0]])
     res = log_softmax(x, axis=-1)
     assert res.shape == x.shape
 
 
 def test_erf() -> None:
     """Execute ``test_erf``."""
-    import numpy as np
-
-    from zero_jax.nn.activation import _erf
-
-    x = np.array([0.0, 1.0, -1.0])
+    x = jnp.array([0.0, 1.0, -1.0])
     res = _erf(x)
     assert res.shape == x.shape
 
 
 def test_nn_tanh() -> None:
     """Execute ``test_nn_tanh``."""
-    import numpy as np
-
-    from zero_jax import nn
-
-    x = np.array([0.0, 1.0])
-    np.testing.assert_allclose(nn.tanh(x), np.tanh(x))
+    x = jnp.array([0.0, 1.0])
+    assert_allclose(nn.tanh(x), [math.tanh(0.0), math.tanh(1.0)])

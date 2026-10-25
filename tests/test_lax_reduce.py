@@ -8,22 +8,42 @@ from zero_jax.numpy import array
 
 
 def add(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``add``."""
+    """Execute ``add``.
+
+    Args:
+        x: Parameter ``x``.
+        y: Parameter ``y``.
+    """
     return x + y
 
 
 def mul(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``mul``."""
+    """Execute ``mul``.
+
+    Args:
+        x: Parameter ``x``.
+        y: Parameter ``y``.
+    """
     return x * y
 
 
 def max(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``max``."""
+    """Execute ``max``.
+
+    Args:
+        x: Parameter ``x``.
+        y: Parameter ``y``.
+    """
     return x if x > y else y
 
 
 def min(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``min``."""
+    """Execute ``min``.
+
+    Args:
+        x: Parameter ``x``.
+        y: Parameter ``y``.
+    """
     return x if x < y else y
 
 
