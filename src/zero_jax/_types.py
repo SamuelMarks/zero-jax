@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import typing
 from collections.abc import Callable, Mapping, Sequence
-from typing import Protocol, TypeVar, Union, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 from ml_switcheroo_compiler.core.shape import TensorOrScalar
 from ml_switcheroo_compiler.core.tensor import Tensor
@@ -72,47 +72,49 @@ class VariadicCallable(Protocol[T_co]):
 
 
 if typing.TYPE_CHECKING:
-    from typing import ParamSpec, TypeAlias
-
-    P = ParamSpec("P")
-    NumericScalar: TypeAlias = int | float | complex | bool
-    RealScalar: TypeAlias = int | float | bool
-    ScalarNumeric: TypeAlias = NumericScalar
-    ShapeTuple: TypeAlias = tuple[int, ...]
-    ShapeSpec: TypeAlias = int | Sequence[int]
-    AxisIntOrTuple: TypeAlias = int | Sequence[int] | None
-    AxisSpec: TypeAlias = AxisIntOrTuple
-    DTypeLike: TypeAlias = DType | str | type[int | float | complex | bool] | None
-    DTypeSpec: TypeAlias = DTypeLike
-    PaddingSpec: TypeAlias = str | Sequence[tuple[int, int]] | Sequence[tuple[int, int, int]]
-    PrecisionType: TypeAlias = str | int | tuple[str, str] | tuple[int, int] | None
-    IndexElement: TypeAlias = int | slice[int | Tensor | ArrayProtocol | None, int | Tensor | ArrayProtocol | None, int | Tensor | ArrayProtocol | None] | types.EllipsisType | Tensor | ArrayProtocol | None
-    IndexSpec: TypeAlias = IndexElement | tuple[IndexElement, ...]
-    ArrayInput: TypeAlias = TensorOrScalar | ArrayProtocol | Sequence[NumericScalar]
-    OptionalArrayInput: TypeAlias = ArrayInput | None
-    BoolConfigValue: TypeAlias = bool | None
-    StringConfigValue: TypeAlias = str | None
-    IntConfigValue: TypeAlias = int | None
-    EnumConfigValue: TypeAlias = str | int | None
-    OptionalStringConfig: TypeAlias = str | None
-    ConfigValue: TypeAlias = TensorOrScalar | ArrayProtocol | None
-    PrimitiveParamValue: TypeAlias = bool | int | float | str | ShapeTuple | DTypeSpec | None
-    ArrayLikeSpec: TypeAlias = TensorOrScalar | ArrayProtocol | None
-    PyTreeLeaf: TypeAlias = TensorOrScalar | ArrayProtocol | None
-    PyTree: TypeAlias = TensorOrScalar | ArrayProtocol | None
+    NumericScalar = int | float | complex | bool
+    RealScalar = int | float | bool
+    ScalarNumeric = int | float | complex | bool
+    ShapeTuple = tuple[int, ...]
+    ShapeSpec = int | Sequence[int]
+    AxisIntOrTuple = int | Sequence[int] | None
+    AxisSpec = int | Sequence[int] | None
+    DTypeName = str
+    DTypeLike = DType | str | type[bool | int | float | complex] | NamedProtocol | None
+    DTypeSpec = DType | str | type[bool | int | float | complex] | NamedProtocol | None
+    PaddingSpec = str | Sequence[tuple[int, int]] | Sequence[tuple[int, int, int]]
+    PrecisionType = str | int | tuple[str, str] | tuple[int, int] | None
+    SliceSpec = slice[int | float | None, int | float | None, int | float | None]
+    IndexElement = int | SliceSpec | types.EllipsisType | Tensor | ArrayProtocol | None
+    IndexSpec = IndexElement | tuple[IndexElement, ...]
+    ArrayInput = Tensor | ArrayProtocol | ScalarNumeric | Sequence[ScalarNumeric] | Sequence[Sequence[ScalarNumeric]]
+    OptionalArrayInput = ArrayInput | None
+    BoolConfigValue = bool | None
+    StringConfigValue = str | None
+    IntConfigValue = int | None
+    EnumConfigValue = str | int | None
+    OptionalStringConfig = str | None
+    ConfigValue = bool | int | float | str | ShapeTuple | DType | TensorOrScalar | ArrayProtocol | None
+    PrimitiveParamValue = bool | int | float | str | ShapeTuple | DTypeSpec | None
+    ArrayLike = TensorOrScalar | ArrayProtocol
+    OptionalArrayLike = ArrayLike | None
+    ArrayLikeSpec = TensorOrScalar | ArrayProtocol | None
+    PyTreeLeaf = TensorOrScalar | ArrayProtocol | None
+    PyTree = PyTreeLeaf | Sequence["PyTree"] | Mapping[str, "PyTree"]
 else:
-    P = TypeVar("P")
-    NumericScalar = TypeVar("NumericScalar")
-    RealScalar = TypeVar("RealScalar")
-    ScalarNumeric = NumericScalar
+    NumericScalar = TypeVar("NumericScalar", int, float, complex, bool)
+    RealScalar = TypeVar("RealScalar", int, float, bool)
+    ScalarNumeric = TypeVar("ScalarNumeric", int, float, complex, bool)
     ShapeTuple = tuple[int, ...]
     ShapeSpec = TypeVar("ShapeSpec")
     AxisIntOrTuple = TypeVar("AxisIntOrTuple")
-    AxisSpec = AxisIntOrTuple
+    AxisSpec = TypeVar("AxisSpec")
+    DTypeName = str
     DTypeLike = TypeVar("DTypeLike")
-    DTypeSpec = DTypeLike
+    DTypeSpec = TypeVar("DTypeSpec")
     PaddingSpec = TypeVar("PaddingSpec")
     PrecisionType = TypeVar("PrecisionType")
+    SliceSpec = slice
     IndexElement = TypeVar("IndexElement")
     IndexSpec = TypeVar("IndexSpec")
     ArrayInput = TypeVar("ArrayInput")
@@ -124,12 +126,15 @@ else:
     OptionalStringConfig = TypeVar("OptionalStringConfig")
     ConfigValue = TypeVar("ConfigValue")
     PrimitiveParamValue = TypeVar("PrimitiveParamValue")
+    ArrayLike = TypeVar("ArrayLike")
+    OptionalArrayLike = TypeVar("OptionalArrayLike")
     ArrayLikeSpec = TypeVar("ArrayLikeSpec")
     PyTreeLeaf = TypeVar("PyTreeLeaf")
     PyTree = TypeVar("PyTree")
 
 __all__ = [
     "ArrayInput",
+    "ArrayLike",
     "ArrayLikeSpec",
     "ArrayProtocol",
     "AxisIntOrTuple",
@@ -139,6 +144,7 @@ __all__ = [
     "ConfigValue",
     "DType",
     "DTypeLike",
+    "DTypeName",
     "DTypeSpec",
     "EnumConfigValue",
     "IndexElement",
@@ -149,8 +155,8 @@ __all__ = [
     "NamedProtocol",
     "NumericScalar",
     "OptionalArrayInput",
+    "OptionalArrayLike",
     "OptionalStringConfig",
-    "P",
     "PaddingSpec",
     "PartitionSpec",
     "PrecisionType",
@@ -162,6 +168,7 @@ __all__ = [
     "ScalarNumeric",
     "ShapeSpec",
     "ShapeTuple",
+    "SliceSpec",
     "StatefulProtocol",
     "StringConfigValue",
     "T",
@@ -169,4 +176,6 @@ __all__ = [
     "Tensor",
     "TensorOrScalar",
     "VariadicCallable",
+    "types",
+    "typing",
 ]

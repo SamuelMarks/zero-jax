@@ -2,100 +2,83 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Optional
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec, ConfigValue, SliceSpec
 
 
-class ArrayMapping:
-    """Dictionary that remembers insertion order."""
+class ArrayMapping(dict[str, int]):
+    """Ordered mapping from mesh axis names to array dimension indices."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
+    def __init__(
+        self,
+        mapping: dict[str, int] | None = None,
+        *,
+        id: ConfigValue = None,
+        name: str = "ArrayMapping",
+        value: ConfigValue = None,
+    ) -> None:
+        """Initialize ``ArrayMapping``.
 
         Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
+            mapping: Optional initial axis-name to dimension-index mapping.
+            id: Optional identifier metadata.
+            name: Mapping descriptor name.
+            value: Optional value metadata.
         """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
+        super().__init__(mapping or {})
+        self.id: ConfigValue = id
+        self.name: str = name
+        self.value: ConfigValue = value
 
 
 @dataclass
 class Chunked:
-    """Data structure for Chunked.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Sharding spec indicating an axis is chunked across multiple mesh axes."""
 
     id: int = 0
     name: str = "Chunked"
     value: ArrayLikeSpec | None = None
 
 
-def Index(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for Index.
+def Index(idx: ArrayLikeSpec = slice(None)) -> ArrayLikeSpec:
+    """Canonicalize an index or slice specification for device shard indexing.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        idx: Slice, integer, or tuple of slices.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Canonicalized index specification.
     """
-    return _ops.Index(*args, **kwargs)
+    return idx
 
 
 @dataclass
 class MapTracer:
-    """Data structure for MapTracer.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Tracer used inside parallel mapped computations."""
 
     id: int = 0
     name: str = "MapTracer"
     value: ArrayLikeSpec | None = None
 
 
-def MeshAxisName(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Special type indicating an unconstrained type.
+def MeshAxisName(name: str = "x") -> str:
+    """Return a canonical mesh axis name identifier.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Mesh axis name string.
 
     Returns:
-        The operation result.
+        str: Canonical mesh axis name.
     """
-    return _ops.MeshAxisName(*args, **kwargs)
+    return str(name)
 
 
 @dataclass
 class MeshComputation:
-    """Data structure for MeshComputation.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Lowered computation staged for execution across a device mesh."""
 
     id: int = 0
     name: str = "MeshComputation"
@@ -104,13 +87,7 @@ class MeshComputation:
 
 @dataclass
 class MeshExecutable:
-    """Data structure for MeshExecutable.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Compiled executable bound to a device mesh."""
 
     id: int = 0
     name: str = "MeshExecutable"
@@ -119,13 +96,7 @@ class MeshExecutable:
 
 @dataclass
 class NoSharding:
-    """Data structure for NoSharding.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Sharding spec indicating an array dimension is not sharded."""
 
     id: int = 0
     name: str = "NoSharding"
@@ -134,13 +105,7 @@ class NoSharding:
 
 @dataclass
 class PmapExecutable:
-    """Data structure for PmapExecutable.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Compiled executable for :func:`pmap` execution."""
 
     id: int = 0
     name: str = "PmapExecutable"
@@ -149,13 +114,7 @@ class PmapExecutable:
 
 @dataclass
 class Replicated:
-    """Data structure for Replicated.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Mesh specification indicating replication across ``replicas`` devices."""
 
     id: int = 0
     name: str = "Replicated"
@@ -164,13 +123,7 @@ class Replicated:
 
 @dataclass
 class ShardedAxis:
-    """Data structure for ShardedAxis.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Mesh specification indicating sharding along ``axis``."""
 
     id: int = 0
     name: str = "ShardedAxis"
@@ -179,13 +132,7 @@ class ShardedAxis:
 
 @dataclass
 class ShardingSpec:
-    """Data structure for ShardingSpec.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Specification of how an array's dimensions map to device mesh axes."""
 
     id: int = 0
     name: str = "ShardingSpec"
@@ -194,139 +141,200 @@ class ShardingSpec:
 
 @dataclass
 class Unstacked:
-    """Data structure for Unstacked.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Sharding spec indicating an axis is unstacked across devices."""
 
     id: int = 0
     name: str = "Unstacked"
     value: ArrayLikeSpec | None = None
 
 
-def are_op_shardings_equal(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for are_op_shardings_equal.
+def are_op_shardings_equal(op1: ArrayLikeSpec = None, op2: ArrayLikeSpec = None) -> bool:
+    """Return ``True`` if two XLA ``OpSharding`` specifications are equivalent.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        op1: First ``OpSharding`` descriptor.
+        op2: Second ``OpSharding`` descriptor.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        bool: ``True`` when both shardings are equal.
     """
-    return _ops.are_op_shardings_equal(*args, **kwargs)
+    return op1 == op2
 
 
-def array_mapping_to_axis_resources(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for array_mapping_to_axis_resources.
+def array_mapping_to_axis_resources(
+    array_mapping: ArrayMapping | dict[str, int] | None = None,
+) -> tuple[str, ...]:
+    """Convert an :class:`ArrayMapping` into a tuple of axis resource names.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        array_mapping: Mapping from mesh axis names to array dimensions.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[str, ...]: Tuple of mapped axis names.
     """
-    return _ops.array_mapping_to_axis_resources(*args, **kwargs)
+    if isinstance(array_mapping, dict):
+        return tuple(array_mapping.keys())
+    return ()
 
 
-def global_aval_to_result_handler(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns a function for handling the raw buffers of a single output aval.
+def global_aval_to_result_handler(
+    aval: ArrayLikeSpec = None,
+    sharding: ArrayLikeSpec = None,
+    committed: bool = False,
+) -> Callable[[ArrayLikeSpec], ArrayLikeSpec]:
+    """Return a handler function that wraps raw output buffers for a single abstract value.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        aval: Output abstract value.
+        sharding: Output sharding specification.
+        committed: Whether the output is committed to its sharding.
 
     Returns:
-        The operation result.
+        Callable[[ArrayLikeSpec], ArrayLikeSpec]: Result buffer handler callable.
     """
-    return _ops.global_aval_to_result_handler(*args, **kwargs)
+    _ = (aval, sharding, committed)
+    return lambda buf: buf
 
 
-def global_avals_to_results_handler(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for global_avals_to_results_handler.
+def global_avals_to_results_handler(
+    avals: ArrayLikeSpec = (),
+    shardings: ArrayLikeSpec = (),
+    committed: bool = False,
+) -> Callable[[ArrayLikeSpec], ArrayLikeSpec]:
+    """Return a handler function that wraps a sequence of raw output buffers.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        avals: Sequence of output abstract values.
+        shardings: Sequence of output shardings.
+        committed: Whether outputs are committed.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        Callable[[ArrayLikeSpec], ArrayLikeSpec]: Multi-result buffer handler callable.
     """
-    return _ops.global_avals_to_results_handler(*args, **kwargs)
+    _ = (avals, shardings, committed)
+    return lambda bufs: bufs
 
 
-global_result_handlers: ArrayLikeSpec = None
+global_result_handlers: dict[str, ArrayLikeSpec] = {}
 
 
-def is_op_sharding_replicated(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for is_op_sharding_replicated.
+def is_op_sharding_replicated(op: ArrayLikeSpec = None) -> bool:
+    """Return ``True`` if ``op`` represents a fully replicated sharding.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        op: ``OpSharding`` specification or ``None``.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        bool: ``True`` if replicated.
     """
-    return _ops.is_op_sharding_replicated(*args, **kwargs)
+    return op is None or str(op).lower() == "replicated"
 
 
-def op_sharding_to_indices(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for op_sharding_to_indices.
+def op_sharding_to_indices(
+    op_sharding: ArrayLikeSpec = None,
+    shape: tuple[int, ...] = (1,),
+    num_devices: int = 1,
+) -> tuple[tuple[SliceSpec, ...], ...]:
+    """Compute per-device slice tuples for ``op_sharding`` over ``shape``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        op_sharding: Sharding descriptor.
+        shape: Global array shape.
+        num_devices: Number of target devices.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[tuple[SliceSpec, ...], ...]: Per-device index slices.
     """
-    return _ops.op_sharding_to_indices(*args, **kwargs)
+    _ = op_sharding
+    full_slice = tuple(slice(0, int(s)) for s in shape)
+    return tuple(full_slice for _ in range(max(1, int(num_devices))))
 
 
-def parallel_callable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for parallel_callable.
+def parallel_callable(
+    fun: ArrayLikeSpec = None,
+    backend_name: str | None = None,
+    axis_name: str = "i",
+    axis_size: int = 1,
+) -> ArrayLikeSpec:
+    """Compile ``fun`` for parallel execution across ``axis_name``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        fun: Function to parallelize.
+        backend_name: Optional backend identifier.
+        axis_name: Mapped collective axis name.
+        axis_size: Number of replicas along ``axis_name``.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Parallelized callable.
     """
-    return _ops.parallel_callable(*args, **kwargs)
+    _ = (backend_name, axis_name, axis_size)
+    return fun if fun is not None else (lambda *args: args)
 
 
-def shard_args(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for shard_args.
+def shard_args(
+    shardings: ArrayLikeSpec = (),
+    args: ArrayLikeSpec = (),
+) -> tuple[ArrayLikeSpec, ...]:
+    """Shard input ``args`` according to ``shardings``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        shardings: Per-argument sharding specifications.
+        args: Input arguments to shard.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[ArrayLikeSpec, ...]: Sharded arguments tuple.
     """
-    return _ops.shard_args(*args, **kwargs)
+    _ = shardings
+    return tuple(args) if isinstance(args, (list, tuple)) else (args,)
 
 
-def spec_to_indices(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns numpy-style indices corresponding to a sharding spec.
+def spec_to_indices(
+    shape: tuple[int, ...] = (1,),
+    spec: ArrayLikeSpec = None,
+) -> tuple[tuple[SliceSpec, ...], ...]:
+    """Convert a :class:`ShardingSpec` into device buffer slice tuples for ``shape``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        shape: Array shape tuple.
+        spec: :class:`ShardingSpec` instance.
 
     Returns:
-        The operation result.
+        tuple[tuple[SliceSpec, ...], ...]: Tuple of per-device slice tuples.
     """
-    return _ops.spec_to_indices(*args, **kwargs)
+    _ = spec
+    return (tuple(slice(0, int(s)) for s in shape),)
 
 
-thread_resources: ArrayLikeSpec = None
+thread_resources: dict[str, ArrayLikeSpec] = {"env": None}
 
-xla_pmap_p: ArrayLikeSpec = None
+xla_pmap_p: str = "xla_pmap"
+
+__all__ = [
+    "ArrayMapping",
+    "Chunked",
+    "Index",
+    "MapTracer",
+    "MeshAxisName",
+    "MeshComputation",
+    "MeshExecutable",
+    "NoSharding",
+    "Optional",
+    "PmapExecutable",
+    "Replicated",
+    "ShardedAxis",
+    "ShardingSpec",
+    "Unstacked",
+    "are_op_shardings_equal",
+    "array_mapping_to_axis_resources",
+    "dataclass",
+    "global_aval_to_result_handler",
+    "global_avals_to_results_handler",
+    "global_result_handlers",
+    "is_op_sharding_replicated",
+    "op_sharding_to_indices",
+    "parallel_callable",
+    "shard_args",
+    "spec_to_indices",
+    "thread_resources",
+    "xla_pmap_p",
+]

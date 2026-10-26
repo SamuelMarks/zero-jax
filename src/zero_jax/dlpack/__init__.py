@@ -2,48 +2,57 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, ConfigValue
-from zero_jax.numpy.lax_numpy import asarray
+from zero_jax.numpy.lax_numpy import asarray, bool_, complex64, complex128, float16, float32, float64, int8, int16, int32, int64, uint8, uint16, uint32, uint64
+
+SUPPORTED_DTYPES: frozenset[ConfigValue] = frozenset(
+    {
+        bool_,
+        int8,
+        int16,
+        int32,
+        int64,
+        uint8,
+        uint16,
+        uint32,
+        uint64,
+        float16,
+        float32,
+        float64,
+        complex64,
+        complex128,
+    }
+)
 
 
-class SUPPORTED_DTYPES:
-    """Supported dlpack dtypes."""
-
-    def __init__(self, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> None:
-        """Execute ``__init__``.
-
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
-
-
-def from_dlpack(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns a :class:`~jax.Array` representation of a DLPack tensor.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    if args:
-        return asarray(args[0])
-    return _ops.from_dlpack(*args, **kwargs)
-
-
-def to_dlpack(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns a DLPack tensor that encapsulates a :class:`~jax.Array` ``x``.
+def from_dlpack(external_array: ArrayLikeSpec, device: ConfigValue = None, copy: bool | None = None) -> ArrayLikeSpec:
+    """Create a JAX array from an object implementing the DLPack protocol.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        external_array: Array or capsule object exposing DLPack or array data.
+        device: Optional target device.
+        copy: Optional copy behavior flag.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Constructed ``ndarray``.
     """
-    if args:
-        return asarray(args[0])
-    return _ops.to_dlpack(*args, **kwargs)
+    _ = (device, copy)
+    return asarray(external_array)
+
+
+def to_dlpack(x: ArrayLikeSpec, take_ownership: bool = False, stream: int | None = None) -> ArrayLikeSpec:
+    """Export a JAX array as a DLPack-compatible array representation.
+
+    Args:
+        x: Input array.
+        take_ownership: Unused ownership flag.
+        stream: Optional stream handle.
+
+    Returns:
+        ArrayLikeSpec: Exported array representation.
+    """
+    _ = (take_ownership, stream)
+    return asarray(x)
+
+
+__all__ = ["SUPPORTED_DTYPES", "from_dlpack", "to_dlpack"]

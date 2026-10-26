@@ -605,12 +605,16 @@ def check_file_strict_typing(filepath: str) -> list[str]:
             for idx, arg in enumerate(all_args):
                 if idx == 0 and arg.arg in ("self", "cls"):
                     continue
+                if is_src_file and arg.arg == "dummy":
+                    violations.append(f"{filepath}:{node.lineno}: Forbidden placeholder parameter 'dummy' in '{node.name}'")
                 if arg.annotation is None:
                     violations.append(f"{filepath}:{node.lineno}: Parameter '{arg.arg}' in '{node.name}' is missing a type annotation")
             if node.args.vararg and node.args.vararg.annotation is None:
                 violations.append(f"{filepath}:{node.lineno}: Vararg '*{node.args.vararg.arg}' in '{node.name}' is missing a type annotation")
             if node.args.kwarg and node.args.kwarg.annotation is None:
                 violations.append(f"{filepath}:{node.lineno}: Kwarg '**{node.args.kwarg.arg}' in '{node.name}' is missing a type annotation")
+        elif is_test_file and isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "check_allclose" and len(node.args) >= 2 and isinstance(node.args[0], ast.Name) and isinstance(node.args[1], ast.Name) and node.args[0].id == node.args[1].id:
+            violations.append(f"{filepath}:{node.lineno}: Tautological check_allclose('{node.args[0].id}', '{node.args[1].id}')")
 
     return violations
 

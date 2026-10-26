@@ -317,9 +317,9 @@ def test_lax_and_numpy_v005_coverage() -> None:
     assert int(lax.mulhi(jnp.array(1 << 20), jnp.array(1 << 20)).item()) == (1 << 8)
     assert float(lax.one_minus_square(jnp.array(0.5)).item()) == pytest.approx(0.75)
     assert lax.optimization_barrier(9) == 9
-    assert lax.pcast(jnp.array([1.0]), "x") is not None
+    assert lax.pcast(jnp.array([1.0]), "x").shape == (1,)
     assert float(lax.polynomial(jnp.array(2.0), [1.0, 0.0, 1.0]).item()) == pytest.approx(5.0)
-    assert lax.psum_scatter_start(jnp.array([1.0])) is not None
+    assert lax.psum_scatter_start(jnp.array([1.0])).shape == (1,)
     assert lax.psum_scatter_start() is None
     out_buf = jnp.zeros((2, 2))
     assert lax.ragged_all_to_all(out_buf, out_buf, [0], [1], [0], [1], axis_name="x") is out_buf

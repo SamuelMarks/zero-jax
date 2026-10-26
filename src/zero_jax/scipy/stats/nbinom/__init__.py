@@ -2,42 +2,47 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32, where
 from zero_jax.scipy.special import gammaln, xlog1py, xlogy
 
 
-def logpmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpmf(k: ArrayLikeSpec, n: ArrayLikeSpec, p: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
     """Negative-binomial log probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``k``, ``n``, ``p``, ``loc=0``).
-        **kwargs: Input parameter ``kwargs``.
+        k: Number of failures before ``n`` successes.
+        n: Number of successes.
+        p: Probability of single success.
+        loc: Location offset parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability mass.
     """
-    if len(args) >= 3:
-        k = asarray(args[0], dtype=float32) - asarray(args[3] if len(args) > 3 else kwargs.get("loc", 0.0), dtype=float32)
-        n = asarray(args[1], dtype=float32)
-        p = asarray(args[2], dtype=float32)
-        comb = gammaln(k + n) - gammaln(n) - gammaln(k + 1.0)
-        val = comb + xlogy(n, p) + xlog1py(k, -p)
-        return where(k >= 0.0, val, float("-inf"))
-    return _ops.logpmf(*args, **kwargs)
+    k_arr = asarray(k, dtype=float32) - asarray(loc, dtype=float32)
+    n_arr = asarray(n, dtype=float32)
+    p_arr = asarray(p, dtype=float32)
+    comb = gammaln(k_arr + n_arr) - gammaln(n_arr) - gammaln(k_arr + 1.0)
+    val = comb + xlogy(n_arr, p_arr) + xlog1py(k_arr, -p_arr)
+    return where(k_arr >= 0.0, val, float("-inf"))
 
 
-def pmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pmf(k: ArrayLikeSpec, n: ArrayLikeSpec, p: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
     """Negative-binomial probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``k``, ``n``, ``p``, ``loc=0``).
-        **kwargs: Input parameter ``kwargs``.
+        k: Number of failures before ``n`` successes.
+        n: Number of successes.
+        p: Probability of single success.
+        loc: Location offset parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability mass.
     """
-    if len(args) >= 3:
-        return exp(logpmf(*args, **kwargs))
-    return _ops.pmf(*args, **kwargs)
+    return exp(logpmf(k, n, p, loc))
+
+
+__all__ = [
+    "logpmf",
+    "pmf",
+]

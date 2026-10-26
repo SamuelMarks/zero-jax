@@ -10,10 +10,9 @@ from zero_jax._types import ArrayLikeSpec
 
 def test_class_ErrorCategory() -> None:
     """Test class ErrorCategory."""
-    cat = mod.ErrorCategory("custom", id=1, value="v")
+    cat = mod.ErrorCategory("custom")
     assert cat.name == "custom"
-    assert cat.id == 1
-    assert cat.value == "v"
+    assert cat.category == "custom"
 
 
 def test_check_and_checkify() -> None:
@@ -34,7 +33,8 @@ def test_check_and_checkify() -> None:
     assert out1 == 2
 
     err2, out2 = checked(0)
-    assert err2 is not None
+    assert isinstance(err2, mod.Error)
+    assert err2.get() == "zero division"
     assert out2 == 0
     with pytest.raises(mod.JaxRuntimeError, match="zero division"):
         err2.throw()

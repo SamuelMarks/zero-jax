@@ -246,6 +246,7 @@ transpose: OpDef = get_op("Transpose")()
 tril: OpDef = get_op("Tril")()
 triu: OpDef = get_op("Triu")()
 unique: OpDef = get_op("Unique")()
+stable_unique: OpDef = get_op("Unique")()
 where: OpDef = get_op("Where")()
 
 __all__ = [
@@ -411,6 +412,7 @@ __all__ = [
     "sqrt",
     "square",
     "squeeze",
+    "stable_unique",
     "stack",
     "subtract",
     "sum",

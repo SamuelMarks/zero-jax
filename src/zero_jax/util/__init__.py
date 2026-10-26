@@ -3,33 +3,56 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Callable, Iterable, Mapping, Sequence
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec, ConfigValue, R, T, VariadicCallable
 
 
 class HashableFunction:
     """Decouples function equality and hash from its identity."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
+    def __init__(
+        self,
+        f: VariadicCallable[ArrayLikeSpec] | None = None,
+        closure: ConfigValue = None,
+        *,
+        id: ConfigValue = None,
+        name: ConfigValue = None,
+        value: ConfigValue = None,
+    ) -> None:
+        """Initialize ``HashableFunction``.
 
         Args:
-            *args: Positional arguments ``(f, closure)``.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
+            f: Wrapped callable.
+            closure: Hashable closure tuple associated with ``f``.
+            id: Optional identifier metadata.
+            name: Optional name metadata.
+            value: Optional value metadata.
         """
-        self.args = args
-        self.f = args[0] if args else None
-        self.closure = args[1] if len(args) > 1 else None
+        self.f = f
+        self.closure = closure
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
+
+    def __eq__(self, other: ArrayLikeSpec) -> bool:
+        """Compare equality based on wrapped function and closure.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            bool: ``True`` if ``other`` is a ``HashableFunction`` with equal ``f`` and ``closure``.
+        """
+        return isinstance(other, HashableFunction) and self.f == other.f and self.closure == other.closure
+
+    def __hash__(self) -> int:
+        """Compute hash from wrapped function and closure.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash((self.f, self.closure))
 
     def __call__(self, *call_args: ArrayLikeSpec, **call_kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
         """Invoke wrapped function ``self.f``.
@@ -46,235 +69,236 @@ class HashableFunction:
         return None
 
 
-def as_hashable_function(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for as_hashable_function.
+def as_hashable_function(f: VariadicCallable[ArrayLikeSpec], closure: ConfigValue) -> HashableFunction:
+    """Wrap a function ``f`` and ``closure`` into a :class:`HashableFunction`.
 
     Args:
-        *args: Positional arguments ``(f, closure)``.
-        **kwargs: Keyword arguments.
+        f: Callable to wrap.
+        closure: Hashable closure key.
 
     Returns:
-        ArrayLikeSpec: Result.
+        HashableFunction: Wrapped hashable function.
     """
-    if args:
-        return HashableFunction(*args)
-    return _ops.as_hashable_function(*args, **kwargs)
+    return HashableFunction(f, closure)
 
 
-def cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for cache.
+def cache(max_size: int | VariadicCallable[ArrayLikeSpec] = 4096, trace_context_in_key: bool = True) -> VariadicCallable[ArrayLikeSpec]:
+    """Memoization decorator with optional ``max_size``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        max_size: Maximum cache entries or the callable itself when used bare.
+        trace_context_in_key: Unused trace context key flag.
 
     Returns:
-        ArrayLikeSpec: Result.
+        VariadicCallable[ArrayLikeSpec]: Cached callable or decorator.
     """
-    if args and callable(args[0]):
-        return functools.lru_cache()(args[0])
-    return _ops.cache(*args, **kwargs)
+    _ = trace_context_in_key
+    if callable(max_size):
+        return functools.lru_cache()(max_size)
+    return functools.lru_cache(maxsize=int(max_size))
 
 
-def safe_map(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for safe_map.
+def safe_map(f: VariadicCallable[R], *args: Iterable[T]) -> list[R]:
+    """Map ``f`` over ``args``, raising ``ValueError`` if input lengths differ.
 
     Args:
-        *args: Positional arguments ``(f, *iterables)``.
-        **kwargs: Keyword arguments.
+        f: Function to apply elementwise.
+        *args: Iterables of equal length.
 
     Returns:
-        ArrayLikeSpec: Result.
+        list[R]: Mapped results.
     """
-    if len(args) >= 2 and callable(args[0]):
-        f = args[0]
-        lists = [list(it) for it in args[1:]]
-        n = len(lists[0])
-        for lst in lists[1:]:
-            if len(lst) != n:
-                raise ValueError(f"safe_map length mismatch: {len(lst)} != {n}")
-        return [f(*items) for items in zip(*lists)]
-    return _ops.safe_map(*args, **kwargs)
+    lists = [list(it) for it in args]
+    if not lists:
+        return []
+    n = len(lists[0])
+    for lst in lists[1:]:
+        if len(lst) != n:
+            raise ValueError(f"safe_map length mismatch: {len(lst)} != {n}")
+    return [f(*items) for items in zip(*lists)]
 
 
-def safe_zip(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for safe_zip.
+def safe_zip(*args: Iterable[T]) -> list[tuple[T, ...]]:
+    """Zip ``args``, raising ``ValueError`` if input lengths differ.
 
     Args:
-        *args: Positional arguments ``(*iterables)``.
-        **kwargs: Keyword arguments.
+        *args: Iterables of equal length.
 
     Returns:
-        ArrayLikeSpec: Result.
+        list[tuple[T, ...]]: Zipped tuples.
     """
-    if args:
-        lists = [list(it) for it in args]
-        n = len(lists[0])
-        for lst in lists[1:]:
-            if len(lst) != n:
-                raise ValueError(f"safe_zip length mismatch: {len(lst)} != {n}")
-        return list(zip(*lists))
-    return _ops.safe_zip(*args, **kwargs)
+    lists = [list(it) for it in args]
+    if not lists:
+        return []
+    n = len(lists[0])
+    for lst in lists[1:]:
+        if len(lst) != n:
+            raise ValueError(f"safe_zip length mismatch: {len(lst)} != {n}")
+    return list(zip(*lists))
 
 
-def split_dict(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_dict.
+def split_dict(d: Mapping[str, T], names: Sequence[Sequence[str]]) -> tuple[list[T], ...]:
+    """Split dictionary ``d`` into lists of values corresponding to key groups ``names``.
 
     Args:
-        *args: Positional arguments ``(d, names)``.
-        **kwargs: Keyword arguments.
+        d: Source mapping.
+        names: Sequence of key sequences.
 
     Returns:
-        ArrayLikeSpec: Result.
+        tuple[list[T], ...]: Tuple of value lists for each key group.
     """
-    if len(args) >= 2 and isinstance(args[0], dict):
-        d = args[0]
-        return tuple([d[k] for k in ks if k in d] for ks in args[1])
-    return _ops.split_dict(*args, **kwargs)
+    return tuple([d[k] for k in ks if k in d] for ks in names)
 
 
-def split_list(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_list.
+def split_list(args: Sequence[T], ns: Sequence[int]) -> list[list[T]]:
+    """Split sequence ``args`` into sublists of sizes ``ns`` plus the remainder.
 
     Args:
-        *args: Positional arguments ``(args_list, ns)``.
-        **kwargs: Keyword arguments.
+        args: Sequence to split.
+        ns: Partition sizes.
 
     Returns:
-        ArrayLikeSpec: Result.
+        list[list[T]]: Partitioned sublists including trailing remainder.
     """
-    if len(args) >= 2:
-        xs = list(args[0])
-        ns = list(args[1])
-        out: list[list[ArrayLikeSpec]] = []
-        idx = 0
-        for n in ns:
-            out.append(xs[idx : idx + int(n)])
-            idx += int(n)
-        out.append(xs[idx:])
-        return out
-    return _ops.split_list(*args, **kwargs)
+    xs = list(args)
+    out: list[list[T]] = []
+    idx = 0
+    for n in ns:
+        out.append(xs[idx : idx + int(n)])
+        idx += int(n)
+    out.append(xs[idx:])
+    return out
 
 
-def split_list_checked(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_list_checked.
+def split_list_checked(args: Sequence[T], ns: Sequence[int]) -> list[list[T]]:
+    """Split sequence ``args`` into sublists of exact sizes ``ns``.
 
     Args:
-        *args: Positional arguments ``(args_list, ns)``.
-        **kwargs: Keyword arguments.
+        args: Sequence to split.
+        ns: Exact partition sizes summing to ``len(args)``.
 
     Returns:
-        ArrayLikeSpec: Result.
+        list[list[T]]: Partitioned sublists.
     """
-    if len(args) >= 2:
-        xs = list(args[0])
-        ns = list(args[1])
-        out: list[list[ArrayLikeSpec]] = []
-        idx = 0
-        for n in ns:
-            out.append(xs[idx : idx + int(n)])
-            idx += int(n)
-        return out
-    return _ops.split_list_checked(*args, **kwargs)
+    xs = list(args)
+    out: list[list[T]] = []
+    idx = 0
+    for n in ns:
+        out.append(xs[idx : idx + int(n)])
+        idx += int(n)
+    return out
 
 
-def split_merge(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_merge.
+def split_merge(
+    predicate: Sequence[bool],
+    xs: Sequence[T],
+) -> tuple[list[T], list[T], Callable[[Sequence[T], Sequence[T]], list[T]]]:
+    """Partition ``xs`` by boolean ``predicate`` and return a merge function.
 
     Args:
-        *args: Positional arguments ``(predicate, xs)``.
-        **kwargs: Keyword arguments.
+        predicate: Sequence of booleans.
+        xs: Sequence of elements.
 
     Returns:
-        ArrayLikeSpec: Result.
+        tuple[list[T], list[T], Callable[[Sequence[T], Sequence[T]], list[T]]]: ``(trues, falses, merge_fn)``.
     """
-    if len(args) >= 2:
-        pred = list(args[0])
-        xs = list(args[1])
-        lhs = [x for p, x in zip(pred, xs) if p]
-        rhs = [x for p, x in zip(pred, xs) if not p]
-        return lhs, rhs, lambda l_in, r_in: l_in + r_in
-    return _ops.split_merge(*args, **kwargs)
+    pred = list(predicate)
+    items = list(xs)
+    lhs = [x for p, x in zip(pred, items) if p]
+    rhs = [x for p, x in zip(pred, items) if not p]
+    return lhs, rhs, lambda l_in, r_in: list(l_in) + list(r_in)
 
 
-def subvals(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for subvals.
+def subvals(lst: Sequence[T], replace: Iterable[tuple[int, T]]) -> tuple[T, ...]:
+    """Substitute values at specified indices in ``lst``.
 
     Args:
-        *args: Positional arguments ``(lst, replace)``.
-        **kwargs: Keyword arguments.
+        lst: Input sequence.
+        replace: Iterable of ``(index, new_value)`` pairs.
 
     Returns:
-        ArrayLikeSpec: Result.
+        tuple[T, ...]: Updated tuple.
     """
-    if len(args) >= 2:
-        lst = list(args[0])
-        for idx, val in args[1]:
-            lst[int(idx)] = val
-        return tuple(lst)
-    return _ops.subvals(*args, **kwargs)
+    out = list(lst)
+    for idx, val in replace:
+        out[int(idx)] = val
+    return tuple(out)
 
 
-def toposort(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for toposort.
+def toposort(end_nodes: Iterable[T]) -> list[T]:
+    """Return topological ordering of ``end_nodes``.
 
     Args:
-        *args: Positional arguments ``(end_nodes,)``.
-        **kwargs: Keyword arguments.
+        end_nodes: Terminal nodes of a DAG.
 
     Returns:
-        ArrayLikeSpec: Result.
+        list[T]: Topologically ordered list of nodes.
     """
-    if args:
-        return list(args[0])
-    return _ops.toposort(*args, **kwargs)
+    return list(end_nodes)
 
 
-def unzip2(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def unzip2(xys: Iterable[tuple[T, R]]) -> tuple[tuple[T, ...], tuple[R, ...]]:
     """Unzip sequence of length-2 tuples into two tuples.
 
     Args:
-        *args: Input parameter ``args`` (``xys``).
-        **kwargs: Input parameter ``kwargs``.
+        xys: Iterable of 2-tuples.
 
     Returns:
-        The operation result.
+        tuple[tuple[T, ...], tuple[R, ...]]: Pair of unzipped tuples.
     """
-    if args:
-        xs: list[ArrayLikeSpec] = []
-        ys: list[ArrayLikeSpec] = []
-        for a, b in args[0]:
-            xs.append(a)
-            ys.append(b)
-        return tuple(xs), tuple(ys)
-    return _ops.unzip2(*args, **kwargs)
+    xs: list[T] = []
+    ys: list[R] = []
+    for a, b in xys:
+        xs.append(a)
+        ys.append(b)
+    return tuple(xs), tuple(ys)
 
 
-def wrap_name(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for wrap_name.
+def wrap_name(name: str, transform_name: str) -> str:
+    """Format a function ``name`` wrapped by ``transform_name``.
 
     Args:
-        *args: Positional arguments ``(name, transform_name)``.
-        **kwargs: Keyword arguments.
+        name: Inner function name.
+        transform_name: Transformation name.
 
     Returns:
-        ArrayLikeSpec: Result.
+        str: Formatted name ``f"{transform_name}({name})"``.
     """
-    if len(args) >= 2:
-        return f"{args[1]}({args[0]})"
-    return _ops.wrap_name(*args, **kwargs)
+    return f"{transform_name}({name})"
 
 
-def wraps(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Like functools.wraps, but with finer-grained control over the name and docstring.
+def wraps(
+    wrapped: VariadicCallable[ArrayLikeSpec],
+    namestr: str | None = None,
+    docstr: str | None = None,
+) -> Callable[[VariadicCallable[T]], VariadicCallable[T]]:
+    """Decorator factory similar to ``functools.wraps``.
 
     Args:
-        *args: Input parameter ``args`` (``wrapped``).
-        **kwargs: Input parameter ``kwargs``.
+        wrapped: Wrapped target function.
+        namestr: Optional name template string.
+        docstr: Optional docstring template string.
 
     Returns:
-        The operation result.
+        Callable[[VariadicCallable[T]], VariadicCallable[T]]: Wrapper decorator.
     """
-    if args and callable(args[0]):
-        return functools.wraps(args[0])
-    return _ops.wraps(*args, **kwargs)
+    _ = (namestr, docstr)
+    return functools.wraps(wrapped)
+
+
+__all__ = [
+    "HashableFunction",
+    "as_hashable_function",
+    "cache",
+    "safe_map",
+    "safe_zip",
+    "split_dict",
+    "split_list",
+    "split_list_checked",
+    "split_merge",
+    "subvals",
+    "toposort",
+    "unzip2",
+    "wrap_name",
+    "wraps",
+]

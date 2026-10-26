@@ -2,4 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from dataclasses import dataclass, field, fields, is_dataclass
+
+__all__ = [
+    "dataclass",
+    "field",
+    "fields",
+    "is_dataclass",
+]

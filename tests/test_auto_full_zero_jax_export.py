@@ -18,7 +18,9 @@ def test_class_Exported() -> None:
     exp = mod.Exported(fun_name="add_one", fun=lambda x: x + 1)
     assert exp.call(2) == 3
     assert exp.serialize() == bytearray(b"add_one")
-    assert mod.Exported().call(2) is None
+    empty_exp = mod.Exported()
+    assert empty_exp.fun_name == "exported"
+    assert empty_exp.call(2) is None
     assert isinstance(mod.Exported.apply(), mod.Exported)
 
 
@@ -70,7 +72,7 @@ def test_minimum_supported_calling_convention_version() -> None:
 def test_symbolic_args_specs() -> None:
     """Test symbolic_args_specs."""
     assert mod.symbolic_args_specs((1, 2)) == (1, 2)
-    assert mod.symbolic_args_specs() is None
+    assert mod.symbolic_args_specs(()) == ()
 
 
 def test_symbolic_shape() -> None:

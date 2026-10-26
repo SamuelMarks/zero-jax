@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from zero_jax._types import ArrayLikeSpec
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+from zero_jax.numpy._ndarray import _to_tensor, _wrap
 
 
 def poly(seq_of_zeros: ArrayLikeSpec) -> ArrayLikeSpec:

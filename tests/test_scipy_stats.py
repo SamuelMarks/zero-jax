@@ -1,34 +1,36 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats as mod
 
 
 def test_gaussian_kde() -> None:
     """Test gaussian_kde."""
     obj = mod.gaussian_kde()
-    assert obj is not None
+    assert jnp.allclose(obj(jnp.array([1.0, 2.0])), jnp.array([1.0, 2.0]))
+    kde = mod.gaussian_kde(jnp.array([0.0, 1.0, 2.0]))
+    dens = kde(jnp.array([0.0, 1.0]))
+    assert dens.shape == (2,)
+    assert float(dens[1].item()) > float(dens[0].item())
 
 
 def test_mode() -> None:
     """Test mode."""
-    with patch("zero_jax._compiler_proxy_ops.mode", create=True) as mock_op:
-        mod.mode()
-        mock_op.assert_called_once_with()
+    m_val, m_cnt = mod.mode(jnp.array([1.0, 2.0, 2.0, 3.0]))
+    assert jnp.allclose(m_val, jnp.array(2.0))
+    assert jnp.allclose(m_cnt, jnp.array(2))
 
 
 def test_rankdata() -> None:
     """Test rankdata."""
-    with patch("zero_jax._compiler_proxy_ops.rankdata", create=True) as mock_op:
-        mod.rankdata()
-        mock_op.assert_called_once_with()
+    ranks = mod.rankdata(jnp.array([30.0, 10.0, 20.0]))
+    assert jnp.allclose(ranks, jnp.array([3.0, 1.0, 2.0]))
 
 
 def test_sem() -> None:
     """Test sem."""
-    with patch("zero_jax._compiler_proxy_ops.sem", create=True) as mock_op:
-        mod.sem()
-        mock_op.assert_called_once_with()
+    s = mod.sem(jnp.array([1.0, 2.0, 3.0]))
+    assert s.shape == ()
+    assert float(s.item()) > 0.5

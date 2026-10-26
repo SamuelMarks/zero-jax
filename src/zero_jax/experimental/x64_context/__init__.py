@@ -2,46 +2,47 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from collections.abc import Generator
+from contextlib import AbstractContextManager
+from contextlib import contextmanager as _stdlib_contextmanager
+
+from zero_jax._config_internal import enable_x64 as _enable_x64
+from zero_jax._types import PyTree, VariadicCallable
 
 from . import config
 
 
-def contextmanager(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """@contextmanager decorator.
+def contextmanager(func: VariadicCallable[Generator[PyTree, None, None]]) -> VariadicCallable[AbstractContextManager[PyTree]]:
+    """Wrap a generator function as a context manager.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        func: Generator function yielding a single value.
 
     Returns:
-        The operation result.
+        VariadicCallable[AbstractContextManager[PyTree]]: Context manager factory.
     """
-    return _ops.contextmanager(*args, **kwargs)
+    return _stdlib_contextmanager(func)
 
 
-def disable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def disable_x64() -> AbstractContextManager[None]:
     """Experimental context manager to temporarily disable X64 mode.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        AbstractContextManager[None]: Context manager disabling 64-bit precision.
     """
-    return _ops.disable_x64(*args, **kwargs)
+    return _enable_x64(False)
 
 
-def enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def enable_x64(new_val: bool = True) -> Generator[None, None, None]:
     """Experimental context manager to temporarily enable X64 mode.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Whether 64-bit mode should be enabled inside the context.
 
     Returns:
-        The operation result.
+        Generator[None, None, None]: Context manager enabling 64-bit precision.
     """
-    return _ops.enable_x64(*args, **kwargs)
+    return _enable_x64(bool(new_val))
+
+
+__all__ = ["config", "contextmanager", "disable_x64", "enable_x64"]

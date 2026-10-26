@@ -2,644 +2,588 @@
 
 from __future__ import annotations
 
+import pytest
+
 import zero_jax.lib.xla_client as mod
 
 
 def test_class_ArrayImpl() -> None:
-    """Test class ArrayImpl."""
-    try:
-        mod.ArrayImpl()
-    except Exception:
-        pass
+    """Test ArrayImpl."""
+    obj = mod.ArrayImpl(name="ArrayImpl", value=1)
+    assert isinstance(obj, mod.ArrayImpl)
+    assert obj.name == "ArrayImpl"
+    assert obj.value == 1
 
 
 def test_class_Client() -> None:
-    """Test class Client."""
-    try:
-        mod.Client()
-    except Exception:
-        pass
+    """Test Client."""
+    obj = mod.Client(name="Client", value=1)
+    assert isinstance(obj, mod.Client)
+    assert obj.name == "Client"
+    assert obj.value == 1
 
 
 def test_class_CompileOptions() -> None:
-    """Test class CompileOptions."""
-    try:
-        mod.CompileOptions()
-    except Exception:
-        pass
+    """Test CompileOptions."""
+    obj = mod.CompileOptions(name="CompileOptions", value=1)
+    assert isinstance(obj, mod.CompileOptions)
+    assert obj.name == "CompileOptions"
+    assert obj.value == 1
 
 
 def test_class_ConvolutionDimensionNumbers() -> None:
-    """Test class ConvolutionDimensionNumbers."""
-    try:
-        mod.ConvolutionDimensionNumbers()
-    except Exception:
-        pass
+    """Test ConvolutionDimensionNumbers."""
+    obj = mod.ConvolutionDimensionNumbers(name="ConvolutionDimensionNumbers", value=1)
+    assert isinstance(obj, mod.ConvolutionDimensionNumbers)
+    assert obj.name == "ConvolutionDimensionNumbers"
+    assert obj.value == 1
 
 
 def test_CurrentSourceInfoMetadata() -> None:
     """Test CurrentSourceInfoMetadata."""
-    try:
+    with pytest.raises(AttributeError):
         mod.CurrentSourceInfoMetadata()
-    except Exception:
-        pass
 
 
 def test_class_CustomCallHandler() -> None:
-    """Test class CustomCallHandler."""
-    try:
-        mod.CustomCallHandler()
-    except Exception:
-        pass
+    """Test CustomCallHandler."""
+    obj = mod.CustomCallHandler(name="CustomCallHandler", value=1)
+    assert isinstance(obj, mod.CustomCallHandler)
+    assert obj.name == "CustomCallHandler"
+    assert obj.value == 1
 
 
 def test_class_CustomCallTargetTraits() -> None:
-    """Test class CustomCallTargetTraits."""
-    try:
-        mod.CustomCallTargetTraits()
-    except Exception:
-        pass
+    """Test CustomCallTargetTraits."""
+    obj = mod.CustomCallTargetTraits(name="CustomCallTargetTraits", value=1)
+    assert isinstance(obj, mod.CustomCallTargetTraits)
+    assert obj.name == "CustomCallTargetTraits"
+    assert obj.value == 1
 
 
 def test_class_Device() -> None:
-    """Test class Device."""
-    try:
-        mod.Device()
-    except Exception:
-        pass
+    """Test Device."""
+    obj = mod.Device(name="Device", value=1)
+    assert isinstance(obj, mod.Device)
+    assert obj.name == "Device"
+    assert obj.value == 1
 
 
 def test_class_DeviceAssignment() -> None:
-    """Test class DeviceAssignment."""
-    try:
-        mod.DeviceAssignment()
-    except Exception:
-        pass
+    """Test DeviceAssignment."""
+    obj = mod.DeviceAssignment(name="DeviceAssignment", value=1)
+    assert isinstance(obj, mod.DeviceAssignment)
+    assert obj.name == "DeviceAssignment"
+    assert obj.value == 1
 
 
 def test_class_DeviceList() -> None:
-    """Test class DeviceList."""
-    try:
-        mod.DeviceList()
-    except Exception:
-        pass
+    """Test DeviceList."""
+    obj = mod.DeviceList(name="DeviceList", value=1)
+    assert isinstance(obj, mod.DeviceList)
+    assert obj.name == "DeviceList"
+    assert obj.value == 1
 
 
 def test_class_DeviceTopology() -> None:
-    """Test class DeviceTopology."""
-    try:
-        mod.DeviceTopology()
-    except Exception:
-        pass
+    """Test DeviceTopology."""
+    obj = mod.DeviceTopology(name="DeviceTopology", value=1)
+    assert isinstance(obj, mod.DeviceTopology)
+    assert obj.name == "DeviceTopology"
+    assert obj.value == 1
 
 
 def test_class_DotDimensionNumbers() -> None:
-    """Test class DotDimensionNumbers."""
-    try:
-        mod.DotDimensionNumbers()
-    except Exception:
-        pass
+    """Test DotDimensionNumbers."""
+    obj = mod.DotDimensionNumbers(name="DotDimensionNumbers", value=1)
+    assert isinstance(obj, mod.DotDimensionNumbers)
+    assert obj.name == "DotDimensionNumbers"
+    assert obj.value == 1
 
 
 def test_class_FftType() -> None:
-    """Test class FftType."""
-    try:
-        mod.FftType()
-    except Exception:
-        pass
+    """Test FftType."""
+    obj = mod.FftType(name="FftType", value=1)
+    assert isinstance(obj, mod.FftType)
+    assert obj.name == "FftType"
+    assert obj.value == 1
 
 
 def test_class_Frame() -> None:
-    """Test class Frame."""
-    try:
-        mod.Frame()
-    except Exception:
-        pass
+    """Test Frame."""
+    obj = mod.Frame(name="Frame", value=1)
+    assert isinstance(obj, mod.Frame)
+    assert obj.name == "Frame"
+    assert obj.value == 1
 
 
 def test_class_GSPMDSharding() -> None:
-    """Test class GSPMDSharding."""
-    try:
-        mod.GSPMDSharding()
-    except Exception:
-        pass
+    """Test GSPMDSharding."""
+    obj = mod.GSPMDSharding(name="GSPMDSharding", value=1)
+    assert isinstance(obj, mod.GSPMDSharding)
+    assert obj.name == "GSPMDSharding"
+    assert obj.value == 1
 
 
 def test_class_GatherDimensionNumbers() -> None:
-    """Test class GatherDimensionNumbers."""
-    try:
-        mod.GatherDimensionNumbers()
-    except Exception:
-        pass
+    """Test GatherDimensionNumbers."""
+    obj = mod.GatherDimensionNumbers(name="GatherDimensionNumbers", value=1)
+    assert isinstance(obj, mod.GatherDimensionNumbers)
+    assert obj.name == "GatherDimensionNumbers"
+    assert obj.value == 1
 
 
 def test_class_HloSharding() -> None:
-    """Test class HloSharding."""
-    try:
-        mod.HloSharding()
-    except Exception:
-        pass
+    """Test HloSharding."""
+    obj = mod.HloSharding(name="HloSharding", value=1)
+    assert isinstance(obj, mod.HloSharding)
+    assert obj.name == "HloSharding"
+    assert obj.value == 1
 
 
 def test_class_HostBufferSemantics() -> None:
-    """Test class HostBufferSemantics."""
-    try:
-        mod.HostBufferSemantics()
-    except Exception:
-        pass
+    """Test HostBufferSemantics."""
+    obj = mod.HostBufferSemantics(name="HostBufferSemantics", value=1)
+    assert isinstance(obj, mod.HostBufferSemantics)
+    assert obj.name == "HostBufferSemantics"
+    assert obj.value == 1
 
 
 def test_class_Layout() -> None:
-    """Test class Layout."""
-    try:
-        mod.Layout()
-    except Exception:
-        pass
+    """Test Layout."""
+    obj = mod.Layout(name="Layout", value=1)
+    assert isinstance(obj, mod.Layout)
+    assert obj.name == "Layout"
+    assert obj.value == 1
 
 
 def test_class_LoadedExecutable() -> None:
-    """Test class LoadedExecutable."""
-    try:
-        mod.LoadedExecutable()
-    except Exception:
-        pass
+    """Test LoadedExecutable."""
+    obj = mod.LoadedExecutable(name="LoadedExecutable", value=1)
+    assert isinstance(obj, mod.LoadedExecutable)
+    assert obj.name == "LoadedExecutable"
+    assert obj.value == 1
 
 
 def test_LoadedExecutable_execute() -> None:
     """Test LoadedExecutable_execute."""
-    try:
+    with pytest.raises(AttributeError):
         mod.LoadedExecutable_execute()
-    except Exception:
-        pass
 
 
 def test_LoadedExecutable_execute_with_token() -> None:
     """Test LoadedExecutable_execute_with_token."""
-    try:
+    with pytest.raises(AttributeError):
         mod.LoadedExecutable_execute_with_token()
-    except Exception:
-        pass
 
 
 def test_class_Mapping() -> None:
-    """Test class Mapping."""
-    try:
-        mod.Mapping()
-    except Exception:
-        pass
+    """Test Mapping."""
+    obj = mod.Mapping(name="Mapping", value=1)
+    assert isinstance(obj, mod.Mapping)
+    assert obj.name == "Mapping"
+    assert obj.value == 1
 
 
 def test_class_Memory() -> None:
-    """Test class Memory."""
-    try:
-        mod.Memory()
-    except Exception:
-        pass
+    """Test Memory."""
+    obj = mod.Memory(name="Memory", value=1)
+    assert isinstance(obj, mod.Memory)
+    assert obj.name == "Memory"
+    assert obj.value == 1
 
 
 def test_class_NamedSharding() -> None:
-    """Test class NamedSharding."""
-    try:
-        mod.NamedSharding()
-    except Exception:
-        pass
+    """Test NamedSharding."""
+    obj = mod.NamedSharding(name="NamedSharding", value=1)
+    assert isinstance(obj, mod.NamedSharding)
+    assert obj.name == "NamedSharding"
+    assert obj.value == 1
 
 
 def test_class_OpMetadata() -> None:
-    """Test class OpMetadata."""
-    try:
-        mod.OpMetadata()
-    except Exception:
-        pass
+    """Test OpMetadata."""
+    obj = mod.OpMetadata(name="OpMetadata", value=1)
+    assert isinstance(obj, mod.OpMetadata)
+    assert obj.name == "OpMetadata"
+    assert obj.value == 1
 
 
 def test_class_OpSharding() -> None:
-    """Test class OpSharding."""
-    try:
-        mod.OpSharding()
-    except Exception:
-        pass
+    """Test OpSharding."""
+    obj = mod.OpSharding(name="OpSharding", value=1)
+    assert isinstance(obj, mod.OpSharding)
+    assert obj.name == "OpSharding"
+    assert obj.value == 1
 
 
 def test_class_PaddingConfig() -> None:
-    """Test class PaddingConfig."""
-    try:
-        mod.PaddingConfig()
-    except Exception:
-        pass
+    """Test PaddingConfig."""
+    obj = mod.PaddingConfig(name="PaddingConfig", value=1)
+    assert isinstance(obj, mod.PaddingConfig)
+    assert obj.name == "PaddingConfig"
+    assert obj.value == 1
 
 
 def test_class_PaddingConfigDimension() -> None:
-    """Test class PaddingConfigDimension."""
-    try:
-        mod.PaddingConfigDimension()
-    except Exception:
-        pass
+    """Test PaddingConfigDimension."""
+    obj = mod.PaddingConfigDimension(name="PaddingConfigDimension", value=1)
+    assert isinstance(obj, mod.PaddingConfigDimension)
+    assert obj.name == "PaddingConfigDimension"
+    assert obj.value == 1
 
 
 def test_class_PaddingType() -> None:
-    """Test class PaddingType."""
-    try:
-        mod.PaddingType()
-    except Exception:
-        pass
+    """Test PaddingType."""
+    obj = mod.PaddingType(name="PaddingType", value=1)
+    assert isinstance(obj, mod.PaddingType)
+    assert obj.name == "PaddingType"
+    assert obj.value == 1
 
 
 def test_class_PjRtLayout() -> None:
-    """Test class PjRtLayout."""
-    try:
-        mod.PjRtLayout()
-    except Exception:
-        pass
+    """Test PjRtLayout."""
+    obj = mod.PjRtLayout(name="PjRtLayout", value=1)
+    assert isinstance(obj, mod.PjRtLayout)
+    assert obj.name == "PjRtLayout"
+    assert obj.value == 1
 
 
 def test_class_PmapSharding() -> None:
-    """Test class PmapSharding."""
-    try:
-        mod.PmapSharding()
-    except Exception:
-        pass
+    """Test PmapSharding."""
+    obj = mod.PmapSharding(name="PmapSharding", value=1)
+    assert isinstance(obj, mod.PmapSharding)
+    assert obj.name == "PmapSharding"
+    assert obj.value == 1
 
 
 def test_class_PrecisionConfig() -> None:
-    """Test class PrecisionConfig."""
-    try:
-        mod.PrecisionConfig()
-    except Exception:
-        pass
+    """Test PrecisionConfig."""
+    obj = mod.PrecisionConfig(name="PrecisionConfig", value=1)
+    assert isinstance(obj, mod.PrecisionConfig)
+    assert obj.name == "PrecisionConfig"
+    assert obj.value == 1
 
 
 def test_class_PrimitiveType() -> None:
-    """Test class PrimitiveType."""
-    try:
-        mod.PrimitiveType()
-    except Exception:
-        pass
+    """Test PrimitiveType."""
+    obj = mod.PrimitiveType(name="PrimitiveType", value=1)
+    assert isinstance(obj, mod.PrimitiveType)
+    assert obj.name == "PrimitiveType"
+    assert obj.value == 1
 
 
 def test_class_ProgramShape() -> None:
-    """Test class ProgramShape."""
-    try:
-        mod.ProgramShape()
-    except Exception:
-        pass
+    """Test ProgramShape."""
+    obj = mod.ProgramShape(name="ProgramShape", value=1)
+    assert isinstance(obj, mod.ProgramShape)
+    assert obj.name == "ProgramShape"
+    assert obj.value == 1
 
 
 def test_class_Protocol() -> None:
-    """Test class Protocol."""
-    try:
-        mod.Protocol()
-    except Exception:
-        pass
+    """Test Protocol."""
+    obj = mod.Protocol(name="Protocol", value=1)
+    assert isinstance(obj, mod.Protocol)
+    assert obj.name == "Protocol"
+    assert obj.value == 1
 
 
 def test_class_ReplicaGroup() -> None:
-    """Test class ReplicaGroup."""
-    try:
-        mod.ReplicaGroup()
-    except Exception:
-        pass
+    """Test ReplicaGroup."""
+    obj = mod.ReplicaGroup(name="ReplicaGroup", value=1)
+    assert isinstance(obj, mod.ReplicaGroup)
+    assert obj.name == "ReplicaGroup"
+    assert obj.value == 1
 
 
 def test_class_ScatterDimensionNumbers() -> None:
-    """Test class ScatterDimensionNumbers."""
-    try:
-        mod.ScatterDimensionNumbers()
-    except Exception:
-        pass
+    """Test ScatterDimensionNumbers."""
+    obj = mod.ScatterDimensionNumbers(name="ScatterDimensionNumbers", value=1)
+    assert isinstance(obj, mod.ScatterDimensionNumbers)
+    assert obj.name == "ScatterDimensionNumbers"
+    assert obj.value == 1
 
 
 def test_class_Sequence() -> None:
-    """Test class Sequence."""
-    try:
-        mod.Sequence()
-    except Exception:
-        pass
+    """Test Sequence."""
+    obj = mod.Sequence(name="Sequence", value=1)
+    assert isinstance(obj, mod.Sequence)
+    assert obj.name == "Sequence"
+    assert obj.value == 1
 
 
 def test_class_Shape() -> None:
-    """Test class Shape."""
-    try:
-        mod.Shape()
-    except Exception:
-        pass
+    """Test Shape."""
+    obj = mod.Shape(name="Shape", value=1)
+    assert isinstance(obj, mod.Shape)
+    assert obj.name == "Shape"
+    assert obj.value == 1
 
 
 def test_class_ShapeIndex() -> None:
-    """Test class ShapeIndex."""
-    try:
-        mod.ShapeIndex()
-    except Exception:
-        pass
+    """Test ShapeIndex."""
+    obj = mod.ShapeIndex(name="ShapeIndex", value=1)
+    assert isinstance(obj, mod.ShapeIndex)
+    assert obj.name == "ShapeIndex"
+    assert obj.value == 1
 
 
 def test_class_Sharding() -> None:
-    """Test class Sharding."""
-    try:
-        mod.Sharding()
-    except Exception:
-        pass
+    """Test Sharding."""
+    obj = mod.Sharding(name="Sharding", value=1)
+    assert isinstance(obj, mod.Sharding)
+    assert obj.name == "Sharding"
+    assert obj.value == 1
 
 
 def test_class_SingleDeviceSharding() -> None:
-    """Test class SingleDeviceSharding."""
-    try:
-        mod.SingleDeviceSharding()
-    except Exception:
-        pass
+    """Test SingleDeviceSharding."""
+    obj = mod.SingleDeviceSharding(name="SingleDeviceSharding", value=1)
+    assert isinstance(obj, mod.SingleDeviceSharding)
+    assert obj.name == "SingleDeviceSharding"
+    assert obj.value == 1
 
 
 def test_class_Traceback() -> None:
-    """Test class Traceback."""
-    try:
-        mod.Traceback()
-    except Exception:
-        pass
+    """Test Traceback."""
+    obj = mod.Traceback(name="Traceback", value=1)
+    assert isinstance(obj, mod.Traceback)
+    assert obj.name == "Traceback"
+    assert obj.value == 1
 
 
 def test_class_XlaBuilder() -> None:
-    """Test class XlaBuilder."""
-    try:
-        mod.XlaBuilder()
-    except Exception:
-        pass
+    """Test XlaBuilder."""
+    obj = mod.XlaBuilder(name="XlaBuilder", value=1)
+    assert isinstance(obj, mod.XlaBuilder)
+    assert obj.name == "XlaBuilder"
+    assert obj.value == 1
 
 
 def test_class_XlaComputation() -> None:
-    """Test class XlaComputation."""
-    try:
-        mod.XlaComputation()
-    except Exception:
-        pass
+    """Test XlaComputation."""
+    obj = mod.XlaComputation(name="XlaComputation", value=1)
+    assert isinstance(obj, mod.XlaComputation)
+    assert obj.name == "XlaComputation"
+    assert obj.value == 1
 
 
 def test_class_XlaOp() -> None:
-    """Test class XlaOp."""
-    try:
-        mod.XlaOp()
-    except Exception:
-        pass
+    """Test XlaOp."""
+    obj = mod.XlaOp(name="XlaOp", value=1)
+    assert isinstance(obj, mod.XlaOp)
+    assert obj.name == "XlaOp"
+    assert obj.value == 1
 
 
 def test_class_XlaRuntimeError() -> None:
-    """Test class XlaRuntimeError."""
-    try:
-        mod.XlaRuntimeError()
-    except Exception:
-        pass
+    """Test XlaRuntimeError."""
+    obj = mod.XlaRuntimeError(name="XlaRuntimeError", value=1)
+    assert isinstance(obj, mod.XlaRuntimeError)
+    assert obj.name == "XlaRuntimeError"
+    assert obj.value == 1
 
 
 def test_class_bfloat16() -> None:
-    """Test class bfloat16."""
-    try:
-        mod.bfloat16()
-    except Exception:
-        pass
+    """Test bfloat16."""
+    obj = mod.bfloat16(name="bfloat16", value=1)
+    assert isinstance(obj, mod.bfloat16)
+    assert obj.name == "bfloat16"
+    assert obj.value == 1
 
 
 def test_dtype_to_etype() -> None:
     """Test dtype_to_etype."""
-    try:
+    with pytest.raises(AttributeError):
         mod.dtype_to_etype()
-    except Exception:
-        pass
 
 
 def test_execute_with_python_values() -> None:
     """Test execute_with_python_values."""
-    try:
+    with pytest.raises(AttributeError):
         mod.execute_with_python_values()
-    except Exception:
-        pass
 
 
 def test_execute_with_python_values_replicated() -> None:
     """Test execute_with_python_values_replicated."""
-    try:
+    with pytest.raises(AttributeError):
         mod.execute_with_python_values_replicated()
-    except Exception:
-        pass
 
 
 def test_class_float8_e4m3b11fnuz() -> None:
-    """Test class float8_e4m3b11fnuz."""
-    try:
-        mod.float8_e4m3b11fnuz()
-    except Exception:
-        pass
+    """Test float8_e4m3b11fnuz."""
+    obj = mod.float8_e4m3b11fnuz(name="float8_e4m3b11fnuz", value=1)
+    assert isinstance(obj, mod.float8_e4m3b11fnuz)
+    assert obj.name == "float8_e4m3b11fnuz"
+    assert obj.value == 1
 
 
 def test_class_float8_e4m3fn() -> None:
-    """Test class float8_e4m3fn."""
-    try:
-        mod.float8_e4m3fn()
-    except Exception:
-        pass
+    """Test float8_e4m3fn."""
+    obj = mod.float8_e4m3fn(name="float8_e4m3fn", value=1)
+    assert isinstance(obj, mod.float8_e4m3fn)
+    assert obj.name == "float8_e4m3fn"
+    assert obj.value == 1
 
 
 def test_class_float8_e4m3fnuz() -> None:
-    """Test class float8_e4m3fnuz."""
-    try:
-        mod.float8_e4m3fnuz()
-    except Exception:
-        pass
+    """Test float8_e4m3fnuz."""
+    obj = mod.float8_e4m3fnuz(name="float8_e4m3fnuz", value=1)
+    assert isinstance(obj, mod.float8_e4m3fnuz)
+    assert obj.name == "float8_e4m3fnuz"
+    assert obj.value == 1
 
 
 def test_class_float8_e5m2() -> None:
-    """Test class float8_e5m2."""
-    try:
-        mod.float8_e5m2()
-    except Exception:
-        pass
+    """Test float8_e5m2."""
+    obj = mod.float8_e5m2(name="float8_e5m2", value=1)
+    assert isinstance(obj, mod.float8_e5m2)
+    assert obj.name == "float8_e5m2"
+    assert obj.value == 1
 
 
 def test_class_float8_e5m2fnuz() -> None:
-    """Test class float8_e5m2fnuz."""
-    try:
-        mod.float8_e5m2fnuz()
-    except Exception:
-        pass
+    """Test float8_e5m2fnuz."""
+    obj = mod.float8_e5m2fnuz(name="float8_e5m2fnuz", value=1)
+    assert isinstance(obj, mod.float8_e5m2fnuz)
+    assert obj.name == "float8_e5m2fnuz"
+    assert obj.value == 1
 
 
 def test_generate_pjrt_gpu_plugin_options() -> None:
     """Test generate_pjrt_gpu_plugin_options."""
-    try:
+    with pytest.raises(AttributeError):
         mod.generate_pjrt_gpu_plugin_options()
-    except Exception:
-        pass
 
 
 def test_heap_profile() -> None:
     """Test heap_profile."""
-    try:
+    with pytest.raises(AttributeError):
         mod.heap_profile()
-    except Exception:
-        pass
 
 
 def test_initialize_pjrt_plugin() -> None:
     """Test initialize_pjrt_plugin."""
-    try:
+    with pytest.raises(AttributeError):
         mod.initialize_pjrt_plugin()
-    except Exception:
-        pass
 
 
 def test_load_pjrt_plugin_dynamically() -> None:
     """Test load_pjrt_plugin_dynamically."""
-    try:
+    with pytest.raises(AttributeError):
         mod.load_pjrt_plugin_dynamically()
-    except Exception:
-        pass
 
 
 def test_load_pjrt_plugin_with_c_api() -> None:
     """Test load_pjrt_plugin_with_c_api."""
-    try:
+    with pytest.raises(AttributeError):
         mod.load_pjrt_plugin_with_c_api()
-    except Exception:
-        pass
 
 
 def test_make_c_api_client() -> None:
     """Test make_c_api_client."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_c_api_client()
-    except Exception:
-        pass
 
 
 def test_make_c_api_device_topology() -> None:
     """Test make_c_api_device_topology."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_c_api_device_topology()
-    except Exception:
-        pass
 
 
 def test_make_convolution_dimension_numbers() -> None:
     """Test make_convolution_dimension_numbers."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_convolution_dimension_numbers()
-    except Exception:
-        pass
 
 
 def test_make_cpu_client() -> None:
     """Test make_cpu_client."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_cpu_client()
-    except Exception:
-        pass
 
 
 def test_make_dot_dimension_numbers() -> None:
     """Test make_dot_dimension_numbers."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_dot_dimension_numbers()
-    except Exception:
-        pass
 
 
 def test_make_gpu_client() -> None:
     """Test make_gpu_client."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_gpu_client()
-    except Exception:
-        pass
 
 
 def test_make_padding_config() -> None:
     """Test make_padding_config."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_padding_config()
-    except Exception:
-        pass
 
 
 def test_make_replica_groups() -> None:
     """Test make_replica_groups."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_replica_groups()
-    except Exception:
-        pass
 
 
 def test_make_tfrt_tpu_c_api_client() -> None:
     """Test make_tfrt_tpu_c_api_client."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_tfrt_tpu_c_api_client()
-    except Exception:
-        pass
 
 
 def test_make_tfrt_tpu_c_api_device_topology() -> None:
     """Test make_tfrt_tpu_c_api_device_topology."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_tfrt_tpu_c_api_device_topology()
-    except Exception:
-        pass
 
 
 def test_make_tpu_client() -> None:
     """Test make_tpu_client."""
-    try:
+    with pytest.raises(AttributeError):
         mod.make_tpu_client()
-    except Exception:
-        pass
 
 
 def test_pjrt_plugin_initialized() -> None:
     """Test pjrt_plugin_initialized."""
-    try:
+    with pytest.raises(AttributeError):
         mod.pjrt_plugin_initialized()
-    except Exception:
-        pass
 
 
 def test_pjrt_plugin_loaded() -> None:
     """Test pjrt_plugin_loaded."""
-    try:
+    with pytest.raises(AttributeError):
         mod.pjrt_plugin_loaded()
-    except Exception:
-        pass
 
 
 def test_register_custom_call_handler() -> None:
     """Test register_custom_call_handler."""
-    try:
+    with pytest.raises(AttributeError):
         mod.register_custom_call_handler()
-    except Exception:
-        pass
 
 
 def test_register_custom_call_target() -> None:
     """Test register_custom_call_target."""
-    try:
+    with pytest.raises(AttributeError):
         mod.register_custom_call_target()
-    except Exception:
-        pass
 
 
 def test_shape_from_pyval() -> None:
     """Test shape_from_pyval."""
-    try:
+    with pytest.raises(AttributeError):
         mod.shape_from_pyval()
-    except Exception:
-        pass
 
 
 def test_tracebacks() -> None:
     """Test tracebacks."""
-    try:
+    with pytest.raises(AttributeError):
         mod.tracebacks()
-    except Exception:
-        pass
 
 
 def test_window_padding_type_to_pad_values() -> None:
     """Test window_padding_type_to_pad_values."""
-    try:
+    with pytest.raises(AttributeError):
         mod.window_padding_type_to_pad_values()
-    except Exception:
-        pass

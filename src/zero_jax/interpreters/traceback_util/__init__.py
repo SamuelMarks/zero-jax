@@ -2,171 +2,154 @@
 
 from __future__ import annotations
 
+import typing
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TypeVar
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+import ml_switcheroo_compiler
+
+from zero_jax._types import ArrayLikeSpec
+
+from . import config, functools, os, sys, traceback, types, util
+
+_EXCLUDED_PATHS: list[str] = []
 
 
-def C(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``C``.
+def C(val: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Identity callable type variable placeholder ``C``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        val: Optional callable or value.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Unmodified ``val`` or ``"C"`` when ``None``.
     """
-    return None
+    return "C" if val is None else val
 
 
 @dataclass
 class SimplifiedTraceback:
-    """Data structure for SimplifiedTraceback.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for SimplifiedTraceback."""
 
     id: int = 0
     name: str = "SimplifiedTraceback"
     value: ArrayLikeSpec | None = None
 
 
-class TypeVar:
-    """Type variable."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
 @dataclass
 class UnfilteredStackTrace:
-    """Data structure for UnfilteredStackTrace.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for UnfilteredStackTrace."""
 
     id: int = 0
     name: str = "UnfilteredStackTrace"
     value: ArrayLikeSpec | None = None
 
 
-annotations: ArrayLikeSpec = None
+annotations: str = "__future__.annotations"
 
 
-def api_boundary(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Wraps ``fun`` to form a boundary for filtering exception tracebacks.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.api_boundary(*args, **kwargs)
-
-
-def cast(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Cast a value to a type.
+def api_boundary(fun: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Wrap ``fun`` to form a boundary for filtering exception tracebacks.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        fun: Function to wrap at the API boundary.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Wrapped function (or identity decorator when ``fun`` is ``None``).
     """
-    return _ops.cast(*args, **kwargs)
+    if fun is None:
+        return lambda f: f
+    return fun
 
 
-from . import config
-
-
-def filter_traceback(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for filter_traceback.
+def cast(typ: ArrayLikeSpec = None, val: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Return ``val`` unchanged as a runtime type cast helper.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        typ: Target type descriptor.
+        val: Value to cast.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: ``val`` when provided, otherwise ``typ``.
     """
-    return _ops.filter_traceback(*args, **kwargs)
+    return val if val is not None else typ
 
 
-def format_exception_only(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for format_exception_only.
+def filter_traceback(tb: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Filter internal JAX frames from traceback ``tb``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        tb: Input traceback object.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Filtered traceback object.
     """
-    return _ops.format_exception_only(*args, **kwargs)
+    return tb
 
 
-from . import functools
-
-
-def include_frame(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for include_frame.
+def format_exception_only(etype: type[BaseException] = Exception, value: BaseException | str = "") -> list[str]:
+    """Format an exception type and value without a traceback.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        etype: Exception class.
+        value: Exception instance or message string.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[str]: Formatted exception lines.
     """
-    return _ops.include_frame(*args, **kwargs)
+    return [f"{etype.__name__}: {value}\n"]
 
 
-from . import os
-
-
-def register_exclusion(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for register_exclusion.
+def include_frame(frame: ArrayLikeSpec = None) -> bool:
+    """Return ``True`` if ``frame`` should be included in filtered tracebacks.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        frame: Frame object or filename string.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        bool: ``True`` if the frame is not in ``_EXCLUDED_PATHS``.
     """
-    return _ops.register_exclusion(*args, **kwargs)
+    frame_str = str(frame or "")
+    return not any(excl and excl in frame_str for excl in _EXCLUDED_PATHS)
 
 
-import typing
-from collections.abc import Callable
+def register_exclusion(path: str = "") -> str:
+    """Register a file or module ``path`` to exclude from filtered tracebacks.
 
-import ml_switcheroo_compiler
+    Args:
+        path: File path prefix to exclude.
 
-from . import sys, traceback, types, util
+    Returns:
+        str: Registered exclusion path.
+    """
+    if path and path not in _EXCLUDED_PATHS:
+        _EXCLUDED_PATHS.append(path)
+    return path
+
+
+__all__ = [
+    "C",
+    "Callable",
+    "Optional",
+    "SimplifiedTraceback",
+    "TypeVar",
+    "UnfilteredStackTrace",
+    "annotations",
+    "api_boundary",
+    "cast",
+    "config",
+    "dataclass",
+    "filter_traceback",
+    "format_exception_only",
+    "functools",
+    "include_frame",
+    "ml_switcheroo_compiler",
+    "os",
+    "register_exclusion",
+    "sys",
+    "traceback",
+    "types",
+    "typing",
+    "util",
+]

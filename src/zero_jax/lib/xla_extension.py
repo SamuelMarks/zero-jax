@@ -49,7 +49,7 @@ weakref_lru_cache: ArrayLikeSpec = None
 class ArrayImpl:
     """Frontend API routing for ArrayImpl."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -57,21 +57,19 @@ class ArrayImpl:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class CallInliner:
     """Frontend API routing for CallInliner."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -79,21 +77,19 @@ class CallInliner:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Client:
     """Frontend API routing for Client."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -101,21 +97,19 @@ class Client:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class CompileOnlyPyClient:
     """Frontend API routing for CompileOnlyPyClient."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -123,21 +117,19 @@ class CompileOnlyPyClient:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class CompileOptions:
     """Frontend API routing for CompileOptions."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -145,21 +137,19 @@ class CompileOptions:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class CompiledMemoryStats:
     """Frontend API routing for CompiledMemoryStats."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -167,21 +157,19 @@ class CompiledMemoryStats:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class CpuCollectives:
     """Frontend API routing for CpuCollectives."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -189,21 +177,19 @@ class CpuCollectives:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DebugOptions:
     """Frontend API routing for DebugOptions."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -211,21 +197,19 @@ class DebugOptions:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Device:
     """Frontend API routing for Device."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -233,21 +217,19 @@ class Device:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DeviceAssignment:
     """Frontend API routing for DeviceAssignment."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -255,21 +237,19 @@ class DeviceAssignment:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DeviceList:
     """Frontend API routing for DeviceList."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -277,21 +257,19 @@ class DeviceList:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DeviceTopology:
     """Frontend API routing for DeviceTopology."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -299,21 +277,19 @@ class DeviceTopology:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DistributedRuntimeClient:
     """Frontend API routing for DistributedRuntimeClient."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -321,21 +297,19 @@ class DistributedRuntimeClient:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DistributedRuntimeService:
     """Frontend API routing for DistributedRuntimeService."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -343,21 +317,19 @@ class DistributedRuntimeService:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Executable:
     """Frontend API routing for Executable."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -365,21 +337,19 @@ class Executable:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ExecutableBuildOptions:
     """Frontend API routing for ExecutableBuildOptions."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -387,21 +357,19 @@ class ExecutableBuildOptions:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ExecuteResults:
     """Frontend API routing for ExecuteResults."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -409,21 +377,19 @@ class ExecuteResults:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class FftType:
     """Frontend API routing for FftType."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -431,21 +397,19 @@ class FftType:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class FlattenCallGraph:
     """Frontend API routing for FlattenCallGraph."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -453,21 +417,19 @@ class FlattenCallGraph:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Frame:
     """Frontend API routing for Frame."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -475,21 +437,19 @@ class Frame:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class FrontendAttributes:
     """Frontend API routing for FrontendAttributes."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -497,21 +457,19 @@ class FrontendAttributes:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class GSPMDSharding:
     """Frontend API routing for GSPMDSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -519,21 +477,19 @@ class GSPMDSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloComputation:
     """Frontend API routing for HloComputation."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -541,21 +497,19 @@ class HloComputation:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloDCE:
     """Frontend API routing for HloDCE."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -563,21 +517,19 @@ class HloDCE:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloModule:
     """Frontend API routing for HloModule."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -585,21 +537,19 @@ class HloModule:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloModuleGroup:
     """Frontend API routing for HloModuleGroup."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -607,21 +557,19 @@ class HloModuleGroup:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloPassInterface:
     """Frontend API routing for HloPassInterface."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -629,21 +577,19 @@ class HloPassInterface:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloPrintOptions:
     """Frontend API routing for HloPrintOptions."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -651,21 +597,19 @@ class HloPrintOptions:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HloSharding:
     """Frontend API routing for HloSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -673,21 +617,19 @@ class HloSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class HostBufferSemantics:
     """Frontend API routing for HostBufferSemantics."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -695,21 +637,19 @@ class HostBufferSemantics:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Layout:
     """Frontend API routing for Layout."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -717,21 +657,19 @@ class Layout:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Literal:
     """Frontend API routing for Literal."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -739,21 +677,19 @@ class Literal:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class LoadedExecutable:
     """Frontend API routing for LoadedExecutable."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -761,21 +697,19 @@ class LoadedExecutable:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Memory:
     """Frontend API routing for Memory."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -783,21 +717,19 @@ class Memory:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class MpiCollectives:
     """Frontend API routing for MpiCollectives."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -805,21 +737,19 @@ class MpiCollectives:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class NamedSharding:
     """Frontend API routing for NamedSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -827,21 +757,19 @@ class NamedSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class OpSharding:
     """Frontend API routing for OpSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -849,21 +777,19 @@ class OpSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class OpSharding_ShardGroupType:
     """Frontend API routing for OpSharding_ShardGroupType."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -871,21 +797,19 @@ class OpSharding_ShardGroupType:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class OpSharding_Type:
     """Frontend API routing for OpSharding_Type."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -893,21 +817,19 @@ class OpSharding_Type:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PjRtLayout:
     """Frontend API routing for PjRtLayout."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -915,21 +837,19 @@ class PjRtLayout:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PjRtXlaLayout:
     """Frontend API routing for PjRtXlaLayout."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -937,21 +857,19 @@ class PjRtXlaLayout:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PjitFunction:
     """Frontend API routing for PjitFunction."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -959,21 +877,19 @@ class PjitFunction:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PjitFunctionCache:
     """Frontend API routing for PjitFunctionCache."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -981,21 +897,19 @@ class PjitFunctionCache:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PmapFunction:
     """Frontend API routing for PmapFunction."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1003,21 +917,19 @@ class PmapFunction:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PmapSharding:
     """Frontend API routing for PmapSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1025,21 +937,19 @@ class PmapSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PrecisionConfig_Precision:
     """Frontend API routing for PrecisionConfig_Precision."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1047,21 +957,19 @@ class PrecisionConfig_Precision:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PreemptionSyncManager:
     """Frontend API routing for PreemptionSyncManager."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1069,21 +977,19 @@ class PreemptionSyncManager:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PrimitiveType:
     """Frontend API routing for PrimitiveType."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1091,21 +997,19 @@ class PrimitiveType:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ProgramShape:
     """Frontend API routing for ProgramShape."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1113,21 +1017,19 @@ class ProgramShape:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PyTreeRegistry:
     """Frontend API routing for PyTreeRegistry."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1135,21 +1037,19 @@ class PyTreeRegistry:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ResultHandler:
     """Frontend API routing for ResultHandler."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1157,21 +1057,19 @@ class ResultHandler:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Shape:
     """Frontend API routing for Shape."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1179,21 +1077,19 @@ class Shape:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ShapeIndex:
     """Frontend API routing for ShapeIndex."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1201,21 +1097,19 @@ class ShapeIndex:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ShardedToken:
     """Frontend API routing for ShardedToken."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1223,21 +1117,19 @@ class ShardedToken:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Sharding:
     """Frontend API routing for Sharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1245,21 +1137,19 @@ class Sharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class SingleDeviceSharding:
     """Frontend API routing for SingleDeviceSharding."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1267,21 +1157,19 @@ class SingleDeviceSharding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Token:
     """Frontend API routing for Token."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1289,21 +1177,19 @@ class Token:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Traceback:
     """Frontend API routing for Traceback."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1311,21 +1197,19 @@ class Traceback:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class TupleSimplifier:
     """Frontend API routing for TupleSimplifier."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1333,21 +1217,19 @@ class TupleSimplifier:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class WeakrefLRUCache:
     """Frontend API routing for WeakrefLRUCache."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1355,21 +1237,19 @@ class WeakrefLRUCache:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class XlaBuilder:
     """Frontend API routing for XlaBuilder."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1377,21 +1257,19 @@ class XlaBuilder:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class XlaComputation:
     """Frontend API routing for XlaComputation."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1399,21 +1277,19 @@ class XlaComputation:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class XlaOp:
     """Frontend API routing for XlaOp."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1421,21 +1297,19 @@ class XlaOp:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class XlaRuntimeError:
     """Frontend API routing for XlaRuntimeError."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1443,14 +1317,12 @@ class XlaRuntimeError:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 

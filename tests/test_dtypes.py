@@ -16,10 +16,9 @@ class _NamedDType:
 
 def test_extended_scalar_types() -> None:
     """Verify extended scalar classes and attributes."""
-    bf = mod.bfloat16(1.5, id=1, name="bf16")
+    bf = mod.bfloat16(1.5)
     assert bf.value == 1.5
-    assert bf.id == 1
-    assert bf.name == "bf16"
+    assert bf.name == "bfloat16"
     assert mod.float8_e4m3b11fnuz(1.0).dtype == "float8_e4m3b11fnuz"
     assert mod.float8_e4m3fn(1.0).dtype == "float8_e4m3fn"
     assert mod.float8_e4m3fnuz(1.0).dtype == "float8_e4m3fnuz"

@@ -132,16 +132,16 @@ from .api import (
 )
 
 
-def jax(*args: ConfigValue, **kwargs: ConfigValue) -> None:
+def jax(version: str | None = None) -> None:
     """Stub callable for the top-level ``jax`` entry point.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        version: Optional version query string.
 
     Returns:
         None: Always returns ``None``.
     """
+    _ = version
     return
 
 

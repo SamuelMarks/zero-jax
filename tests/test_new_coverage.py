@@ -56,13 +56,13 @@ def test_lax_numpy_setitem_eager() -> None:
 
     config.eager_mode = True
     a = jnp.array([1.0, 2.0])
-    a[0] = 3.0
-    assert a[0] == 3.0
-    a[1] = jnp.array(4.0)
-    assert a[1] == 4.0
+    with pytest.raises(TypeError, match="immutable"):
+        a[0] = 3.0
+    updated = a.at[0].set(3.0)
+    assert updated[0] == 3.0
 
     config.eager_mode = False
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="immutable"):
         a[0] = 5.0
     config.eager_mode = True
 

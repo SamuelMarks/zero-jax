@@ -1,182 +1,254 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.linalg."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
+import pytest
 
+import zero_jax.numpy as jnp
 import zero_jax.scipy.linalg as mod
+from tests.conftest import assert_allclose
 
 
 def test_block_diag() -> None:
     """Test block_diag."""
-    with patch("zero_jax._compiler_proxy_ops.block_diag", create=True) as mock_op:
-        mod.block_diag()
-        mock_op.assert_called_once_with()
+    assert mod.block_diag().shape == (0, 0)
+    a = jnp.array([[1.0, 2.0], [3.0, 4.0]])
+    b = jnp.array([[5.0]])
+    res = mod.block_diag(a, b)
+    assert_allclose(res, [[1.0, 2.0, 0.0], [3.0, 4.0, 0.0], [0.0, 0.0, 5.0]])
 
 
 def test_cho_factor() -> None:
     """Test cho_factor."""
-    with patch("zero_jax._compiler_proxy_ops.cho_factor", create=True) as mock_op:
-        mod.cho_factor()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    c, lower = mod.cho_factor(a, lower=True)
+    assert lower is True
+    assert_allclose(c, [[2.0, 0.0], [0.0, 3.0]])
+    c_int, lower_int = mod.cho_factor(jnp.array([[4, 0], [0, 9]]), lower=False)
+    assert lower_int is False
+    assert_allclose(c_int, [[2.0, 0.0], [0.0, 3.0]])
 
 
 def test_cho_solve() -> None:
     """Test cho_solve."""
-    with patch("zero_jax._compiler_proxy_ops.cho_solve", create=True) as mock_op:
-        mod.cho_solve()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    b = jnp.array([8.0, 18.0])
+    cf_low = mod.cho_factor(a, lower=True)
+    assert_allclose(mod.cho_solve(cf_low, b), [2.0, 2.0])
+    cf_up = mod.cho_factor(a, lower=False)
+    assert_allclose(mod.cho_solve(cf_up, b), [2.0, 2.0])
 
 
 def test_cholesky() -> None:
     """Test cholesky."""
-    with patch("zero_jax._compiler_proxy_ops.cholesky", create=True) as mock_op:
-        mod.cholesky()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    assert_allclose(mod.cholesky(a, lower=True), [[2.0, 0.0], [0.0, 3.0]])
 
 
 def test_det() -> None:
     """Test det."""
-    with patch("zero_jax._compiler_proxy_ops.det", create=True) as mock_op:
-        mod.det()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 3.0]])
+    assert_allclose(mod.det(a), 6.0)
 
 
 def test_eigh() -> None:
     """Test eigh."""
-    with patch("zero_jax._compiler_proxy_ops.eigh", create=True) as mock_op:
-        mod.eigh()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 5.0]])
+    w, v = mod.eigh(a)
+    assert_allclose(w, [2.0, 5.0])
+    assert_allclose(v @ jnp.transpose(v), jnp.eye(2), atol=1e-5)
+    w_only = mod.eigh(a, eigvals_only=True)
+    assert_allclose(w_only, [2.0, 5.0])
 
 
 def test_eigh_tridiagonal() -> None:
     """Test eigh_tridiagonal."""
-    with patch("zero_jax._compiler_proxy_ops.eigh_tridiagonal", create=True) as mock_op:
-        mod.eigh_tridiagonal()
-        mock_op.assert_called_once_with()
+    d = jnp.array([2.0, 3.0])
+    e = jnp.array([0.0])
+    w = mod.eigh_tridiagonal(d, e, eigvals_only=True)
+    assert_allclose(w, [2.0, 3.0])
+    w2, v2 = mod.eigh_tridiagonal(d, e, eigvals_only=False)
+    assert_allclose(w2, [2.0, 3.0])
+    assert v2.shape == (2, 2)
 
 
 def test_expm() -> None:
     """Test expm."""
-    with patch("zero_jax._compiler_proxy_ops.expm", create=True) as mock_op:
-        mod.expm()
-        mock_op.assert_called_once_with()
+    a = jnp.zeros((2, 2))
+    assert_allclose(mod.expm(a), jnp.eye(2))
 
 
 def test_expm_frechet() -> None:
     """Test expm_frechet."""
-    with patch("zero_jax._compiler_proxy_ops.expm_frechet", create=True) as mock_op:
-        mod.expm_frechet()
-        mock_op.assert_called_once_with()
+    a = jnp.zeros((2, 2))
+    e = jnp.eye(2)
+    ea, frechet = mod.expm_frechet(a, e, compute_expm=True)
+    assert_allclose(ea, jnp.eye(2))
+    assert_allclose(frechet, jnp.eye(2))
+    only_f = mod.expm_frechet(a, e, compute_expm=False)
+    assert_allclose(only_f, jnp.eye(2))
 
 
 def test_funm() -> None:
     """Test funm."""
-    with patch("zero_jax._compiler_proxy_ops.funm", create=True) as mock_op:
-        mod.funm()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    res = mod.funm(a, jnp.sqrt)
+    assert_allclose(res, [[2.0, 0.0], [0.0, 3.0]])
+    res_disp, err = mod.funm(a, jnp.sqrt, disp=False)
+    assert_allclose(res_disp, [[2.0, 0.0], [0.0, 3.0]])
+    assert err == 0.0
 
 
 def test_hessenberg() -> None:
     """Test hessenberg."""
-    with patch("zero_jax._compiler_proxy_ops.hessenberg", create=True) as mock_op:
-        mod.hessenberg()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 1.0], [0.0, 3.0]])
+    h = mod.hessenberg(a)
+    assert_allclose(h, a)
+    h_q, q_h = mod.hessenberg(a, calc_q=True)
+    assert_allclose(h_q, a)
+    assert_allclose(q_h, jnp.eye(2))
 
 
 def test_hilbert() -> None:
     """Test hilbert."""
-    with patch("zero_jax._compiler_proxy_ops.hilbert", create=True) as mock_op:
-        mod.hilbert()
-        mock_op.assert_called_once_with()
+    h = mod.hilbert(2)
+    assert_allclose(h, [[1.0, 0.5], [0.5, 1.0 / 3.0]])
 
 
 def test_inv() -> None:
     """Test inv."""
-    with patch("zero_jax._compiler_proxy_ops.inv", create=True) as mock_op:
-        mod.inv()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 4.0]])
+    assert_allclose(mod.inv(a), [[0.5, 0.0], [0.0, 0.25]])
 
 
 def test_lu() -> None:
     """Test lu."""
-    with patch("zero_jax._compiler_proxy_ops.lu", create=True) as mock_op:
-        mod.lu()
-        mock_op.assert_called_once_with()
+    a = jnp.eye(2)
+    p, l_m, u_m = mod.lu(a)
+    assert_allclose(p @ l_m @ u_m, a)
+    pl, u2 = mod.lu(a, permute_l=True)
+    assert_allclose(pl @ u2, a)
 
 
 def test_lu_factor() -> None:
     """Test lu_factor."""
-    with patch("zero_jax._compiler_proxy_ops.lu_factor", create=True) as mock_op:
-        mod.lu_factor()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 4.0]])
+    lu_mat, piv = mod.lu_factor(a)
+    assert lu_mat.shape == (2, 2)
+    assert piv.shape == (2,)
 
 
 def test_lu_solve() -> None:
     """Test lu_solve."""
-    with patch("zero_jax._compiler_proxy_ops.lu_solve", create=True) as mock_op:
-        mod.lu_solve()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 4.0]])
+    b = jnp.array([6.0, 8.0])
+    luf = mod.lu_factor(a)
+    x = mod.lu_solve(luf, b)
+    assert_allclose(x, [3.0, 2.0])
+    x_t = mod.lu_solve(luf, b, trans=1)
+    assert_allclose(x_t, [3.0, 2.0])
+
+
+def test_pascal() -> None:
+    """Test pascal."""
+    assert_allclose(mod.pascal(3, kind="lower"), [[1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [1.0, 2.0, 1.0]])
+    assert_allclose(mod.pascal(3, kind="upper"), [[1.0, 1.0, 1.0], [0.0, 1.0, 2.0], [0.0, 0.0, 1.0]])
+    assert_allclose(mod.pascal(3, kind="symmetric"), [[1.0, 1.0, 1.0], [1.0, 2.0, 3.0], [1.0, 3.0, 6.0]])
 
 
 def test_polar() -> None:
     """Test polar."""
-    with patch("zero_jax._compiler_proxy_ops.polar", create=True) as mock_op:
-        mod.polar()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 3.0]])
+    u, p = mod.polar(a)
+    assert_allclose(u @ p, a)
 
 
 def test_qr() -> None:
     """Test qr."""
-    with patch("zero_jax._compiler_proxy_ops.qr", create=True) as mock_op:
-        mod.qr()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 3.0]])
+    q, r = mod.qr(a)
+    assert_allclose(q @ r, a)
 
 
 def test_rsf2csf() -> None:
     """Test rsf2csf."""
-    with patch("zero_jax._compiler_proxy_ops.rsf2csf", create=True) as mock_op:
-        mod.rsf2csf()
-        mock_op.assert_called_once_with()
+    t_mat = jnp.eye(2)
+    z_mat = jnp.eye(2)
+    t_out, z_out = mod.rsf2csf(t_mat, z_mat)
+    assert_allclose(t_out, t_mat)
+    assert_allclose(z_out, z_mat)
 
 
 def test_schur() -> None:
     """Test schur."""
-    with patch("zero_jax._compiler_proxy_ops.schur", create=True) as mock_op:
-        mod.schur()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 3.0]])
+    t_mat, z_mat = mod.schur(a)
+    assert_allclose(z_mat @ t_mat @ jnp.transpose(z_mat), a)
 
 
 def test_solve() -> None:
     """Test solve."""
-    with patch("zero_jax._compiler_proxy_ops.solve", create=True) as mock_op:
-        mod.solve()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 4.0]])
+    b = jnp.array([6.0, 8.0])
+    assert_allclose(mod.solve(a, b), [3.0, 2.0])
+
+
+def test_solve_sylvester() -> None:
+    """Test solve_sylvester."""
+    a = jnp.array([[1.0, 0.0], [0.0, 2.0]])
+    b = jnp.array([[3.0, 0.0], [0.0, 4.0]])
+    q = jnp.array([[4.0, 5.0], [10.0, 12.0]])
+    x = mod.solve_sylvester(a, b, q)
+    assert_allclose(a @ x + x @ b, q, atol=1e-5)
 
 
 def test_solve_triangular() -> None:
     """Test solve_triangular."""
-    with patch("zero_jax._compiler_proxy_ops.solve_triangular", create=True) as mock_op:
-        mod.solve_triangular()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [1.0, 4.0]])
+    b = jnp.array([4.0, 6.0])
+    assert_allclose(mod.solve_triangular(a, b, lower=True), [2.0, 1.0])
+    assert_allclose(mod.solve_triangular(jnp.transpose(a), b, trans="T"), [2.0, 1.0])
 
 
 def test_sqrtm() -> None:
     """Test sqrtm."""
-    with patch("zero_jax._compiler_proxy_ops.sqrtm", create=True) as mock_op:
-        mod.sqrtm()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    assert_allclose(mod.sqrtm(a), [[2.0, 0.0], [0.0, 3.0]])
 
 
 def test_svd() -> None:
     """Test svd."""
-    with patch("zero_jax._compiler_proxy_ops.svd", create=True) as mock_op:
-        mod.svd()
-        mock_op.assert_called_once_with()
+    a = jnp.array([[2.0, 0.0], [0.0, 3.0]])
+    u, s, vh = mod.svd(a)
+    assert_allclose(u @ jnp.diag(s) @ vh, a)
 
 
 def test_toeplitz() -> None:
     """Test toeplitz."""
-    with patch("zero_jax._compiler_proxy_ops.toeplitz", create=True) as mock_op:
-        mod.toeplitz()
-        mock_op.assert_called_once_with()
+    c = jnp.array([1.0, 2.0, 3.0])
+    r = jnp.array([1.0, 4.0])
+    assert_allclose(mod.toeplitz(c, r), [[1.0, 4.0], [2.0, 1.0], [3.0, 2.0]])
+    assert_allclose(mod.toeplitz(jnp.array([1.0, 2.0])), [[1.0, 2.0], [2.0, 1.0]])
+
+
+def test_cholesky_solve_and_lu_helpers() -> None:
+    """Test cholesky_solve, lu_reconstruct, and lu_matrix_inverse."""
+    a = jnp.array([[4.0, 0.0], [0.0, 9.0]])
+    c, lower = mod.cho_factor(a, True)
+    b = jnp.array([8.0, 18.0])
+    x = mod.cholesky_solve(c, b, lower)
+    assert_allclose(x, [2.0, 2.0])
+
+    eye2 = jnp.eye(2)
+    rec = mod.lu_reconstruct(eye2, eye2, a)
+    assert_allclose(rec, a)
+    rec_tup = mod.lu_reconstruct((eye2, eye2, a))
+    assert_allclose(rec_tup, a)
+
+    inv_a = mod.lu_matrix_inverse(a)
+    assert_allclose(inv_a, [[0.25, 0.0], [0.0, 1.0 / 9.0]])
+
+    with pytest.raises(Exception):
+        mod.lu_reconstruct(eye2, jnp.array([0, 1]))
+    with pytest.raises(Exception):
+        mod.lu_matrix_inverse(eye2, jnp.array([0, 1]))

@@ -49,6 +49,11 @@ def min(x: ArrayLikeSpec, y: ArrayLikeSpec) -> ArrayLikeSpec:
 
 def test_lax_reduce_others() -> None:
     """Execute ``test_lax_reduce_others``."""
+    assert add(1, 2) == 3
+    assert mul(2, 3) == 6
+    assert max(2, 3) == 3
+    assert min(2, 3) == 2
+
     x = array([1, 2, 3])
 
     res1 = lax.reduce(x, 1, mul, (0,))
@@ -56,4 +61,4 @@ def test_lax_reduce_others() -> None:
     lax.reduce(x, 10, min, (0,))
     lax.reduce(x, 0, lambda a, b: a, (0,))
 
-    assert res1 is not None
+    assert res1 == 6

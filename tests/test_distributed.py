@@ -1,21 +1,19 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.distributed."""
 
 from __future__ import annotations
-
-from unittest.mock import patch
 
 import zero_jax.distributed as mod
 
 
 def test_initialize() -> None:
     """Test initialize."""
-    with patch("zero_jax._compiler_proxy_ops.initialize", create=True) as mock_op:
-        mod.initialize()
-        mock_op.assert_called_once_with()
+    mod.initialize(coordinator_address="127.0.0.1:1234", num_processes=1, process_id=0)
+    assert mod.is_initialized() is True
 
 
 def test_shutdown() -> None:
     """Test shutdown."""
-    with patch("zero_jax._compiler_proxy_ops.shutdown", create=True) as mock_op:
-        mod.shutdown()
-        mock_op.assert_called_once_with()
+    mod.initialize()
+    assert mod.is_initialized() is True
+    mod.shutdown()
+    assert mod.is_initialized() is False

@@ -2,4 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from sys import exc_info, modules, stderr, stdout
+
+__all__ = [
+    "exc_info",
+    "modules",
+    "stderr",
+    "stdout",
+]

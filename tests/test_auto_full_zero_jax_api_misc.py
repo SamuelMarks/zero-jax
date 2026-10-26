@@ -89,7 +89,11 @@ def test_ensure_compile_time_eval_and_misc_helpers() -> None:
         pass
 
     assert mod.pure_callback(lambda x: x * 4, None, 3) == 12
-    assert mod.make_array_from_callback((2, 2), None, lambda idx: 0).shape == (2, 2)
+    cb_arr = mod.make_array_from_callback((2, 2), None, lambda idx: 5.0)
+    assert cb_arr.shape == (2, 2)
+    assert_allclose(cb_arr, [[5.0, 5.0], [5.0, 5.0]])
+    cb_exact = mod.make_array_from_callback((2,), None, lambda idx: jnp.array([7.0, 8.0])[idx])
+    assert_allclose(cb_exact, [7.0, 8.0])
     assert mod.make_array_from_process_local_data(None, 42) == 42
     assert mod.make_array_from_single_device_arrays((2,), None, [jnp.array(1.0), jnp.array(2.0)]).shape == (2,)
     assert mod.softmax_custom_jvp(jnp.array([1.0, 2.0])).shape == (2,)
@@ -109,8 +113,8 @@ def test_ensure_compile_time_eval_and_misc_helpers() -> None:
         pass
 
     j_fn = zero_jax.jit(lambda x: x + 1)
-    assert j_fn.trace(jnp.array(1.0)) is not None
-    assert j_fn.lower(jnp.array(1.0)) is not None
+    assert j_fn.trace(jnp.array(1.0)).lower().compile()(jnp.array(2.0)) == jnp.array(3.0)
+    assert j_fn.lower(jnp.array(1.0)).compile()(jnp.array(4.0)) == jnp.array(5.0)
     with zero_jax.disable_jit():
         assert j_fn(jnp.array(2.0)) == jnp.array(3.0)
 

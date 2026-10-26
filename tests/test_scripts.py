@@ -292,7 +292,7 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
                 "def __getattr__(name: " + "object) -> typing." + "Any:",
                 '    """Doc without Args section."""',
                 "    return typing." + "cast(" + "Any, name)",
-                "def bad_args_doc(alpha: int, beta: int) -> int:",
+                "def bad_args_doc(alpha: int, beta: int, dummy: int = 0) -> int:",
                 '    """Doc.',
                 "",
                 "    Args:",
@@ -303,6 +303,23 @@ def test_strict_typing_and_docstring_auditors(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
+
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    taut_test = tests_dir / "test_taut.py"
+    taut_test.write_text(
+        NL.join(
+            [
+                '"""Doc."""',
+                "def test_t() -> None:",
+                '    """Doc."""',
+                "    a = 1",
+                "    check_allclose(a, a)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert any("Tautological check_allclose" in v for v in run_checks.check_file_strict_typing(str(taut_test)))
 
     bad_syntax = src_dir / "syntax_err.py"
     bad_syntax.write_text("def (", encoding="utf-8")

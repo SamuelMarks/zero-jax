@@ -90,32 +90,15 @@ class GatherScatterMode:
     FILL_OR_DROP = "FILL_OR_DROP"
     ONE_HOT = "ONE_HOT"
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        dummy: ConfigValue = None,
-        **kwargs: ConfigValue,
-    ) -> None:
+    def __init__(self, mode: ConfigValue = None) -> None:
         """Initialize ``GatherScatterMode``.
 
         Args:
-            *args: Optional positional mode arguments.
-            id: Optional identifier metadata.
-            name: Optional mode name.
-            value: Optional mode value (defaults to ``"FILL_OR_DROP"``).
-            dummy: Optional legacy test parameter.
-            **kwargs: Optional additional keyword parameters.
+            mode: Mode identifier string (defaults to ``"FILL_OR_DROP"``).
         """
-        resolved = args[0] if args else (value if value is not None else self.FILL_OR_DROP)
-        self.args = args
-        self.id = id
-        self.name = str(name) if name is not None else str(resolved)
-        self.value = resolved
-        self.dummy = dummy
-        self.kwargs = kwargs
+        resolved = str(mode) if mode is not None else self.FILL_OR_DROP
+        self.name: str = resolved
+        self.value: str = resolved
 
     @classmethod
     def from_any(cls, mode: str | GatherScatterMode | None) -> GatherScatterMode:
@@ -130,8 +113,8 @@ class GatherScatterMode:
         if isinstance(mode, GatherScatterMode):
             return mode
         if isinstance(mode, str):
-            return cls(value=mode.upper(), name=mode.upper())
-        return cls(value=cls.FILL_OR_DROP, name=cls.FILL_OR_DROP)
+            return cls(mode.upper())
+        return cls(cls.FILL_OR_DROP)
 
 
 class Precision:
@@ -149,32 +132,15 @@ class PrecisionLike:
     HIGH = Precision.HIGH
     HIGHEST = Precision.HIGHEST
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        dummy: ConfigValue = None,
-        **kwargs: ConfigValue,
-    ) -> None:
+    def __init__(self, precision: ConfigValue = None) -> None:
         """Initialize ``PrecisionLike``.
 
         Args:
-            *args: Optional positional precision values.
-            id: Optional identifier metadata.
-            name: Optional precision name.
-            value: Optional precision value.
-            dummy: Optional legacy test parameter.
-            **kwargs: Optional additional keyword parameters.
+            precision: Precision level specification (defaults to ``"DEFAULT"``).
         """
-        resolved = args[0] if args else (value if value is not None else Precision.DEFAULT)
-        self.args = args
-        self.id = id
-        self.name = str(name) if name is not None else str(resolved)
-        self.value = resolved
-        self.dummy = dummy
-        self.kwargs = kwargs
+        resolved = str(precision) if precision is not None else Precision.DEFAULT
+        self.name: str = resolved
+        self.value: str = resolved
 
 
 class RandomAlgorithm:
@@ -184,32 +150,15 @@ class RandomAlgorithm:
     RNG_THREE_FRY = "RNG_THREE_FRY"
     RNG_PHILOX = "RNG_PHILOX"
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        dummy: ConfigValue = None,
-        **kwargs: ConfigValue,
-    ) -> None:
+    def __init__(self, algorithm: ConfigValue = None) -> None:
         """Initialize ``RandomAlgorithm``.
 
         Args:
-            *args: Optional positional algorithm identifiers.
-            id: Optional identifier metadata.
-            name: Optional algorithm name.
-            value: Optional algorithm value.
-            dummy: Optional legacy test parameter.
-            **kwargs: Optional additional keyword parameters.
+            algorithm: Algorithm identifier string (defaults to ``"RNG_DEFAULT"``).
         """
-        resolved = args[0] if args else (value if value is not None else self.RNG_DEFAULT)
-        self.args = args
-        self.id = id
-        self.name = str(name) if name is not None else str(resolved)
-        self.value = resolved
-        self.dummy = dummy
-        self.kwargs = kwargs
+        resolved = str(algorithm) if algorithm is not None else self.RNG_DEFAULT
+        self.name: str = resolved
+        self.value: str = resolved
 
 
 class RoundingMethod:
@@ -218,32 +167,15 @@ class RoundingMethod:
     AWAY_FROM_ZERO = 0
     TO_NEAREST_EVEN = 1
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        dummy: ConfigValue = None,
-        **kwargs: ConfigValue,
-    ) -> None:
+    def __init__(self, method: int | ConfigValue = None) -> None:
         """Initialize ``RoundingMethod``.
 
         Args:
-            *args: Optional positional rounding method values.
-            id: Optional identifier metadata.
-            name: Optional rounding method name.
-            value: Optional rounding method integer code.
-            dummy: Optional legacy test parameter.
-            **kwargs: Optional additional keyword parameters.
+            method: Rounding method integer code (defaults to ``TO_NEAREST_EVEN``).
         """
-        resolved = args[0] if args else (value if value is not None else self.TO_NEAREST_EVEN)
-        self.args = args
-        self.id = id
-        self.name = str(name) if name is not None else str(resolved)
-        self.value = resolved
-        self.dummy = dummy
-        self.kwargs = kwargs
+        resolved = int(method) if isinstance(method, int) else self.TO_NEAREST_EVEN
+        self.name: str = "AWAY_FROM_ZERO" if resolved == 0 else "TO_NEAREST_EVEN"
+        self.value: int = resolved
 
 
 class ScatterDimensionNumbers:

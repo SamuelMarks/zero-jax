@@ -2,4 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from itertools import chain, count, islice
+
+__all__ = [
+    "chain",
+    "count",
+    "islice",
+]

@@ -1,51 +1,24 @@
-"""jaxlib_utils stub."""
+"""Frontend API routing for jax.interpreters.traceback_util.util.jaxlib_utils."""
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax.util import safe_map, safe_zip
 
 
 class CallOp:
-    """Frontend class for ``CallOp``."""
+    """Descriptor for a low-level jaxlib call operation."""
+
+    def __init__(self, name: str = "call") -> None:
+        """Initialize ``CallOp``.
+
+        Args:
+            name: Operation name identifier.
+        """
+        self.name: str = str(name)
 
 
-import typing
-
-import ml_switcheroo_compiler
-
-import zero_jax._compiler_proxy_ops as _ops
-
-
-def safe_map(f: ArrayLikeSpec, *args: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Map a function over sequences, checking they have the same length.
-
-    Args:
-        f: Input parameter ``f``.
-        *args: Input parameter ``args``.
-
-    Returns:
-        The operation result.
-    """
-    if not args:
-        return []
-    n = len(args[0])
-    for arg in args[1:]:
-        assert len(arg) == n, "Lengths must match"
-    return list(map(f, *args))
-
-
-def safe_zip(*args: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Zip sequences, checking they have the same length.
-
-    Args:
-        *args: Input parameter ``args``.
-
-    Returns:
-        The operation result.
-    """
-    if not args:
-        return []
-    n = len(args[0])
-    for arg in args[1:]:
-        assert len(arg) == n, "Lengths must match"
-    return list(zip(*args))
+__all__ = [
+    "CallOp",
+    "safe_map",
+    "safe_zip",
+]

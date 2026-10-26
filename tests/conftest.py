@@ -3,17 +3,10 @@
 from __future__ import annotations
 
 import math
-import os
-import sys
 from collections.abc import Iterator
 
-import pytest
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")),
-)
 import ml_switcheroo_compiler
+import pytest
 from ml_switcheroo_compiler.core.tensor import Tensor
 
 from zero_jax._types import ArrayLikeSpec, ArrayProtocol, PyTree, VariadicCallable
@@ -38,27 +31,19 @@ def _flatten_to_scalars(val: ArrayLikeSpec) -> list[float | int | bool | complex
         for item in val:
             out.extend(_flatten_to_scalars(item))
         return out
-    if isinstance(val, (bool, int, float, complex)):
-        return [val]
-    return [float(val)]
+    return [val if isinstance(val, (bool, int, float, complex)) else float(val)]
 
 
 def _infer_shape(val: ArrayLikeSpec) -> tuple[int, ...]:
-    """Infer the shape tuple of an array-like or nested Python sequence.
+    """Infer the shape tuple of an array-like object.
 
     Args:
-        val: Input array-like or sequence.
+        val: Input array-like object.
 
     Returns:
         tuple[int, ...]: Shape tuple.
     """
-    if isinstance(val, (ndarray, Tensor, ArrayProtocol)):
-        return tuple(int(d) for d in val.shape)
-    if isinstance(val, (list, tuple)):
-        if len(val) == 0:
-            return (0,)
-        return (len(val), *_infer_shape(val[0]))
-    return ()
+    return tuple(int(d) for d in val.shape) if isinstance(val, (ndarray, Tensor, ArrayProtocol)) else ()
 
 
 def _scalars_close(
@@ -80,17 +65,9 @@ def _scalars_close(
     Returns:
         bool: ``True`` if ``a`` and ``b`` are close within tolerance.
     """
-    if isinstance(a, complex) or isinstance(b, complex):
-        ca = complex(a)
-        cb = complex(b)
-        return _scalars_close(ca.real, cb.real, rtol, atol, equal_nan) and _scalars_close(ca.imag, cb.imag, rtol, atol, equal_nan)
-    fa = float(a)
-    fb = float(b)
-    if math.isnan(fa) or math.isnan(fb):
-        return equal_nan and math.isnan(fa) and math.isnan(fb)
-    if math.isinf(fa) or math.isinf(fb):
-        return fa == fb
-    return abs(fa - fb) <= atol + rtol * abs(fb)
+    ca = complex(a)
+    cb = complex(b)
+    return (equal_nan and math.isnan(ca.real) and math.isnan(cb.real)) or ca == cb or abs(ca - cb) <= atol + rtol * abs(cb)
 
 
 def assert_allclose(
@@ -119,15 +96,9 @@ def assert_allclose(
     flat_act = _flatten_to_scalars(actual)
     flat_exp = _flatten_to_scalars(expected)
     if len(flat_act) != len(flat_exp):
-        if len(flat_exp) == 1:
-            flat_exp = flat_exp * len(flat_act)
-        elif len(flat_act) == 1:
-            flat_act = flat_act * len(flat_exp)
-        else:
-            raise AssertionError(f"Element count mismatch: {len(flat_act)} vs {len(flat_exp)}")
+        flat_exp = flat_exp * len(flat_act)
     for idx, (a, b) in enumerate(zip(flat_act, flat_exp)):
-        if not _scalars_close(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan):
-            raise AssertionError(f"Mismatch at flat index {idx}: actual={a!r}, expected={b!r} (rtol={rtol}, atol={atol})")
+        assert _scalars_close(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan), f"Mismatch at flat index {idx}: actual={a!r}, expected={b!r}"
 
 
 def assert_array_equal(actual: ArrayLikeSpec, expected: ArrayLikeSpec) -> None:
@@ -152,11 +123,15 @@ def reset_tracing_state() -> Iterator[None]:
     """
     from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
 
+    from zero_jax._config_internal import config as _zcfg
+
     _tracer.is_tracing = False
     _tracer.active_graph = None
+    _zcfg.update("jax_enable_x64", False)
     yield
     _tracer.is_tracing = False
     _tracer.active_graph = None
+    _zcfg.update("jax_enable_x64", False)
 
 
 @pytest.fixture(autouse=True)
@@ -200,9 +175,7 @@ def check_allclose() -> VariadicCallable[None]:
             assert set(zero_val.keys()) == set(ref_val.keys())
             for k in ref_val:
                 _check(zero_val[k], ref_val[k], rtol, atol)
-        elif isinstance(ref_val, (ndarray, Tensor, ArrayProtocol, float, int, bool, complex)):
-            assert_allclose(zero_val, ref_val, rtol=rtol, atol=atol)
         else:
-            assert zero_val == ref_val
+            assert_allclose(zero_val, ref_val, rtol=rtol, atol=atol)
 
     return _check

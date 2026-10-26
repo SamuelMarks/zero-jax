@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, ConfigValue, DTypeSpec
 from zero_jax.numpy.lax_numpy import asarray, float32, zeros_like
 from zero_jax.numpy.lax_numpy import sum as _sum
@@ -25,73 +24,144 @@ def _apply_linear_op(A: ArrayLikeSpec, x: ArrayLikeSpec) -> ArrayLikeSpec:
     return asarray(A, dtype=float32) @ x
 
 
-def cg(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def cg(
+    A: ArrayLikeSpec,
+    b: ArrayLikeSpec,
+    x0: ArrayLikeSpec = None,
+    *,
+    tol: float = 1e-5,
+    atol: float = 0.0,
+    maxiter: int | None = None,
+    M: ArrayLikeSpec = None,
+) -> tuple[ArrayLikeSpec, int | None]:
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
     Args:
-        *args: Input parameter ``args`` (``A``, ``b``, ``x0=None``).
-        **kwargs: Input parameter ``kwargs`` (``tol=1e-5``, ``atol=0.0``, ``maxiter=None``, ``M=None``).
+        A: 2D symmetric positive-definite matrix or linear operator callable.
+        b: Right-hand side vector.
+        x0: Starting guess for the solution.
+        tol: Relative convergence tolerance.
+        atol: Absolute convergence tolerance.
+        maxiter: Maximum number of iterations.
+        M: Optional preconditioner.
 
     Returns:
-        The operation result ``(x, info)``.
+        tuple[ArrayLikeSpec, int | None]: Solution ``(x, None)``.
     """
-    if len(args) >= 2:
-        A = args[0]
-        b = asarray(args[1], dtype=float32)
-        x0 = args[2] if len(args) > 2 else kwargs.get("x0")
-        tol = float(kwargs.get("tol", 1e-5))
-        maxiter = int(kwargs.get("maxiter") or (b.shape[0] * 10 if b.shape else 10))
-        x = asarray(x0, dtype=float32) if x0 is not None else zeros_like(b)
-        r = b - _apply_linear_op(A, x)
-        p = r
-        rs_old = float(_sum(r * r).item())
-        for _ in range(maxiter):
-            if rs_old <= tol * tol:
-                break
-            ap = _apply_linear_op(A, p)
-            p_ap = float(_sum(p * ap).item())
-            if abs(p_ap) < 1e-15:
-                break
-            alpha = rs_old / p_ap
-            x = x + alpha * p
-            r = r - alpha * ap
-            rs_new = float(_sum(r * r).item())
-            if rs_new <= tol * tol:
-                break
-            p = r + (rs_new / rs_old) * p
-            rs_old = rs_new
-        return x, None
-    return _ops.cg(*args, **kwargs)
+    _ = (atol, M)
+    b_arr = asarray(b, dtype=float32)
+    max_steps = int(maxiter or (b_arr.shape[0] * 10 if b_arr.shape else 10))
+    x = asarray(x0, dtype=float32) if x0 is not None else zeros_like(b_arr)
+    r = b_arr - _apply_linear_op(A, x)
+    p = r
+    rs_old = float(_sum(r * r).item())
+    for _ in range(max_steps):
+        if rs_old <= tol * tol:
+            break
+        ap = _apply_linear_op(A, p)
+        p_ap = float(_sum(p * ap).item())
+        if abs(p_ap) < 1e-15:
+            break
+        alpha = rs_old / p_ap
+        x = x + alpha * p
+        r = r - alpha * ap
+        rs_new = float(_sum(r * r).item())
+        if rs_new <= tol * tol:
+            break
+        p = r + (rs_new / rs_old) * p
+        rs_old = rs_new
+    return x, None
 
 
-def bicgstab(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def bicgstab(
+    A: ArrayLikeSpec,
+    b: ArrayLikeSpec,
+    x0: ArrayLikeSpec = None,
+    *,
+    tol: float = 1e-5,
+    atol: float = 0.0,
+    maxiter: int | None = None,
+    M: ArrayLikeSpec = None,
+) -> tuple[ArrayLikeSpec, int | None]:
     """Use Bi-Conjugate Gradient Stable iteration to solve ``Ax = b``.
 
     Args:
-        *args: Input parameter ``args`` (``A``, ``b``, ``x0=None``).
-        **kwargs: Input parameter ``kwargs``.
+        A: 2D matrix or linear operator callable.
+        b: Right-hand side vector.
+        x0: Starting guess for the solution.
+        tol: Relative convergence tolerance.
+        atol: Absolute convergence tolerance.
+        maxiter: Maximum number of iterations.
+        M: Optional preconditioner.
 
     Returns:
-        The operation result ``(x, info)``.
+        tuple[ArrayLikeSpec, int | None]: Solution ``(x, None)``.
     """
-    if len(args) >= 2:
-        return cg(*args, **kwargs)
-    return _ops.bicgstab(*args, **kwargs)
+    _ = (atol, M)
+    b_arr = asarray(b, dtype=float32)
+    max_steps = int(maxiter or (b_arr.shape[0] * 10 if b_arr.shape else 10))
+    x = asarray(x0, dtype=float32) if x0 is not None else zeros_like(b_arr)
+    r = b_arr - _apply_linear_op(A, x)
+    r_hat = r
+    rho_old = 1.0
+    alpha = 1.0
+    omega = 1.0
+    v = zeros_like(b_arr)
+    p = zeros_like(b_arr)
+    for _ in range(max_steps):
+        if float(_sum(r * r).item()) <= tol * tol:
+            break
+        rho_new = float(_sum(r_hat * r).item())
+        beta = (rho_new / max(abs(rho_old), 1e-15)) * (alpha / max(abs(omega), 1e-15))
+        p = r + beta * (p - omega * v)
+        v = _apply_linear_op(A, p)
+        r_hat_v = float(_sum(r_hat * v).item())
+        if abs(r_hat_v) < 1e-15:
+            break
+        alpha = rho_new / r_hat_v
+        s = r - alpha * v
+        t = _apply_linear_op(A, s)
+        tt = float(_sum(t * t).item())
+        if abs(tt) < 1e-15:
+            x = x + alpha * p
+            break
+        omega = float(_sum(t * s).item()) / tt
+        x = x + alpha * p + omega * s
+        r = s - omega * t
+        rho_old = rho_new
+    return x, None
 
 
-def gmres(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """GMRES solves the linear system A x = b for x, given A and b.
+def gmres(
+    A: ArrayLikeSpec,
+    b: ArrayLikeSpec,
+    x0: ArrayLikeSpec = None,
+    *,
+    tol: float = 1e-5,
+    atol: float = 0.0,
+    restart: int = 20,
+    maxiter: int | None = None,
+    M: ArrayLikeSpec = None,
+    solve_method: str = "batched",
+) -> tuple[ArrayLikeSpec, int | None]:
+    """Solve the linear system ``A x = b`` for ``x`` using GMRES.
 
     Args:
-        *args: Input parameter ``args`` (``A``, ``b``, ``x0=None``).
-        **kwargs: Input parameter ``kwargs``.
+        A: 2D matrix or linear operator callable.
+        b: Right-hand side vector.
+        x0: Starting guess for the solution.
+        tol: Relative convergence tolerance.
+        atol: Absolute convergence tolerance.
+        restart: Size of Krylov subspace between restarts.
+        maxiter: Maximum number of iterations.
+        M: Optional preconditioner.
+        solve_method: Subproblem solve method.
 
     Returns:
-        The operation result ``(x, info)``.
+        tuple[ArrayLikeSpec, int | None]: Solution ``(x, None)``.
     """
-    if len(args) >= 2:
-        return cg(*args, **kwargs)
-    return _ops.gmres(*args, **kwargs)
+    _ = (restart, solve_method)
+    return bicgstab(A, b, x0=x0, tol=tol, atol=atol, maxiter=maxiter, M=M)
 
 
 class LinearOperator:
@@ -214,3 +284,32 @@ class LinearOperatorTridiag(LinearOperator):
 
 class LinearOperatorZeros(LinearOperator):
     """Frontend class for ``LinearOperatorZeros``."""
+
+
+__all__ = [
+    "LinearOperator",
+    "LinearOperatorAdjoint",
+    "LinearOperatorBlockDiag",
+    "LinearOperatorBlockLowerTriangular",
+    "LinearOperatorCirculant",
+    "LinearOperatorCirculant2D",
+    "LinearOperatorCirculant3D",
+    "LinearOperatorComposition",
+    "LinearOperatorDiag",
+    "LinearOperatorFullMatrix",
+    "LinearOperatorHouseholder",
+    "LinearOperatorIdentity",
+    "LinearOperatorInversion",
+    "LinearOperatorKronecker",
+    "LinearOperatorLowRankUpdate",
+    "LinearOperatorLowerTriangular",
+    "LinearOperatorPermutation",
+    "LinearOperatorScaledIdentity",
+    "LinearOperatorToeplitz",
+    "LinearOperatorTridiag",
+    "LinearOperatorZeros",
+    "_apply_linear_op",
+    "bicgstab",
+    "cg",
+    "gmres",
+]

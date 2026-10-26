@@ -6,9 +6,21 @@ import contextlib
 import types
 from collections.abc import Iterator, Sequence
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue, PyTree, ShapeSpec, StatefulProtocol, T, VariadicCallable
-from zero_jax.numpy.lax_numpy import ndarray
-from zero_jax.tree_util import tree_flatten
+from zero_jax._types import (
+    ArrayLikeSpec,
+    ArrayProtocol,
+    PyTree,
+    ShapeSpec,
+    StatefulProtocol,
+    T,
+    VariadicCallable,
+)
+from zero_jax.api.core import ShapeDtypeStruct
+from zero_jax.nn import softmax as _nn_softmax
+from zero_jax.numpy import asarray, stack, zeros
+from zero_jax.numpy.lax_numpy import _to_tensor, ndarray
+from zero_jax.sharding import Sharding
+from zero_jax.tree_util import tree_flatten, tree_map
 
 
 def closure_convert(
@@ -26,6 +38,7 @@ def closure_convert(
     Returns:
         tuple[VariadicCallable[PyTree], list[PyTree]]: Tuple of ``(converted_fun, residual_env)``.
     """
+    _ = (args, kwargs)
     aux_args: list[PyTree] = []
     if callable(fun):
         for val in getattr_safe_dict(fun).values():
@@ -34,7 +47,7 @@ def closure_convert(
     return fun, aux_args
 
 
-def getattr_safe_dict(obj: ConfigValue) -> dict[str, PyTree]:
+def getattr_safe_dict(obj: VariadicCallable[PyTree] | StatefulProtocol | PyTree) -> dict[str, PyTree]:
     """Return residual state mapping of a callable or PyTree-registered object without dunder dict access.
 
     Args:
@@ -70,6 +83,7 @@ def named_call(fun: VariadicCallable[R], name: str | None = None) -> VariadicCal
     Returns:
         VariadicCallable[R]: The annotated function.
     """
+    _ = name
     return fun
 
 
@@ -85,6 +99,7 @@ def named_scope(name: str) -> contextlib.AbstractContextManager[None]:
     Returns:
         contextlib.AbstractContextManager[None]: Context manager entering the named scope.
     """
+    _ = name
 
     @contextlib.contextmanager
     def _scope() -> Iterator[None]:
@@ -102,7 +117,7 @@ def remat(
     fun: VariadicCallable[R] | None = None,
     *,
     prevent_cse: bool = True,
-    policy: ConfigValue = None,
+    policy: str | VariadicCallable[bool] | None = None,
     static_argnums: int | Sequence[int] = (),
     static_argnames: str | Sequence[str] = (),
 ) -> VariadicCallable[R]:
@@ -206,6 +221,7 @@ def make_jaxpr(
     Returns:
         VariadicCallable[PyTree]: A callable returning the traced JAXpr representation.
     """
+    _ = static_argnums
 
     def wrapper(*args: PyTree, **kwargs: PyTree) -> PyTree:
         """Trace ``fun`` with the given arguments and return its JAXpr representation.
@@ -217,10 +233,6 @@ def make_jaxpr(
         Returns:
             PyTree: ``_TracedJaxprRepr`` or ``(_TracedJaxprRepr, out)`` when ``return_shape=True``.
         """
-        from zero_jax.api.core import ShapeDtypeStruct
-        from zero_jax.numpy.lax_numpy import _to_tensor
-        from zero_jax.tree_util import tree_flatten, tree_map
-
         flat_in, _ = tree_flatten((args, kwargs))
         name = getattr_safe_dict(fun).get("__name__", "fun")
         out = fun(*args, **kwargs)
@@ -237,7 +249,7 @@ def make_jaxpr(
 
 def pure_callback(
     callback: VariadicCallable[PyTree],
-    result_shape_dtypes: ConfigValue,
+    result_shape_dtypes: ArrayProtocol | Sequence[ArrayProtocol] | PyTree,
     *args: PyTree,
     **kwargs: PyTree,
 ) -> PyTree:
@@ -252,31 +264,36 @@ def pure_callback(
     Returns:
         PyTree: Result of invoking ``callback(*args, **kwargs)``.
     """
+    _ = result_shape_dtypes
     return callback(*args, **kwargs)
 
 
 def make_array_from_callback(
     shape: ShapeSpec,
-    sharding: ConfigValue,
+    sharding: Sharding | None,
     callback: VariadicCallable[ArrayLikeSpec],
 ) -> ndarray:
-    """Create a sharded array by invoking ``callback`` for each shard.
+    """Create a sharded array by invoking ``callback`` for the global shard index tuple.
 
     Args:
         shape: Output array shape.
         sharding: Array sharding specification.
-        callback: Callback function returning shard data.
+        callback: Callback function accepting a tuple of ``slice(None)`` indices and returning shard data.
 
     Returns:
-        ndarray: Constructed array of zeros with ``shape``.
+        ndarray: Constructed array of ``shape``.
     """
-    from zero_jax.numpy import zeros
-
-    return zeros(shape)
+    _ = sharding
+    shape_tup = (int(shape),) if isinstance(shape, int) else tuple(int(d) for d in shape)
+    idx_tuple = tuple(slice(None) for _ in shape_tup)
+    res = asarray(callback(idx_tuple))
+    if res.shape == shape_tup:
+        return res
+    return zeros(shape_tup, dtype=res.dtype) + res
 
 
 def make_array_from_process_local_data(
-    sharding: ConfigValue,
+    sharding: Sharding | None,
     local_data: T,
 ) -> T:
     """Create a globally sharded array from process-local data.
@@ -288,12 +305,13 @@ def make_array_from_process_local_data(
     Returns:
         T: The local data wrapped as a global array.
     """
+    _ = sharding
     return local_data
 
 
 def make_array_from_single_device_arrays(
     shape: ShapeSpec,
-    sharding: ConfigValue,
+    sharding: Sharding | None,
     arrays: Sequence[ArrayLikeSpec],
 ) -> ndarray:
     """Create a sharded array from a sequence of single-device arrays.
@@ -306,8 +324,7 @@ def make_array_from_single_device_arrays(
     Returns:
         ndarray: Stacked array constructed from ``arrays``.
     """
-    from zero_jax.numpy import stack
-
+    _ = (shape, sharding)
     return stack(arrays)
 
 
@@ -320,9 +337,7 @@ def softmax_custom_jvp(x: ArrayLikeSpec) -> ndarray:
     Returns:
         ndarray: Softmax of ``x``.
     """
-    from zero_jax.nn import softmax
-
-    return softmax(x)
+    return _nn_softmax(x)
 
 
 def enable_custom_vjp_by_custom_transpose(enable: bool = True) -> None:
@@ -331,46 +346,36 @@ def enable_custom_vjp_by_custom_transpose(enable: bool = True) -> None:
     Args:
         enable: Whether to enable custom transpose VJP rules.
     """
+    _ = enable
 
 
 class _Float0:
     """Type representing a zero-width tangent space for integer/boolean primals."""
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
+    def __init__(self, dtype_name: str = "float0") -> None:
         """Initialize ``_Float0`` instance.
 
         Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
+            dtype_name: Symbolic tangent dtype name (defaults to ``"float0"``).
         """
-        self.args = args
-        self.id = id
-        self.name = name if name is not None else "float0"
-        self.value = value
+        self.name: str = str(dtype_name)
+        self.dtype: str = str(dtype_name)
 
 
 float0 = _Float0()
 
 
 @contextlib.contextmanager
-def threefry_partitionable(*args: ConfigValue, **kwargs: ConfigValue) -> Iterator[None]:
+def threefry_partitionable(enable: bool = True) -> Iterator[None]:
     """Context manager for enabling partitionable Threefry PRNG.
 
     Args:
-        *args: Positional configuration arguments.
-        **kwargs: Keyword configuration arguments.
+        enable: Whether to enable partitionable Threefry PRNG.
 
     Yields:
         None: Context where partitionable Threefry is configured.
     """
+    _ = enable
     yield
 
 
@@ -387,16 +392,16 @@ checkpoint_policies = _CheckpointPolicies()
 
 
 @contextlib.contextmanager
-def legacy_prng_key(*args: ConfigValue, **kwargs: ConfigValue) -> Iterator[None]:
+def legacy_prng_key(enable: str | bool = True) -> Iterator[None]:
     """Context manager for enabling legacy PRNG key behavior.
 
     Args:
-        *args: Positional configuration arguments.
-        **kwargs: Keyword configuration arguments.
+        enable: Whether or how to enable legacy PRNG keys.
 
     Yields:
         None: Context where legacy PRNG keys are configured.
     """
+    _ = enable
     yield
 
 
@@ -406,6 +411,7 @@ def enable_custom_prng(enable: bool = True) -> None:
     Args:
         enable: Whether to enable custom PRNG keys.
     """
+    _ = enable
 
 
 def default_prng_impl() -> str:
@@ -440,6 +446,7 @@ def debug_key_reuse(enable: bool = True) -> Iterator[None]:
     Yields:
         None: Context where key reuse checking is configured.
     """
+    _ = enable
     yield
 
 
@@ -457,6 +464,7 @@ __all__ = [
     "enable_custom_vjp_by_custom_transpose",
     "ensure_compile_time_eval",
     "float0",
+    "getattr_safe_dict",
     "jax2tf_associative_scan_reductions",
     "legacy_prng_key",
     "make_array_from_callback",

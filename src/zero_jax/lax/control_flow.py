@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
 
 import ml_switcheroo_compiler.ops.control_flow as cf
 from ml_switcheroo_compiler.core.config import config
+from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
 from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+from ml_switcheroo_ir import LogicalNode
 
 from zero_jax._types import ArrayLikeSpec
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, ndarray
+from zero_jax.tree_util import tree_map
 
 
 def cond(pred: ArrayLikeSpec, true_fn: Callable, false_fn: Callable, *operands: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -60,8 +65,6 @@ def scan(f: Callable, init: ArrayLikeSpec, xs: ArrayLikeSpec, length: int | None
         if length is None:
             raise ValueError("length must be provided if xs is None")
         xs = [0] * length
-    elif config.eager_mode:
-        pass  # xs is iterable
 
     if config.eager_mode and not _tracer.is_tracing:
         carry = init
@@ -70,12 +73,23 @@ def scan(f: Callable, init: ArrayLikeSpec, xs: ArrayLikeSpec, length: int | None
             carry, y = f(carry, x)
             ys.append(y)
         return carry, ys
-    # tracing
     carry, ys = cf.scan(f, _to_tensor(init), _to_tensor(xs))
     return _wrap(carry), _wrap(ys)
 
 
-_STOP_GRADIENT_SOURCES: dict[str, str] = {}
+_GRAPH_STOP_GRADIENT_SOURCES: dict[int, dict[str, str]] = {}
+
+
+def get_stop_gradient_sources(graph_id: int) -> dict[str, str]:
+    """Return and clear the stop-gradient source mapping for a trace graph.
+
+    Args:
+        graph_id: ``id(graph)`` of the active or completed trace graph.
+
+    Returns:
+        dict[str, str]: Mapping from detached node ID to source node ID.
+    """
+    return _GRAPH_STOP_GRADIENT_SOURCES.pop(graph_id, {})
 
 
 def stop_gradient(x: ArrayLikeSpec) -> ArrayLikeSpec:
@@ -88,16 +102,8 @@ def stop_gradient(x: ArrayLikeSpec) -> ArrayLikeSpec:
         ArrayLikeSpec: The identical value, treated as a constant by gradient computations.
     """
     if _tracer.is_tracing and _tracer.active_graph is not None:
-        import uuid
-
-        from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
-        from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
-        from ml_switcheroo_ir import LogicalNode
-
-        from zero_jax.numpy.lax_numpy import ndarray
-        from zero_jax.tree_util import tree_map
-
         active_graph = _tracer.active_graph
+        graph_sources = _GRAPH_STOP_GRADIENT_SOURCES.setdefault(id(active_graph), {})
 
         def _detach_leaf(leaf: ArrayLikeSpec) -> ArrayLikeSpec:
             """Create a detached constant-like proxy node when ``leaf`` is being traced.
@@ -110,7 +116,7 @@ def stop_gradient(x: ArrayLikeSpec) -> ArrayLikeSpec:
             """
             t = _to_tensor(leaf)
             sg_id = str(uuid.uuid4())
-            _STOP_GRADIENT_SOURCES[sg_id] = t.data.id
+            graph_sources[sg_id] = t.data.id
             node = LogicalNode(
                 id=sg_id,
                 op_type="Input",
@@ -123,3 +129,11 @@ def stop_gradient(x: ArrayLikeSpec) -> ArrayLikeSpec:
 
         return tree_map(_detach_leaf, x)
     return x
+
+
+__all__ = [
+    "cond",
+    "get_stop_gradient_sources",
+    "scan",
+    "stop_gradient",
+]

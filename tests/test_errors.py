@@ -9,11 +9,9 @@ import zero_jax.errors as mod
 
 def test_ConcretizationTypeError() -> None:
     """Verify ConcretizationTypeError is a TypeError and Exception."""
-    err = mod.ConcretizationTypeError("concrete required", id=1, name="x", value=2)
+    err = mod.ConcretizationTypeError("concrete required")
     assert isinstance(err, TypeError)
-    assert err.id == 1
-    assert err.name == "x"
-    assert err.value == 2
+    assert err.message == "concrete required"
     with pytest.raises(mod.ConcretizationTypeError, match="concrete required"):
         raise err
 
@@ -51,12 +49,9 @@ def test_NonConcreteBooleanIndexError() -> None:
 
 
 def test_SimplifiedTraceback() -> None:
-    """Verify SimplifiedTraceback stores frames and metadata."""
-    obj = mod.SimplifiedTraceback(frames=["frame0"], id=10, name="tb", value="v")
-    assert obj.frames == ["frame0"]
-    assert obj.id == 10
-    assert obj.name == "tb"
-    assert obj.value == "v"
+    """Verify SimplifiedTraceback stores frames and works as a context manager."""
+    with mod.SimplifiedTraceback(frames=["frame0"]) as obj:
+        assert obj.frames == ["frame0"]
 
 
 def test_TracerArrayConversionError() -> None:

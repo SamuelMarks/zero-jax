@@ -2,34 +2,32 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, DTypeSpec
+from zero_jax.numpy.lax_numpy import asarray, dtype
 
 
-def ArrayLike(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Type annotation and wrapper for JAX array-like objects.
-
-    Args:
-        *args: Positional arguments forwarded to the compiler proxy op.
-        **kwargs: Keyword arguments forwarded to the compiler proxy op.
-
-    Returns:
-        ArrayLikeSpec: The result from the compiler proxy op.
-    """
-    return _ops.ArrayLike(*args, **kwargs)
-
-
-def DTypeLike(*args: DTypeSpec, **kwargs: DTypeSpec) -> DTypeSpec:
-    """Type annotation and wrapper for JAX dtype-like objects.
+def ArrayLike(x: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
+    """Convert or validate an array-like object.
 
     Args:
-        *args: Positional arguments forwarded to the compiler proxy op.
-        **kwargs: Keyword arguments forwarded to the compiler proxy op.
+        x: Input array-like value.
 
     Returns:
-        DTypeSpec: The result from the compiler proxy op.
+        ArrayLikeSpec: Converted array-like object.
     """
-    return _ops.DTypeLike(*args, **kwargs)
+    return asarray(x)
+
+
+def DTypeLike(x: DTypeSpec = "float32") -> DTypeSpec:
+    """Convert or validate a dtype-like object.
+
+    Args:
+        x: Input dtype specification.
+
+    Returns:
+        DTypeSpec: Canonical dtype object.
+    """
+    return dtype(x)
 
 
 __all__ = [

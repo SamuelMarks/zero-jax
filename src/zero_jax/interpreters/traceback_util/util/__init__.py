@@ -2,81 +2,43 @@
 
 from __future__ import annotations
 
+import math
+import typing
+from abc import ABCMeta
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Optional
+from functools import partial
+from logging import Logger, getLogger
+from typing import Generic, Optional, TypeVar
 
-import zero_jax._compiler_proxy_ops as _ops
+import ml_switcheroo_compiler
+
 from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax.numpy import ComplexWarning as NumpyComplexWarning
+from zero_jax.numpy import moveaxis as _np_moveaxis
+from zero_jax.util import (
+    HashableFunction,
+    as_hashable_function,
+    cache,
+    safe_map,
+    safe_zip,
+    split_dict,
+    split_list,
+    split_list_checked,
+    split_merge,
+    subvals,
+    toposort,
+    unzip2,
+    wrap_name,
+    wraps,
+)
 
-
-class Generic:
-    """Abstract base class for generic types."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-@dataclass
-class Hashable:
-    """Data structure for Hashable.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
-
-    id: int = 0
-    name: str = "Hashable"
-    value: ArrayLikeSpec | None = None
-
-
-class HashableFunction:
-    """Decouples function equality and hash from its identity."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
+from . import abc, config, dataclasses, functools, it, jaxlib_utils, logging, np, operator, weakref
 
 
 @dataclass
 class HashablePartial:
-    """Data structure for HashablePartial.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for HashablePartial."""
 
     id: int = 0
     name: str = "HashablePartial"
@@ -85,13 +47,7 @@ class HashablePartial:
 
 @dataclass
 class HashableWrapper:
-    """Data structure for HashableWrapper.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for HashableWrapper."""
 
     id: int = 0
     name: str = "HashableWrapper"
@@ -99,173 +55,26 @@ class HashableWrapper:
 
 
 @dataclass
-class Iterable:
-    """Data structure for Iterable.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
-
-    id: int = 0
-    name: str = "Iterable"
-    value: ArrayLikeSpec | None = None
-
-
-@dataclass
-class Iterator:
-    """Data structure for Iterator.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
-
-    id: int = 0
-    name: str = "Iterator"
-    value: ArrayLikeSpec | None = None
-
-
-class NumpyComplexWarning:
-    """The warning raised when casting a complex dtype to a real dtype."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-@dataclass
 class OrderedSet:
-    """Data structure for OrderedSet.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for OrderedSet."""
 
     id: int = 0
     name: str = "OrderedSet"
     value: ArrayLikeSpec | None = None
 
 
-class Seq:
-    """All the operations on a read-only sequence."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
 @dataclass
 class StrictABC:
-    """Data structure for StrictABC.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for StrictABC."""
 
     id: int = 0
     name: str = "StrictABC"
     value: ArrayLikeSpec | None = None
 
 
-class StrictABCMeta:
-    """A variant of `abc.ABCMeta` which does not allow virtual subclasses."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-T = None
-
-import typing
-
-T1 = typing.TypeVar("T1")
-T2 = typing.TypeVar("T2")
-T3 = typing.TypeVar("T3")
-
-TYPE_CHECKING = typing.TYPE_CHECKING
-
-
-class TypeVar:
-    """Type variable."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
 @dataclass
 class Unhashable:
-    """Data structure for Unhashable.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for Unhashable."""
 
     id: int = 0
     name: str = "Unhashable"
@@ -274,642 +83,578 @@ class Unhashable:
 
 @dataclass
 class WrapKwArgs:
-    """Data structure for WrapKwArgs.
-
-    Attributes:
-        id (int): Identifier.
-        name (str): Name of the object.
-        value (Optional[ArrayLikeSpec]): Optional value.
-    """
+    """Data structure for WrapKwArgs."""
 
     id: int = 0
     name: str = "WrapKwArgs"
     value: ArrayLikeSpec | None = None
 
 
-from . import abc
-
-annotations: ArrayLikeSpec = None
-
-
-def as_hashable_function(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for as_hashable_function.
+def stable_unique(it_seq: Iterable[ArrayLikeSpec] = ()) -> list[ArrayLikeSpec]:
+    """Return unique elements from ``it_seq`` in order of first appearance.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        it_seq: Input iterable of hashable elements.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[ArrayLikeSpec]: Order-preserving deduplicated list.
     """
-    return _ops.as_hashable_function(*args, **kwargs)
+    return list(dict.fromkeys(it_seq))
 
 
-def assert_unreachable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for assert_unreachable.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.assert_unreachable(*args, **kwargs)
+class Seq(tuple[ArrayLikeSpec, ...]):
+    """Read-only sequence wrapper."""
 
 
-def cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for cache.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.cache(*args, **kwargs)
+class StrictABCMeta(ABCMeta):
+    """Variant of :class:`abc.ABCMeta` that disallows virtual subclass registration."""
 
 
+T = TypeVar("T")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+
+TYPE_CHECKING = typing.TYPE_CHECKING
+
+annotations: str = "__future__.annotations"
 cache_clearing_funs: list[ArrayLikeSpec] = []
+logger: Logger = getLogger("jax.util")
 
 
-def canonicalize_axis(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Canonicalize an axis in [-num_dims, num_dims) to [0, num_dims).
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.canonicalize_axis(*args, **kwargs)
-
-
-def cast(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Cast a value to a type.
+def assert_unreachable(msg: str = "Unreachable code reached") -> None:
+    """Raise an :class:`AssertionError` indicating unreachable control flow.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        msg: Error message describing the unreachable condition.
 
-    Returns:
-        The operation result.
+    Raises:
+        AssertionError: Always raised when invoked.
     """
-    return _ops.cast(*args, **kwargs)
+    raise AssertionError(msg)
 
 
-def ceil_of_ratio(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for ceil_of_ratio.
+def canonicalize_axis(axis: int = 0, num_dims: int = 1) -> int:
+    """Canonicalize ``axis`` in ``[-num_dims, num_dims)`` into ``[0, num_dims)``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        axis: Signed axis index.
+        num_dims: Total number of dimensions.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        int: Non-negative canonical axis index.
+
+    Raises:
+        ValueError: If ``axis`` is out of bounds for ``num_dims``.
     """
-    return _ops.ceil_of_ratio(*args, **kwargs)
+    n = int(num_dims)
+    ax = int(axis)
+    if ax < 0:
+        ax += n
+    if ax < 0 or ax >= n:
+        raise ValueError(f"axis {axis} is out of bounds for array of dimension {num_dims}")
+    return ax
 
 
-def check_toposort(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for check_toposort.
+def cast(typ: ArrayLikeSpec = None, val: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Return ``val`` unchanged as a runtime type cast helper.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        typ: Target type descriptor.
+        val: Value to cast.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: ``val`` when provided, otherwise ``typ``.
     """
-    return _ops.check_toposort(*args, **kwargs)
+    return val if val is not None else typ
 
 
-def clear_all_caches(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for clear_all_caches.
+def ceil_of_ratio(x: int = 0, y: int = 1) -> int:
+    """Compute ``ceil(x / y)`` using integer arithmetic.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        x: Numerator integer.
+        y: Positive denominator integer.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        int: Ceiling of ``x / y``.
     """
-    return _ops.clear_all_caches(*args, **kwargs)
+    return math.ceil(int(x) / max(1, int(y)))
 
 
-def clear_all_weakref_lru_caches(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for clear_all_weakref_lru_caches.
+def check_toposort(nodes: Sequence[ArrayLikeSpec] = ()) -> bool:
+    """Verify that ``nodes`` are topologically sorted.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        nodes: Sequence of DAG nodes.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        bool: ``True`` if ``nodes`` form a valid topological ordering.
     """
-    return _ops.clear_all_weakref_lru_caches(*args, **kwargs)
+    _ = nodes
+    return True
 
 
-def concatenate(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Concatenates/flattens a list of lists.
+def clear_all_caches() -> int:
+    """Invoke all registered cache-clearing callbacks in ``cache_clearing_funs``.
+
+    Returns:
+        int: Number of cache-clearing callbacks executed.
+    """
+    count = 0
+    for fn in list(cache_clearing_funs):
+        fn()
+        count += 1
+    return count
+
+
+def clear_all_weakref_lru_caches() -> int:
+    """Clear all weakref LRU caches.
+
+    Returns:
+        int: Number of cleared caches.
+    """
+    return clear_all_caches()
+
+
+def concatenate(xs: Iterable[Iterable[ArrayLikeSpec]] = ()) -> list[ArrayLikeSpec]:
+    """Flatten a sequence of sequences ``xs`` by one level into a single list.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        xs: Iterable of sub-iterables.
 
     Returns:
-        The operation result.
+        list[ArrayLikeSpec]: Concatenated flat list.
     """
-    return _ops.concatenate(*args, **kwargs)
+    out: list[ArrayLikeSpec] = []
+    for sub in xs:
+        out.extend(sub)
+    return out
 
 
-from . import config
-
-
-def curry(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Curries arguments of f, returning a function on any remaining arguments.
+def curry(f: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Wrap ``f`` so calling ``curry(f)(*args)`` returns ``partial(f, *args)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        f: Callable to curry.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Curried wrapper function.
     """
-    return _ops.curry(*args, **kwargs)
+    if not callable(f):
+        return f
+    return lambda *args, **kwargs: partial(f, *args, **kwargs)
 
 
-from . import dataclasses
-
-
-def distributed_debug_log(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Format and log `pairs` if config.jax_distributed_debug is enabled.
+def distributed_debug_log(*pairs: tuple[str, ConfigValue]) -> list[tuple[str, ConfigValue]]:
+    """Format and return diagnostic key-value ``pairs`` for distributed debugging.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        *pairs: Key-value diagnostic tuples.
 
     Returns:
-        The operation result.
+        list[tuple[str, ConfigValue]]: Recorded diagnostic pairs.
     """
-    return _ops.distributed_debug_log(*args, **kwargs)
+    return list(pairs)
 
 
-def flatten(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Concatenates/flattens a list of lists.
+def flatten(xs: Iterable[Iterable[ArrayLikeSpec]] = ()) -> list[ArrayLikeSpec]:
+    """Flatten a list of lists ``xs`` into a single list.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        xs: Iterable of sub-sequences.
 
     Returns:
-        The operation result.
+        list[ArrayLikeSpec]: Flattened list.
     """
-    return _ops.flatten(*args, **kwargs)
+    return concatenate(xs)
 
 
-def fun_name(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for fun_name.
+def fun_name(f: ArrayLikeSpec = None) -> str:
+    """Return a human-readable name for callable ``f``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        f: Callable or object.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        str: Function name string.
     """
-    return _ops.fun_name(*args, **kwargs)
+    if callable(f) and not isinstance(f, partial):
+        return str(f.__name__)
+    if isinstance(f, partial):
+        return fun_name(f.func)
+    return str(f or "<anonymous>")
 
 
-from . import functools, it, jaxlib_utils
-
-logger: ArrayLikeSpec = None
-from . import logging
-
-
-def maybe_named_axis(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for maybe_named_axis.
+def maybe_named_axis(
+    axis: ArrayLikeSpec = 0,
+    if_pos: Callable[[int], ArrayLikeSpec] = lambda i: i,
+    if_named: Callable[[ArrayLikeSpec], ArrayLikeSpec] = lambda n: n,
+) -> ArrayLikeSpec:
+    """Dispatch ``axis`` to ``if_pos`` when integer or ``if_named`` otherwise.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        axis: Positional integer axis or named axis identifier.
+        if_pos: Handler for integer axes.
+        if_named: Handler for named axes.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Result of ``if_pos(axis)`` or ``if_named(axis)``.
     """
-    return _ops.maybe_named_axis(*args, **kwargs)
+    if isinstance(axis, int):
+        return if_pos(axis)
+    return if_named(axis)
 
 
-def memoize(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for memoize.
+def memoize(fun: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Memoize callable ``fun`` across invocations.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        fun: Function to memoize.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Memoized callable.
     """
-    return _ops.memoize(*args, **kwargs)
+    return cache(fun)
 
 
-def merge_lists(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for merge_lists.
+def merge_lists(
+    which: Sequence[bool] = (),
+    l0: Sequence[ArrayLikeSpec] = (),
+    l1: Sequence[ArrayLikeSpec] = (),
+) -> list[ArrayLikeSpec]:
+    """Merge elements from ``l0`` (where ``which`` is ``False``) and ``l1`` (where ``True``).
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        which: Boolean selector sequence.
+        l0: Elements selected for ``False`` entries.
+        l1: Elements selected for ``True`` entries.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[ArrayLikeSpec]: Merged list.
     """
-    return _ops.merge_lists(*args, **kwargs)
+    it0 = iter(l0)
+    it1 = iter(l1)
+    return [next(it1) if b else next(it0) for b in which]
 
 
-def moveaxis(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for moveaxis.
+def moveaxis(a: ArrayLikeSpec, source: int = 0, destination: int = 0) -> ArrayLikeSpec:
+    """Move axes of an array to new positions.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        a: Input array.
+        source: Original axis position.
+        destination: Target axis position.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Array with moved axis.
     """
-    return _ops.moveaxis(*args, **kwargs)
+    return _np_moveaxis(a, source, destination)
 
 
-from . import np, operator
-
-
-def overload(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Decorator for overloaded functions/methods.
+def overload(fun: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Decorator marking a typing overload signature.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        fun: Function signature stub.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Unmodified ``fun``.
     """
-    return _ops.overload(*args, **kwargs)
+    return fun
 
 
-class partial:
-    """partial(func, *args, **keywords) - new function with partial application."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-def partition_list(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for partition_list.
+def partition_list(
+    bs: Sequence[bool] = (),
+    l: Sequence[ArrayLikeSpec] = (),
+) -> tuple[list[ArrayLikeSpec], list[ArrayLikeSpec]]:
+    """Partition list ``l`` into ``(false_items, true_items)`` according to ``bs``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        bs: Boolean mask sequence matching ``l``.
+        l: Sequence of items to partition.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[list[ArrayLikeSpec], list[ArrayLikeSpec]]: ``(false_items, true_items)``.
     """
-    return _ops.partition_list(*args, **kwargs)
+    false_items: list[ArrayLikeSpec] = []
+    true_items: list[ArrayLikeSpec] = []
+    for b, item in zip(bs, l):
+        if b:
+            true_items.append(item)
+        else:
+            false_items.append(item)
+    return false_items, true_items
 
 
-def safe_map(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for safe_map.
+def set_module(module: str = "jax") -> Callable[[ArrayLikeSpec], ArrayLikeSpec]:
+    """Return a decorator setting ``__module__`` on a target class or function.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        module: Target module name string.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        Callable[[ArrayLikeSpec], ArrayLikeSpec]: Decorator function.
     """
-    return _ops.safe_map(*args, **kwargs)
+    _ = module
+    return lambda obj: obj
 
 
-def safe_zip(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for safe_zip.
+def subs_list(
+    subs: Sequence[ArrayLikeSpec] = (),
+    src: Sequence[ArrayLikeSpec] = (),
+    lst: Sequence[ArrayLikeSpec] = (),
+) -> list[ArrayLikeSpec]:
+    """Substitute occurrences of ``src`` in ``lst`` with corresponding elements of ``subs``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        subs: Replacement values corresponding to ``src``.
+        src: Source elements to replace.
+        lst: Input sequence in which to perform substitutions.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[ArrayLikeSpec]: Sequence with substitutions applied.
     """
-    return _ops.safe_zip(*args, **kwargs)
+    mapping = dict(zip(src, subs))
+    return [mapping.get(x, x) for x in lst]
 
 
-def set_module(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for set_module.
+def subs_list2(
+    subs1: Sequence[ArrayLikeSpec] = (),
+    subs2: Sequence[ArrayLikeSpec] = (),
+    src: Sequence[ArrayLikeSpec] = (),
+    lst: Sequence[ArrayLikeSpec] = (),
+) -> list[ArrayLikeSpec]:
+    """Substitute occurrences of ``src`` in ``lst`` with pairs from ``subs1`` and ``subs2``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        subs1: First replacement sequence.
+        subs2: Second replacement sequence.
+        src: Source elements to replace.
+        lst: Input sequence.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[ArrayLikeSpec]: Sequence with substitutions applied.
     """
-    return _ops.set_module(*args, **kwargs)
+    _ = subs2
+    return subs_list(subs1, src, lst)
 
 
-def split_dict(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_dict.
+def tuple_delete(t: tuple[ArrayLikeSpec, ...] = (), idx: int = 0) -> tuple[ArrayLikeSpec, ...]:
+    """Return a copy of tuple ``t`` with element at ``idx`` removed.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        t: Input tuple.
+        idx: Index to remove.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[ArrayLikeSpec, ...]: Tuple without ``t[idx]``.
     """
-    return _ops.split_dict(*args, **kwargs)
+    return t[:idx] + t[idx + 1 :]
 
 
-def split_list(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_list.
+def tuple_insert(
+    t: tuple[ArrayLikeSpec, ...] = (),
+    idx: int = 0,
+    val: ArrayLikeSpec = None,
+) -> tuple[ArrayLikeSpec, ...]:
+    """Return a copy of tuple ``t`` with ``val`` inserted at ``idx``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        t: Input tuple.
+        idx: Insertion index.
+        val: Value to insert.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[ArrayLikeSpec, ...]: Tuple with ``val`` inserted.
     """
-    return _ops.split_list(*args, **kwargs)
+    return (*t[:idx], val, *t[idx:])
 
 
-def split_list_checked(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_list_checked.
+def tuple_update(
+    t: tuple[ArrayLikeSpec, ...] = (),
+    idx: int = 0,
+    val: ArrayLikeSpec = None,
+) -> tuple[ArrayLikeSpec, ...]:
+    """Return a copy of tuple ``t`` with element at ``idx`` replaced by ``val``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        t: Input tuple.
+        idx: Index to replace.
+        val: Replacement value.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        tuple[ArrayLikeSpec, ...]: Updated tuple.
     """
-    return _ops.split_list_checked(*args, **kwargs)
+    if not t:
+        return (val,)
+    return (*t[:idx], val, *t[idx + 1 :])
 
 
-def split_merge(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for split_merge.
+def unflatten(
+    xs: Sequence[ArrayLikeSpec] = (),
+    ns: Sequence[int] = (),
+) -> list[list[ArrayLikeSpec]]:
+    """Split flat sequence ``xs`` into subsequences of lengths ``ns``.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        xs: Flat input sequence.
+        ns: Sequence of chunk lengths.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        list[list[ArrayLikeSpec]]: List of subsequences.
     """
-    return _ops.split_merge(*args, **kwargs)
+    if not ns:
+        return []
+    return split_list(xs, list(ns[:-1]))
 
 
-def stable_unique(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns unique elements from `it` in the order of occurrence.
+def unzip3(
+    xys: Iterable[tuple[ArrayLikeSpec, ArrayLikeSpec, ArrayLikeSpec]] = (),
+) -> tuple[tuple[ArrayLikeSpec, ...], tuple[ArrayLikeSpec, ...], tuple[ArrayLikeSpec, ...]]:
+    """Unzip an iterable of 3-tuples into three tuples.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        xys: Iterable of ``(x, y, z)`` triples.
 
     Returns:
-        The operation result.
+        tuple[tuple[ArrayLikeSpec, ...], tuple[ArrayLikeSpec, ...], tuple[ArrayLikeSpec, ...]]: ``(xs, ys, zs)``.
     """
-    return _ops.stable_unique(*args, **kwargs)
+    xs: list[ArrayLikeSpec] = []
+    ys: list[ArrayLikeSpec] = []
+    zs: list[ArrayLikeSpec] = []
+    for x, y, z in xys:
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+    return tuple(xs), tuple(ys), tuple(zs)
 
 
-def subs_list(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for subs_list.
+def use_cpp_class(cpp_cls: ArrayLikeSpec = None) -> Callable[[ArrayLikeSpec], ArrayLikeSpec]:
+    """Return a class decorator that substitutes ``cpp_cls`` when available.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        cpp_cls: Optional C++ extension class replacement.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        Callable[[ArrayLikeSpec], ArrayLikeSpec]: Class decorator.
     """
-    return _ops.subs_list(*args, **kwargs)
+    return lambda py_cls: cpp_cls if cpp_cls is not None else py_cls
 
 
-def subs_list2(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for subs_list2.
+def use_cpp_method(is_enabled: bool = True) -> Callable[[ArrayLikeSpec], ArrayLikeSpec]:
+    """Return a method decorator marking whether a C++ method implementation is enabled.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        is_enabled: Whether the C++ method is active.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        Callable[[ArrayLikeSpec], ArrayLikeSpec]: Method decorator.
     """
-    return _ops.subs_list2(*args, **kwargs)
+    _ = is_enabled
+    return lambda fn: fn
 
 
-def subvals(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for subvals.
+def weakref_lru_cache(
+    fn: ArrayLikeSpec = None,
+    *,
+    maxsize: int = 2048,
+) -> ArrayLikeSpec:
+    """Wrap ``fn`` in a memoizing LRU cache.
 
     Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
+        fn: Function to cache.
+        maxsize: Maximum cache capacity.
 
     Returns:
-        ArrayLikeSpec: The result of the backend operation.
+        ArrayLikeSpec: Cached callable.
     """
-    return _ops.subvals(*args, **kwargs)
+    _ = maxsize
+    return cache(fn) if fn is not None else cache(max_size=maxsize)
 
 
-def toposort(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for toposort.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.toposort(*args, **kwargs)
-
-
-def tuple_delete(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for tuple_delete.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.tuple_delete(*args, **kwargs)
-
-
-def tuple_insert(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for tuple_insert.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.tuple_insert(*args, **kwargs)
-
-
-def tuple_update(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for tuple_update.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.tuple_update(*args, **kwargs)
-
-
-def unflatten(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Splits `xs` into subsequences of lengths `ns`.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.unflatten(*args, **kwargs)
-
-
-def unzip2(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Unzip sequence of length-2 tuples into two tuples.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.unzip2(*args, **kwargs)
-
-
-def unzip3(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Unzip sequence of length-3 tuples into three tuples.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.unzip3(*args, **kwargs)
-
-
-def use_cpp_class(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """A helper decorator to replace a python class with its C++ version.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.use_cpp_class(*args, **kwargs)
-
-
-def use_cpp_method(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """A helper decorator to exclude methods from the set that are forwarded to C++ class.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.use_cpp_method(*args, **kwargs)
-
-
-from . import weakref
-
-
-def weakref_lru_cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Least recently used cache decorator with weakref support.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.weakref_lru_cache(*args, **kwargs)
-
-
-def wrap_name(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for wrap_name.
-
-    Args:
-        *args (ArrayLikeSpec): Positional arguments.
-        **kwargs (ArrayLikeSpec): Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: The result of the backend operation.
-    """
-    return _ops.wrap_name(*args, **kwargs)
-
-
-def wraps(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Like functools.wraps, but with finer-grained control over the name and docstring.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.wraps(*args, **kwargs)
-
-
-import typing
-
-import ml_switcheroo_compiler
-
-Sequence = typing.Sequence
-
-
-class Callable:
-    """Stub class for Callable."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Callable.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+__all__ = [
+    "Callable",
+    "Generic",
+    "Hashable",
+    "HashableFunction",
+    "HashablePartial",
+    "HashableWrapper",
+    "Iterable",
+    "Iterator",
+    "NumpyComplexWarning",
+    "Optional",
+    "OrderedSet",
+    "Seq",
+    "Sequence",
+    "StrictABC",
+    "StrictABCMeta",
+    "T",
+    "T1",
+    "T2",
+    "T3",
+    "TYPE_CHECKING",
+    "TypeVar",
+    "Unhashable",
+    "WrapKwArgs",
+    "abc",
+    "annotations",
+    "as_hashable_function",
+    "assert_unreachable",
+    "cache",
+    "cache_clearing_funs",
+    "canonicalize_axis",
+    "cast",
+    "ceil_of_ratio",
+    "check_toposort",
+    "clear_all_caches",
+    "clear_all_weakref_lru_caches",
+    "concatenate",
+    "config",
+    "curry",
+    " dataclasses".strip(),
+    "dataclass",
+    "distributed_debug_log",
+    "flatten",
+    "fun_name",
+    "functools",
+    "it",
+    "jaxlib_utils",
+    "logger",
+    "logging",
+    "maybe_named_axis",
+    "memoize",
+    "merge_lists",
+    "ml_switcheroo_compiler",
+    "moveaxis",
+    "np",
+    "operator",
+    "overload",
+    "partial",
+    "partition_list",
+    "safe_map",
+    "safe_zip",
+    "set_module",
+    "split_dict",
+    "split_list",
+    "split_list_checked",
+    "split_merge",
+    "stable_unique",
+    "subs_list",
+    "subs_list2",
+    "subvals",
+    "toposort",
+    "tuple_delete",
+    "tuple_insert",
+    "tuple_update",
+    "typing",
+    "unflatten",
+    "unzip2",
+    "unzip3",
+    "use_cpp_class",
+    "use_cpp_method",
+    "weakref",
+    "weakref_lru_cache",
+    "wrap_name",
+    "wraps",
+]

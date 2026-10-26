@@ -2,22 +2,13 @@
 
 from __future__ import annotations
 
-import os
-import sys
-
-import pytest
-
-from tests.fuzz_utils import generate_random_arrays
-from zero_jax._types import ArrayLikeSpec
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ml-switcheroo-compiler/src")),
-)
 import ml_switcheroo_compiler
+import pytest
 
 import zero_jax._compiler_proxy_ops as compiler_ops
 import zero_jax.numpy as jnp
+from tests.fuzz_utils import generate_random_arrays
+from zero_jax._types import ArrayLikeSpec
 
 SKIP_OPS = {
     "OpDef",
@@ -89,13 +80,18 @@ def test_op_coverage(op_name: str, check_allclose: ArrayLikeSpec) -> None:
         op_name: Parameter ``op_name``.
         check_allclose: Parameter ``check_allclose``.
     """
+    import math
+
     assert op_name in compiler_ops.__all__
     x = jnp.array([0.5, 0.25], dtype=jnp.float32)._tensor
     y = jnp.array([0.3, 0.1], dtype=jnp.float32)._tensor
 
     with ml_switcheroo_compiler.core.EagerMode():
-        try:
-            res = compiler_ops.add(x, y) if op_name == "add" else jnp.sin(jnp.array([0.5, 0.25]))
-            check_allclose(res, res)
-        except Exception as exc:
-            pytest.skip(f"Dynamic execution skipped for {op_name}: {exc}")
+        if op_name == "add":
+            res = jnp.asarray(compiler_ops.add(x, y))
+            expected = jnp.array([0.8, 0.35], dtype=jnp.float32)
+            check_allclose(res, expected)
+        else:
+            res = jnp.sin(jnp.array([0.5, 0.25], dtype=jnp.float32))
+            expected = jnp.array([math.sin(0.5), math.sin(0.25)], dtype=jnp.float32)
+            check_allclose(res, expected)

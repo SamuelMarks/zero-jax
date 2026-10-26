@@ -48,7 +48,5 @@ def test_gather_scatter_dimension_numbers() -> None:
     except Exception:
         pass
 
-    try:
-        scatter_add(operand, start_indices, updates, dimension_numbers=True)
-    except Exception:
-        pass
+    res_sa = scatter_add(operand, start_indices, updates, dimension_numbers=True)
+    assert res_sa.shape == (3,)

@@ -2,72 +2,77 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from collections.abc import Generator
+from contextlib import AbstractContextManager
 
-
-class EArray:
-    """Frontend state holder for EArray."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
+from zero_jax._config_internal import enable_x64 as _enable_x64
+from zero_jax._types import ArrayLike, PyTree, VariadicCallable
+from zero_jax.api.misc import pure_callback
+from zero_jax.numpy.lax_numpy import asarray, ndarray
 
 from . import compilation_cache, pallas, x64_context
 
 
-def disable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+class EArray:
+    """Extensible array wrapper holding an underlying ``ndarray``."""
+
+    def __init__(self, data: ArrayLike = 0.0, *, aval: PyTree = None) -> None:
+        """Initialize ``EArray`` with backing array data.
+
+        Args:
+            data: Backing array-like data.
+            aval: Optional abstract value descriptor.
+        """
+        self.data: ndarray = asarray(data)
+        self.aval: PyTree = aval
+        self.shape: tuple[int, ...] = self.data.shape
+        self.dtype = self.data.dtype
+
+
+def disable_x64() -> AbstractContextManager[None]:
     """Experimental context manager to temporarily disable X64 mode.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        AbstractContextManager[None]: Context manager disabling 64-bit precision.
     """
-    return _ops.disable_x64(*args, **kwargs)
+    return _enable_x64(False)
 
 
-def enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def enable_x64(new_val: bool = True) -> Generator[None, None, None]:
     """Experimental context manager to temporarily enable X64 mode.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Whether 64-bit mode should be enabled inside the context.
 
     Returns:
-        The operation result.
+        Generator[None, None, None]: Context manager enabling 64-bit precision.
     """
-    return _ops.enable_x64(*args, **kwargs)
+    return _enable_x64(bool(new_val))
 
 
-def io_callback(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Calls an impure Python callback.
+def io_callback(
+    callback: VariadicCallable[PyTree],
+    result_shape_dtypes: PyTree,
+    *args: PyTree,
+    sharding: PyTree = None,
+    ordered: bool = False,
+    **kwargs: PyTree,
+) -> PyTree:
+    """Call an impure Python host callback with side-effect support.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        callback: Host Python callable to invoke.
+        result_shape_dtypes: PyTree of expected output ``ShapeDtypeStruct`` or example arrays.
+        *args: Positional arguments forwarded to ``callback``.
+        sharding: Optional sharding specification.
+        ordered: Whether sequential ordering of IO callbacks is enforced.
+        **kwargs: Keyword arguments forwarded to ``callback``.
 
     Returns:
-        The operation result.
+        PyTree: Result of invoking ``callback``.
     """
-    return _ops.io_callback(*args, **kwargs)
+    _ = (sharding, ordered)
+    return pure_callback(callback, result_shape_dtypes, *args, **kwargs)
 
 
 class BlurConfig:
@@ -84,3 +89,18 @@ class ElasticConfig:
 
 class PerspectiveConfig:
     """Frontend class for ``PerspectiveConfig``."""
+
+
+__all__ = [
+    "BlurConfig",
+    "CTCLossOptions",
+    "EArray",
+    "ElasticConfig",
+    "PerspectiveConfig",
+    "compilation_cache",
+    "disable_x64",
+    "enable_x64",
+    "io_callback",
+    "pallas",
+    "x64_context",
+]

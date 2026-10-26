@@ -178,6 +178,7 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
 
     b = Box(7)
     assert mod.tree_leaves_with_path(b) == [((mod.FlattenedIndexKey(0),), 7)]
+    assert mod.tree_unflatten(mod.tree_structure(b), [8]).val == 8
 
     @mod.register_pytree_with_keys_class
     class KeyedBox:
@@ -208,3 +209,4 @@ def test_custom_with_keys_and_plain_custom_nodes() -> None:
     kb = KeyedBox(9)
     assert mod.tree_leaves(kb) == [9]
     assert mod.tree_leaves_with_path(kb) == [((mod.GetAttrKey("val"),), 9)]
+    assert mod.tree_unflatten(mod.tree_structure(kb), [10]).val == 10

@@ -1,28 +1,22 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats.poisson."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats.poisson as mod
+from tests.conftest import assert_allclose
 
 
 def test_cdf() -> None:
     """Test cdf."""
-    with patch("zero_jax._compiler_proxy_ops.cdf", create=True) as mock_op:
-        mod.cdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.cdf(jnp.array([-1.0, 0.0]), 1.0), [0.0, jnp.exp(-1.0)], atol=1e-4)
 
 
 def test_logpmf() -> None:
     """Test logpmf."""
-    with patch("zero_jax._compiler_proxy_ops.logpmf", create=True) as mock_op:
-        mod.logpmf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logpmf(jnp.array([0.0, 1.0]), 1.0), [-1.0, -1.0], atol=1e-4)
 
 
 def test_pmf() -> None:
     """Test pmf."""
-    with patch("zero_jax._compiler_proxy_ops.pmf", create=True) as mock_op:
-        mod.pmf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.pmf(jnp.array([0.0, 1.0]), 1.0), [jnp.exp(-1.0), jnp.exp(-1.0)], atol=1e-4)

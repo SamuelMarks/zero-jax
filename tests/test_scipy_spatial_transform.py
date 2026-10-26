@@ -10,7 +10,8 @@ import zero_jax.scipy.spatial.transform as mod
 
 def test_module_exists() -> None:
     """Test module imports correctly."""
-    assert mod is not None
+    assert mod.Rotation.__name__ == "Rotation"
+    assert mod.Slerp.__name__ == "Slerp"
 
 
 @mock.patch("zero_jax.scipy.spatial.transform.get_op")
@@ -60,8 +61,7 @@ def test_rotation_methods(mock_get_op: mock.MagicMock) -> None:
     # Instance methods
     rot = mod.Rotation.from_quat(quat)
 
-    _ = rot.single
-    # property check
+    assert rot.single is True
 
     rot.as_matrix()
     mock_get_op.assert_called_with("ScipySpatialRotationAsMatrix")
@@ -90,7 +90,7 @@ def test_rotation_methods(mock_get_op: mock.MagicMock) -> None:
     rot * rot
     mock_get_op.assert_called_with("ScipySpatialRotationMul")
 
-    len(rot)
+    assert len(rot) == 4
 
     mod.Rotation.concatenate([rot, rot])
     mock_get_op.assert_called_with("ScipySpatialRotationConcatenate")
@@ -112,7 +112,7 @@ def test_slerp(mock_get_op: mock.MagicMock) -> None:
     rot = mod.Rotation.from_quat(quat)
 
     slerp = mod.Slerp(times, rot)
-    assert slerp is not None
+    assert jnp.allclose(slerp.times, times)
 
     res = slerp(jnp.array([0.5]))
     mock_get_op.assert_called_with("ScipySpatialSlerpCall")
@@ -121,12 +121,7 @@ def test_slerp(mock_get_op: mock.MagicMock) -> None:
 
 def test_rotation_len_single_fallback() -> None:
     """Test Rotation single/len fallbacks for scalars."""
-
-    # Test property fallback
-    class DummyQuat:
-        """Test class ``DummyQuat``."""
-
-    rot = mod.Rotation.from_quat(DummyQuat())
+    rot = mod.Rotation.from_quat(1)
     assert rot.single is True
     assert len(rot) == 1
 
@@ -136,9 +131,11 @@ def test_align_vectors_none_weights() -> None:
     with mock.patch("zero_jax.scipy.spatial.transform.get_op") as mock_get_op:
         mock_op_instance = mock.MagicMock()
         mock_get_op.return_value = mock_op_instance
+        mock_op_instance.return_value = jnp.eye(3)
 
-        mod.Rotation.align_vectors(jnp.array([[1.0, 0.0, 0.0]]), jnp.array([[0.0, 1.0, 0.0]]), weights=None)
+        res = mod.Rotation.align_vectors(jnp.array([[1.0, 0.0, 0.0]]), jnp.array([[0.0, 1.0, 0.0]]), weights=None)
         assert mock_op_instance.call_args[0][2] is None
+        assert res.shape == (3, 3)
 
 
 def test_mean_none_weights() -> None:
@@ -149,5 +146,6 @@ def test_mean_none_weights() -> None:
         mock_op_instance.return_value = jnp.array([0.0, 0.0, 0.0, 1.0])
 
         rot = mod.Rotation.from_quat(jnp.array([0.0, 0.0, 0.0, 1.0]))
-        rot.mean(weights=None)
+        mean_rot = rot.mean(weights=None)
         assert mock_op_instance.call_args[0][1] is None
+        assert jnp.allclose(mean_rot.as_quat(), jnp.array([0.0, 0.0, 0.0, 1.0]))

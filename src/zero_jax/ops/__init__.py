@@ -3,65 +3,120 @@
 from __future__ import annotations
 
 import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
 
 
-def segment_max(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Computes the maximum within segments of an array.
+def segment_max(
+    data: ArrayLikeSpec,
+    segment_ids: ArrayLikeSpec,
+    num_segments: int | None = None,
+    indices_are_sorted: bool = False,
+    unique_indices: bool = False,
+    bucket_size: int | None = None,
+    mode: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute the maximum within segments of an array.
 
     Args:
-        *args: Input parameter ``args`` (``data``, ``segment_ids``, ``num_segments=None``).
-        **kwargs: Input parameter ``kwargs``.
+        data: Array with the values to be reduced.
+        segment_ids: Integer array of segment indices.
+        num_segments: Optional total number of segments.
+        indices_are_sorted: Whether ``segment_ids`` is known to be sorted.
+        unique_indices: Whether ``segment_ids`` has no duplicates.
+        bucket_size: Size of bucket for segmented reduction.
+        mode: Out-of-bounds indexing mode.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Segment-wise maxima.
     """
-    if len(args) >= 2:
-        return _wrap(_ops.segment_max(_to_tensor(args[0]), _to_tensor(args[1]), *args[2:], **kwargs))
-    return _ops.segment_max(*args, **kwargs)
+    _ = (indices_are_sorted, unique_indices, bucket_size, mode)
+    args = (_to_tensor(data), _to_tensor(segment_ids)) + ((num_segments,) if num_segments is not None else ())
+    return _wrap(_ops.segment_max(*args))
 
 
-def segment_min(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Computes the minimum within segments of an array.
+def segment_min(
+    data: ArrayLikeSpec,
+    segment_ids: ArrayLikeSpec,
+    num_segments: int | None = None,
+    indices_are_sorted: bool = False,
+    unique_indices: bool = False,
+    bucket_size: int | None = None,
+    mode: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute the minimum within segments of an array.
 
     Args:
-        *args: Input parameter ``args`` (``data``, ``segment_ids``, ``num_segments=None``).
-        **kwargs: Input parameter ``kwargs``.
+        data: Array with the values to be reduced.
+        segment_ids: Integer array of segment indices.
+        num_segments: Optional total number of segments.
+        indices_are_sorted: Whether ``segment_ids`` is known to be sorted.
+        unique_indices: Whether ``segment_ids`` has no duplicates.
+        bucket_size: Size of bucket for segmented reduction.
+        mode: Out-of-bounds indexing mode.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Segment-wise minima.
     """
-    if len(args) >= 2:
-        return _wrap(_ops.segment_min(_to_tensor(args[0]), _to_tensor(args[1]), *args[2:], **kwargs))
-    return _ops.segment_min(*args, **kwargs)
+    _ = (indices_are_sorted, unique_indices, bucket_size, mode)
+    args = (_to_tensor(data), _to_tensor(segment_ids)) + ((num_segments,) if num_segments is not None else ())
+    return _wrap(_ops.segment_min(*args))
 
 
-def segment_prod(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Computes the product within segments of an array.
+def segment_prod(
+    data: ArrayLikeSpec,
+    segment_ids: ArrayLikeSpec,
+    num_segments: int | None = None,
+    indices_are_sorted: bool = False,
+    unique_indices: bool = False,
+    bucket_size: int | None = None,
+    mode: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute the product within segments of an array.
 
     Args:
-        *args: Input parameter ``args`` (``data``, ``segment_ids``, ``num_segments=None``).
-        **kwargs: Input parameter ``kwargs``.
+        data: Array with the values to be reduced.
+        segment_ids: Integer array of segment indices.
+        num_segments: Optional total number of segments.
+        indices_are_sorted: Whether ``segment_ids`` is known to be sorted.
+        unique_indices: Whether ``segment_ids`` has no duplicates.
+        bucket_size: Size of bucket for segmented reduction.
+        mode: Out-of-bounds indexing mode.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Segment-wise products.
     """
-    if len(args) >= 2:
-        return _wrap(_ops.segment_prod(_to_tensor(args[0]), _to_tensor(args[1]), *args[2:], **kwargs))
-    return _ops.segment_prod(*args, **kwargs)
+    _ = (indices_are_sorted, unique_indices, bucket_size, mode)
+    args = (_to_tensor(data), _to_tensor(segment_ids)) + ((num_segments,) if num_segments is not None else ())
+    return _wrap(_ops.segment_prod(*args))
 
 
-def segment_sum(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Computes the sum within segments of an array.
+def segment_sum(
+    data: ArrayLikeSpec,
+    segment_ids: ArrayLikeSpec,
+    num_segments: int | None = None,
+    indices_are_sorted: bool = False,
+    unique_indices: bool = False,
+    bucket_size: int | None = None,
+    mode: str | None = None,
+) -> ArrayLikeSpec:
+    """Compute the sum within segments of an array.
 
     Args:
-        *args: Input parameter ``args`` (``data``, ``segment_ids``, ``num_segments=None``).
-        **kwargs: Input parameter ``kwargs``.
+        data: Array with the values to be reduced.
+        segment_ids: Integer array of segment indices.
+        num_segments: Optional total number of segments.
+        indices_are_sorted: Whether ``segment_ids`` is known to be sorted.
+        unique_indices: Whether ``segment_ids`` has no duplicates.
+        bucket_size: Size of bucket for segmented reduction.
+        mode: Out-of-bounds indexing mode.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Segment-wise sums.
     """
-    if len(args) >= 2:
-        return _wrap(_ops.segment_sum(_to_tensor(args[0]), _to_tensor(args[1]), *args[2:], **kwargs))
-    return _ops.segment_sum(*args, **kwargs)
+    _ = (indices_are_sorted, unique_indices, bucket_size, mode)
+    args = (_to_tensor(data), _to_tensor(segment_ids)) + ((num_segments,) if num_segments is not None else ())
+    return _wrap(_ops.segment_sum(*args))
+
+
+__all__ = ["segment_max", "segment_min", "segment_prod", "segment_sum"]

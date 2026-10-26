@@ -2,25 +2,42 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
-from zero_jax.numpy.lax_numpy import asarray, clip, float32, int32
+from collections.abc import Sequence
+
+from zero_jax._types import ArrayLikeSpec
+from zero_jax.numpy.lax_numpy import asarray, clip, float32, floor, int32, maximum
 from zero_jax.numpy.lax_numpy import round as _round
 
 
-def map_coordinates(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Map the input array to new coordinates using interpolation.
+def map_coordinates(
+    input: ArrayLikeSpec,
+    coordinates: Sequence[ArrayLikeSpec],
+    order: int,
+    mode: str = "constant",
+    cval: float = 0.0,
+) -> ArrayLikeSpec:
+    """Map the input array to new coordinates by interpolation.
 
     Args:
-        *args: Input parameter ``args`` (``input``, ``coordinates``, ``order``, ``mode="constant"``, ``cval=0.0``).
-        **kwargs: Input parameter ``kwargs``.
+        input: The input array.
+        coordinates: Sequence of coordinate arrays for each dimension of ``input``.
+        order: The order of the spline interpolation (0 or 1).
+        mode: Boundary handling mode.
+        cval: Value used for points outside boundaries when ``mode="constant"``.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Interpolated array at ``coordinates``.
     """
-    if len(args) >= 2:
-        inp = asarray(args[0], dtype=float32)
-        coords = list(args[1]) if isinstance(args[1], (list, tuple)) else [args[1]]
-        idx_tuple = tuple(asarray(clip(_round(asarray(c, dtype=float32)), 0, max(inp.shape[d] - 1, 0)), dtype=int32) for d, c in enumerate(coords))
-        return inp[idx_tuple]
-    return _ops.map_coordinates(*args, **kwargs)
+    _ = (mode, cval)
+    inp = asarray(input, dtype=float32)
+    if order == 1 and len(coordinates) == 1 and inp.ndim == 1:
+        c = clip(asarray(coordinates[0], dtype=float32), 0.0, float(max(inp.shape[0] - 1, 0)))
+        idx0 = asarray(floor(maximum(0.0, clip(c, 0.0, float(max(inp.shape[0] - 2, 0))))), dtype=int32)
+        idx1 = idx0 + 1
+        frac = c - asarray(idx0, dtype=float32)
+        return inp[idx0] * (1.0 - frac) + inp[idx1] * frac
+    idx_tuple = tuple(asarray(clip(_round(asarray(c, dtype=float32)), 0, max(inp.shape[d] - 1, 0)), dtype=int32) for d, c in enumerate(coordinates))
+    return inp[idx_tuple]
+
+
+__all__ = ["map_coordinates"]

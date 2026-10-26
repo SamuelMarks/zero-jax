@@ -27,3 +27,14 @@ class SparseEye:
 
 class SparseMapValues:
     """Frontend class for ``SparseMapValues``."""
+
+
+__all__ = [
+    "RaggedConstant",
+    "RaggedCrossHashed",
+    "RaggedRange",
+    "SparseEye",
+    "SparseMapValues",
+    "SparseMask",
+    "linalg",
+]

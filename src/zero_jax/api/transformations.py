@@ -4,13 +4,29 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import uuid
 from collections.abc import Callable, Iterator, Sequence
 
+import ml_switcheroo_compiler
+import ml_switcheroo_compiler.ops.control_flow as cf
+from ml_switcheroo_compiler import Tensor
 from ml_switcheroo_compiler.core.tensor import TensorConfig
-from ml_switcheroo_ir import DType
+from ml_switcheroo_compiler.interpreter import evaluate_graph
+from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
+from ml_switcheroo_compiler.transforms.autodiff import grad as ir_grad
+from ml_switcheroo_ir import DType, LogicalGraph, LogicalNode
 
+import zero_jax._compiler_proxy_ops as ops
 from zero_jax._config_internal import config as _internal_config
-from zero_jax._types import ArrayProtocol, AxisSpec, ConfigValue, PyTree, ShapeTuple, StatefulProtocol, VariadicCallable
+from zero_jax._types import ArrayProtocol, AxisSpec, PyTree, ShapeTuple, StatefulProtocol, VariadicCallable
+from zero_jax.lax.control_flow import get_stop_gradient_sources
+from zero_jax.numpy import moveaxis, ones_like, tensor_utils, zeros
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, array, ndarray
+from zero_jax.sharding import Sharding
+from zero_jax.stages import Lowered, Traced
+from zero_jax.tree_util import tree_flatten, tree_map, tree_unflatten
+from zero_jax.tree_util.pytree import PyTreeDef
 
 
 class ShapedArray:
@@ -64,7 +80,7 @@ class _JitWrapped:
             return self._fun(*args, **kwargs)
         return self._exec_fn(*args, **kwargs)
 
-    def trace(self, *args: PyTree, **kwargs: PyTree) -> PyTree:
+    def trace(self, *args: PyTree, **kwargs: PyTree) -> Traced:
         """Return a :class:`zero_jax.stages.Traced` stage for sample arguments.
 
         Args:
@@ -72,13 +88,12 @@ class _JitWrapped:
             **kwargs: Sample keyword arguments.
 
         Returns:
-            PyTree: ``stages.Traced`` object.
+            Traced: ``stages.Traced`` object.
         """
-        from zero_jax.stages import Traced
-
+        _ = (args, kwargs)
         return Traced(fun=self._exec_fn)
 
-    def lower(self, *args: PyTree, **kwargs: PyTree) -> PyTree:
+    def lower(self, *args: PyTree, **kwargs: PyTree) -> Lowered:
         """Return a :class:`zero_jax.stages.Lowered` stage for sample arguments.
 
         Args:
@@ -86,27 +101,26 @@ class _JitWrapped:
             **kwargs: Sample keyword arguments.
 
         Returns:
-            PyTree: ``stages.Lowered`` object.
+            Lowered: ``stages.Lowered`` object.
         """
-        from zero_jax.stages import Lowered
-
+        _ = (args, kwargs)
         return Lowered(fun=self._exec_fn)
 
 
 def jit(
     fun: VariadicCallable[PyTree],
-    in_shardings: ConfigValue = None,
-    out_shardings: ConfigValue = None,
+    in_shardings: Sharding | Sequence[Sharding | None] | None = None,
+    out_shardings: Sharding | Sequence[Sharding | None] | None = None,
     static_argnums: int | Sequence[int] | None = None,
-    compiler_options: dict[str, ConfigValue] | None = None,
+    compiler_options: dict[str, str | int | float | bool] | None = None,
     donate_argnames: str | Sequence[str] | None = None,
     static_argnames: str | Sequence[str] | None = None,
-    device: ConfigValue = None,
+    device: str | None = None,
     inline: bool = False,
     keep_unused: bool = False,
     donate_argnums: int | Sequence[int] | None = None,
     backend: str | None = None,
-    abstracted_axes: ConfigValue = None,
+    abstracted_axes: Sequence[str] | dict[int, str] | None = None,
 ) -> VariadicCallable[PyTree]:
     """Compile a function for trace-based graph execution.
 
@@ -129,13 +143,10 @@ def jit(
         VariadicCallable[PyTree]: A JIT-compiled wrapper around ``fun``.
     """
     _ = (in_shardings, out_shardings, compiler_options, donate_argnames, device, inline, keep_unused, donate_argnums, backend, abstracted_axes)
-    from ml_switcheroo_ir import LogicalGraph
-
-    from zero_jax.tree_util.pytree import PyTreeDef
 
     static_nums = {static_argnums} if isinstance(static_argnums, int) else set(static_argnums or ())
     static_names = {static_argnames} if isinstance(static_argnames, str) else set(static_argnames or ())
-    cache: dict[tuple[ConfigValue, ...], tuple[LogicalGraph, list[str], list[str], PyTreeDef]] = {}
+    cache: dict[tuple[tuple[str, ...], tuple[tuple[ShapeTuple, str], ...]], tuple[LogicalGraph, list[str], list[str], PyTreeDef]] = {}
 
     @functools.wraps(fun)
     def wrapped(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -148,24 +159,18 @@ def jit(
         Returns:
             PyTree: The evaluated result PyTree.
         """
-        import uuid
+        static_pos = {i: args[i] for i in static_nums if i < len(args)}
+        dyn_pos = [args[i] for i in range(len(args)) if i not in static_nums]
+        static_kw = {k: kwargs[k] for k in static_names if k in kwargs}
+        dyn_kw = {k: v for k, v in kwargs.items() if k not in static_names}
 
-        from ml_switcheroo_compiler import Tensor
-        from ml_switcheroo_compiler.interpreter import evaluate_graph
-        from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
-        from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
-        from ml_switcheroo_ir import LogicalNode
-
-        from zero_jax.numpy import tensor_utils
-        from zero_jax.numpy.lax_numpy import _to_tensor, array, ndarray
-        from zero_jax.tree_util import tree_flatten, tree_unflatten
-
-        if static_nums or static_names:
+        flat_args, tree_def = tree_flatten((dyn_pos, dyn_kw))
+        if not flat_args or any(callable(a) or isinstance(a, (str, StatefulProtocol)) for a in flat_args):
             return fun(*args, **kwargs)
 
-        flat_args, tree_def = tree_flatten((args, kwargs))
+        static_key = tuple(f"p{i}={v!r}" for i, v in sorted(static_pos.items())) + tuple(f"k{k}={v!r}" for k, v in sorted(static_kw.items()))
         t_args = [_to_tensor(a) for a in flat_args]
-        key = tuple((t.shape, t.dtype.value) for t in t_args)
+        key = (static_key, tuple((t.shape, t.dtype.value) for t in t_args))
 
         if key not in cache:
             prev_graph = _tracer.active_graph
@@ -195,8 +200,11 @@ def jit(
                 )
                 proxy_args.append(ndarray(proxy_tensor))
 
-            unflattened_args, unflattened_kwargs = tree_unflatten(tree_def, proxy_args)
-            out = fun(*unflattened_args, **unflattened_kwargs)
+            unflattened_dyn_pos, unflattened_dyn_kw = tree_unflatten(tree_def, proxy_args)
+            dyn_iter = iter(unflattened_dyn_pos)
+            full_args = [static_pos[i] if i in static_pos else next(dyn_iter) for i in range(len(args))]
+            full_kwargs = {**unflattened_dyn_kw, **static_kw}
+            out = fun(*full_args, **full_kwargs)
 
             flat_out, out_tree_def = tree_flatten(out)
             out_ids = []
@@ -256,32 +264,23 @@ def grad(
         Returns:
             PyTree: The computed gradient (or ``(grad, aux)`` if ``has_aux=True``).
         """
-        import uuid
-
-        from ml_switcheroo_compiler import Tensor
-        from ml_switcheroo_compiler.interpreter import evaluate_graph
-        from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
-        from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
-        from ml_switcheroo_compiler.transforms.autodiff import grad as ir_grad
-        from ml_switcheroo_ir import LogicalNode
-
         from zero_jax.api.ad import CustomJVPWrapper, CustomVJPWrapper
-        from zero_jax.numpy import ones_like, tensor_utils
-        from zero_jax.numpy.lax_numpy import _to_tensor, array, ndarray
-        from zero_jax.tree_util import tree_flatten, tree_unflatten
 
         if isinstance(fun, CustomVJPWrapper) and fun.fwd is not None and fun.bwd is not None:
             primal_out, residuals = fun.fwd(*args)
             cot = ones_like(primal_out)
-            bwd_grads = fun.bwd(residuals, cot)
+            nondiff = [args[i] for i in fun.nondiff_argnums if i < len(args)]
+            bwd_grads = fun.bwd(*nondiff, residuals, cot) if nondiff else fun.bwd(residuals, cot)
             g_tuple = bwd_grads if isinstance(bwd_grads, tuple) else (bwd_grads,)
             if isinstance(argnums, int):
-                return g_tuple[argnums]
+                return g_tuple[argnums] if argnums < len(g_tuple) else g_tuple[0]
             return tuple(g_tuple[i] for i in argnums)
 
         if isinstance(fun, CustomJVPWrapper) and fun.jvp_fun is not None:
-            tangents = tuple(ones_like(a) for a in args)
-            _, tangent_out = fun.jvp_fun(tuple(args), tangents)
+            nondiff = [args[i] for i in fun.nondiff_argnums if i < len(args)]
+            diff_args = tuple(a for i, a in enumerate(args) if i not in fun.nondiff_argnums)
+            tangents = tuple(ones_like(a) for a in diff_args)
+            _, tangent_out = fun.jvp_fun(*nondiff, diff_args, tangents) if nondiff else fun.jvp_fun(diff_args, tangents)
             return tangent_out
 
         flat_args, in_tree = tree_flatten((args, kwargs))
@@ -327,7 +326,13 @@ def grad(
             primary_out = out
 
         flat_out, _ = tree_flatten(primary_out)
-        out_tensor = _to_tensor(flat_out[0])
+        if len(flat_out) > 1:
+            acc_t = ops.sum(_to_tensor(flat_out[0]))
+            for extra_leaf in flat_out[1:]:
+                acc_t = ops.add(acc_t, ops.sum(_to_tensor(extra_leaf)))
+            out_tensor = acc_t
+        else:
+            out_tensor = _to_tensor(flat_out[0])
         out_id = out_tensor.data.id
 
         _tracer.stop_tracing()
@@ -335,14 +340,11 @@ def grad(
         _tracer.is_tracing = is_tracing
 
         valid_input_ids = [i for i in input_ids if i is not None]
-        from zero_jax.lax.control_flow import _STOP_GRADIENT_SOURCES
-
         bwd_graph = ir_grad(graph, wrt=valid_input_ids, output_id=out_id)
         valid_t_args = [a for a in t_args if not (callable(a) or isinstance(a, StatefulProtocol))]
         inputs = {in_id: tensor_utils.to_array(a.data) for in_id, a in zip(valid_input_ids, valid_t_args)}
-        for sg_id, src_id in list(_STOP_GRADIENT_SOURCES.items()):
-            if sg_id in graph.nodes and src_id in inputs:
-                inputs[sg_id] = inputs[src_id]
+        for sg_id, src_id in get_stop_gradient_sources(id(graph)).items():
+            inputs[sg_id] = inputs[src_id]
         res = evaluate_graph(bwd_graph, inputs)
 
         flat_grads: list[PyTree] = []
@@ -432,10 +434,7 @@ def vmap(
     Returns:
         VariadicCallable[PyTree]: A vectorized version of ``fun``.
     """
-    _ = (in_axes, axis_name, axis_size, out_axes, spmd_axis_name, sum_match)
-    import ml_switcheroo_compiler.ops.control_flow as cf
-
-    from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+    _ = (axis_name, axis_size, spmd_axis_name, sum_match)
 
     @functools.wraps(fun)
     def wrapped(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -448,12 +447,15 @@ def vmap(
         Returns:
             PyTree: The vectorized output PyTree.
         """
-        from ml_switcheroo_compiler import Tensor
+        norm_args = list(args)
+        if isinstance(in_axes, int) and in_axes != 0:
+            norm_args = [tree_map(lambda x: moveaxis(x, in_axes, 0) if isinstance(x, ArrayProtocol) and x.ndim > 0 else x, a) for a in norm_args]
+        elif isinstance(in_axes, (list, tuple)):
+            for idx, ax in enumerate(in_axes):
+                if idx < len(norm_args) and isinstance(ax, int) and ax != 0:
+                    norm_args[idx] = tree_map(lambda x, _a=ax: moveaxis(x, _a, 0) if isinstance(x, ArrayProtocol) and x.ndim > 0 else x, norm_args[idx])
 
-        from zero_jax.numpy.lax_numpy import ndarray
-        from zero_jax.tree_util import tree_flatten, tree_unflatten
-
-        flat_args, in_tree = tree_flatten((args, kwargs))
+        flat_args, in_tree = tree_flatten((tuple(norm_args), kwargs))
         t_args = [a if callable(a) or isinstance(a, StatefulProtocol) else _to_tensor(a) for a in flat_args]
 
         unflattened_args_orig, unflattened_kwargs_orig = tree_unflatten(in_tree, flat_args)
@@ -499,7 +501,7 @@ def vmap(
 
                 out_flat.append(cf.vmap(ith_inner)(*t_args))
 
-        wrapped_out = [_wrap(o) for o in out_flat]
+        wrapped_out = [moveaxis(_wrap(o), 0, out_axes) if isinstance(out_axes, int) and out_axes != 0 else _wrap(o) for o in out_flat]
         return tree_unflatten(out_tree, wrapped_out)
 
     return wrapped
@@ -529,7 +531,7 @@ def pmap(
     in_axes: int | Sequence[AxisSpec] | None = 0,
     out_axes: AxisSpec = 0,
     static_broadcasted_argnums: int | Sequence[int] = (),
-    devices: Sequence[ConfigValue] | None = None,
+    devices: Sequence[str] | None = None,
     axis_size: int | None = None,
     backend: str | None = None,
     donate_argnums: int | Sequence[int] = (),
@@ -565,11 +567,6 @@ def eval_shape(fun: VariadicCallable[PyTree], *args: PyTree, **kwargs: PyTree) -
     Returns:
         PyTree: PyTree of :class:`ShapedArray` objects containing ``shape`` and ``dtype``.
     """
-    import ml_switcheroo_compiler
-
-    from zero_jax.numpy import zeros
-    from zero_jax.numpy.lax_numpy import _to_tensor
-    from zero_jax.tree_util import tree_map
 
     def _materialize_abstract(leaf: PyTree) -> PyTree:
         """Convert abstract ``ShapeDtypeStruct`` or ``ShapedArray`` into a zero tensor for tracing.

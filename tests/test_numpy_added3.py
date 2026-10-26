@@ -2,97 +2,61 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
 import zero_jax.numpy as jnp
+from tests.conftest import assert_allclose
 from zero_jax.lax import missing_funcs
 
 
 def test_section_4_coverage() -> None:
-    """Execute ``test_section_4_coverage``."""
-    funcs = [
-        "packbits",
-        "unpackbits",
-        "percentile",
-        "quantile",
-        "piecewise",
-        "promote_types",
-        "trapezoid",
-        "tri",
-        "tril_indices",
-        "tril_indices_from",
-        "triu_indices",
-        "triu_indices_from",
-        "trim_zeros",
-        "union1d",
-        "unique",
-        "unwrap",
-        "vander",
-        "nonzero",
-        "mgrid",
-        "ogrid",
-        "r_",
-        "c_",
-        "poly",
-        "polyadd",
-        "polyder",
-        "polydiv",
-        "polyfit",
-        "polyint",
-        "polymul",
-        "polysub",
-        "polyval",
-        "roots",
-        "vectorize",
-        "broadcasted_iota",
-    ]
-    for func in funcs:
-        patcher = patch(f"zero_jax._compiler_proxy_ops.{func}", create=True)
-        m = patcher.start()
-        if func == "polydiv":
-            m.return_value = (1.0, 1.0)
-        else:
-            m.return_value = 1.0
+    """Verify real execution of numpy indexing, grids, triangular, set, and polynomial helpers."""
+    iota = missing_funcs.broadcasted_iota(3, (2, 3), 1)
+    assert iota.shape == (2, 3)
 
-        # for indexers
-        if func in ("mgrid", "ogrid", "r_", "c_"):
-            m.__getitem__ = MagicMock(return_value=1.0)
+    packed = jnp.packbits(jnp.array([1, 0, 1, 0, 0, 0, 0, 0], dtype="uint8"))
+    assert packed.tolist() == [160]
+    unpacked = jnp.unpackbits(jnp.array([160], dtype="uint8"))
+    assert unpacked.tolist() == [1, 0, 1, 0, 0, 0, 0, 0]
 
-    missing_funcs.broadcasted_iota(float, (2,), 0)
+    x = jnp.array([1.0, 2.0, 3.0])
+    assert_allclose(jnp.percentile(x, 50), 2.0)
+    assert_allclose(jnp.quantile(x, 0.5), 2.0)
+    assert_allclose(jnp.piecewise(x, [x < 2.0, x >= 2.0], [0.0, 1.0]), [0.0, 1.0, 1.0])
+    assert_allclose(jnp.piecewise(x, x < 2.0, [lambda v: v * 0.0, lambda v: v + 10.0]), [0.0, 12.0, 13.0])
+    assert "float" in str(jnp.promote_types("int32", "float32"))
+    assert_allclose(jnp.trapezoid(x), 4.0)
+    assert_allclose(jnp.tri(2), [[1.0, 0.0], [1.0, 1.0]])
+    assert len(jnp.tril_indices(3)) == 2
+    assert len(jnp.tril_indices_from(jnp.eye(2))) == 2
+    assert len(jnp.triu_indices(3)) == 2
+    assert len(jnp.triu_indices_from(jnp.eye(2))) == 2
+    assert_allclose(jnp.trim_zeros(jnp.array([0, 1, 2, 0])), [1, 2])
+    assert_allclose(jnp.union1d(jnp.array([1, 2]), jnp.array([2, 3])), [1, 2, 3])
+    assert_allclose(jnp.unique(jnp.array([2, 1, 2])), [1, 2])
+    assert_allclose(jnp.unwrap(jnp.array([0.0, 0.5])), [0.0, 0.5])
+    assert_allclose(jnp.vander(jnp.array([1.0, 2.0]), 2), [[1.0, 1.0], [2.0, 1.0]])
+    assert len(jnp.nonzero(jnp.array([0, 1, 2]))) == 1
 
-    jnp.packbits([1])
-    jnp.unpackbits([1])
-    jnp.percentile([1], 50)
-    jnp.quantile([1], 0.5)
-    jnp.piecewise([1], [True], [1])
-    jnp.promote_types(int, float)
-    jnp.trapezoid([1])
-    jnp.tri(3)
-    jnp.tril_indices(3)
-    jnp.tril_indices_from([[1]])
-    jnp.triu_indices(3)
-    jnp.triu_indices_from([[1]])
-    jnp.trim_zeros([1])
-    jnp.union1d([1], [1])
-    jnp.unique([1])
-    jnp.unwrap([1])
-    jnp.vander([1])
-    jnp.nonzero([1])
+    assert_allclose(jnp.mgrid[0:3], [0, 1, 2])
+    assert jnp.mgrid[0:2, 0:3].shape == (2, 2, 3)
+    assert_allclose(jnp.ogrid[0:3], [0, 1, 2])
+    assert len(jnp.ogrid[0:2, 0:3]) == 2
+    assert_allclose(jnp.r_[0:3], [0, 1, 2])
+    assert_allclose(jnp.r_[0:2, jnp.array([5, 6])], [0, 1, 5, 6])
+    assert_allclose(jnp.r_[jnp.array([1, 2])], [1, 2])
+    assert_allclose(jnp.c_[0:2], [[0], [1]])
+    assert_allclose(jnp.c_[jnp.array([1, 2]), jnp.array([[3], [4]])], [[1, 3], [2, 4]])
+    assert_allclose(jnp.c_[jnp.array([1, 2])], [[1], [2]])
+    assert_allclose(jnp.c_[jnp.array([[1, 2]])], [[1, 2]])
 
-    _ = jnp.mgrid[0:1]
-    _ = jnp.ogrid[0:1]
-    _ = jnp.r_[0:1]
-    _ = jnp.c_[0:1]
-
-    jnp.poly([1])
-    jnp.polyadd([1], [1])
-    jnp.polyder([1])
-    jnp.polydiv([1], [1])
-    jnp.polyfit([1], [1], 1)
-    jnp.polyint([1])
-    jnp.polymul([1], [1])
-    jnp.polysub([1], [1])
-    jnp.polyval([1], 1)
-    jnp.roots([1])
-
-    patch.stopall()
+    assert_allclose(jnp.poly(jnp.array([1.0, 2.0])), [1.0, -3.0, 2.0])
+    assert_allclose(jnp.polyadd(jnp.array([1.0]), jnp.array([2.0])), [3.0])
+    assert_allclose(jnp.polyder(jnp.array([3.0, 2.0, 1.0])), [6.0, 2.0])
+    q_p, r_p = jnp.polydiv(jnp.array([1.0, 0.0, -1.0]), jnp.array([1.0, -1.0]))
+    assert_allclose(q_p, [1.0, 1.0])
+    assert_allclose(r_p, [0.0, 0.0, 0.0])
+    assert jnp.polyfit(jnp.array([0.0, 1.0]), jnp.array([1.0, 3.0]), 1).shape == (2,)
+    assert_allclose(jnp.polyint(jnp.array([2.0, 1.0])), [1.0, 1.0, 0.0])
+    assert_allclose(jnp.polymul(jnp.array([1.0, 1.0]), jnp.array([1.0, -1.0])), [1.0, 0.0, -1.0])
+    assert_allclose(jnp.polysub(jnp.array([3.0]), jnp.array([1.0])), [2.0])
+    assert_allclose(jnp.polyval(jnp.array([2.0, 1.0]), jnp.array(3.0)), 7.0)
+    assert jnp.roots(jnp.array([1.0, -3.0, 2.0])).shape == (2,)

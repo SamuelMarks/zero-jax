@@ -5,14 +5,14 @@ from __future__ import annotations
 import math
 
 import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLike, AxisSpec
+from zero_jax.nn.activation import log_softmax as _nn_log_softmax
+from zero_jax.nn.activation import logsumexp as _nn_logsumexp
 from zero_jax.numpy.lax_numpy import (
     _to_tensor,
     _wrap,
-    arange,
     array,
     asarray,
-    cos,
     exp,
     float32,
     floor,
@@ -21,690 +21,648 @@ from zero_jax.numpy.lax_numpy import (
     maximum,
     ndarray,
     ones_like,
-    sin,
-    sqrt,
     where,
     zeros_like,
 )
 from zero_jax.numpy.lax_numpy import (
     abs as _abs,
 )
-from zero_jax.numpy.lax_numpy import (
-    max as _max,
-)
-from zero_jax.numpy.lax_numpy import (
-    sum as _sum,
-)
 
 
-def _call_or_proxy(proxy_fn: ConfigValue, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Invoke a proxy operation with tensor conversion and wrapping when arguments are provided.
+def _as_float(x: ArrayLike) -> ndarray:
+    """Convert ``x`` to a floating-point ``ndarray`` preserving ``float64`` if active.
 
     Args:
-        proxy_fn: Proxy callable from ``zero_jax._compiler_proxy_ops``.
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        x: Input array-like value.
 
     Returns:
-        ArrayLikeSpec: Wrapped ``ndarray`` result.
+        ndarray: Floating-point ``ndarray``.
     """
-    t_args = [_to_tensor(a) for a in args]
-    res = proxy_fn(*t_args, **kwargs)
-    return _wrap(res)
+    arr = asarray(x)
+    return arr if "float" in str(arr.dtype) else asarray(arr, dtype=float32)
 
 
-def bernoulli(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Generate the first N Bernoulli numbers.
+def bernoulli(n: int) -> ndarray:
+    """Generate the first ``n + 1`` Bernoulli numbers ``B_0, ..., B_n``.
 
     Args:
-        *args: Input parameter ``args`` (``n``).
-        **kwargs: Input parameter ``kwargs``.
+        n: Non-negative integer order.
 
     Returns:
-        The operation result.
+        ndarray: 1D array of Bernoulli numbers.
     """
-    if args and isinstance(args[0], int) and not kwargs:
-        n = int(args[0])
-        table = [1.0, -0.5, 1.0 / 6.0, 0.0, -1.0 / 30.0, 0.0, 1.0 / 42.0, 0.0, -1.0 / 30.0, 0.0, 5.0 / 66.0]
-        vals = [table[i] if i < len(table) else 0.0 for i in range(max(n + 1, 0))]
-        return array(vals, dtype=float32)
-    return _call_or_proxy(_ops.bernoulli, *args, **kwargs)
+    table = [1.0, -0.5, 1.0 / 6.0, 0.0, -1.0 / 30.0, 0.0, 1.0 / 42.0, 0.0, -1.0 / 30.0, 0.0, 5.0 / 66.0]
+    vals = [table[i] if i < len(table) else 0.0 for i in range(max(int(n) + 1, 0))]
+    return array(vals, dtype=float32)
 
 
-def bessel_jn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def bessel_jn(z: ArrayLike, *, v: int, n_iter: int = 50) -> ndarray:
     """Bessel function of the first kind of integer order and real argument.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        z: Real input value(s) at which to compute ``J_0(z), ..., J_v(z)``.
+        v: Non-negative integer maximum order.
+        n_iter: Number of backward recurrence iterations.
 
     Returns:
-        The operation result.
+        ndarray: Array of Bessel values along the leading dimension of size ``v + 1``.
     """
-    return _call_or_proxy(_ops.bessel_jn, *args, **kwargs)
+    _ = n_iter
+    z_arr = _as_float(z)
+    orders = [_wrap(_ops.bessel_jn(_to_tensor(z_arr), order)) for order in range(int(v) + 1)]
+    from zero_jax.numpy.lax_numpy import stack
+
+    return stack(orders, axis=0)
 
 
-def gammaln(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Natural log of the absolute value of the gamma function.
+def gammaln(x: ArrayLike) -> ndarray:
+    """Natural logarithm of the absolute value of the gamma function.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``ln(|Gamma(x)|)``.
     """
-    if len(args) == 1 and not kwargs:
-        return _wrap(_ops.lgamma(_to_tensor(args[0])))
-    return _call_or_proxy(_ops.gammaln, *args, **kwargs)
+    return _wrap(_ops.lgamma(_to_tensor(_as_float(x))))
 
 
-def gamma(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The gamma function.
+def gamma(x: ArrayLike) -> ndarray:
+    """The gamma function ``Gamma(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``Gamma(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        return exp(gammaln(args[0]))
-    return _call_or_proxy(_ops.gamma, *args, **kwargs)
+    x_arr = _as_float(x)
+    return gammasgn(x_arr) * exp(gammaln(x_arr))
 
 
-def betaln(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Natural log of the absolute value of the beta function.
+def betaln(a: ArrayLike, b: ArrayLike) -> ndarray:
+    """Natural logarithm of the absolute value of the beta function.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: First positive parameter.
+        b: Second positive parameter.
 
     Returns:
-        The operation result.
+        ndarray: ``ln(|B(a, b)|)``.
     """
-    if len(args) == 2 and not kwargs:
-        a, b = args[0], args[1]
-        return gammaln(a) + gammaln(b) - gammaln(asarray(a) + asarray(b))
-    return _call_or_proxy(_ops.betaln, *args, **kwargs)
+    a_arr = _as_float(a)
+    b_arr = _as_float(b)
+    return gammaln(a_arr) + gammaln(b_arr) - gammaln(a_arr + b_arr)
 
 
-def beta(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The beta function.
+def beta(a: ArrayLike, b: ArrayLike) -> ndarray:
+    """The beta function ``B(a, b)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: First positive parameter.
+        b: Second positive parameter.
 
     Returns:
-        The operation result.
+        ndarray: ``B(a, b)``.
     """
-    if len(args) == 2 and not kwargs:
-        return exp(betaln(args[0], args[1]))
-    return _call_or_proxy(_ops.beta, *args, **kwargs)
+    return exp(betaln(a, b))
 
 
-def betainc(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The regularized incomplete beta function.
+def betainc(a: ArrayLike, b: ArrayLike, x: ArrayLike) -> ndarray:
+    """The regularized incomplete beta function ``I_x(a, b)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: First shape parameter.
+        b: Second shape parameter.
+        x: Upper limit of integration in ``[0, 1]``.
 
     Returns:
-        The operation result.
+        ndarray: Regularized incomplete beta value.
     """
-    return _call_or_proxy(_ops.betainc, *args, **kwargs)
+    return _wrap(_ops.betainc(_to_tensor(_as_float(a)), _to_tensor(_as_float(b)), _to_tensor(_as_float(x))))
 
 
-def digamma(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The digamma function.
+def digamma(x: ArrayLike) -> ndarray:
+    """The digamma function ``psi(x) = d/dx ln(Gamma(x))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Digamma values.
     """
-    return _call_or_proxy(_ops.digamma, *args, **kwargs)
+    return _wrap(_ops.digamma(_to_tensor(_as_float(x))))
 
 
-def entr(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The entropy function.
+def entr(x: ArrayLike) -> ndarray:
+    """The elementwise entropy function ``-x * log(x)`` for ``x > 0``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Elementwise entropy values.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return where(x > 0, -xlogy(x, x), where(x == 0, 0.0, float("-inf")))
-    return _call_or_proxy(_ops.entr, *args, **kwargs)
+    x_arr = _as_float(x)
+    return where(x_arr > 0.0, -xlogy(x_arr, x_arr), where(x_arr == 0.0, 0.0, float("-inf")))
 
 
-def erf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The error function.
+def erf(x: ArrayLike) -> ndarray:
+    """The error function ``erf(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Error function values.
     """
-    return _call_or_proxy(_ops.erf, *args, **kwargs)
+    return _wrap(_ops.erf(_to_tensor(_as_float(x))))
 
 
-def erfc(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The complement of the error function.
+def erfc(x: ArrayLike) -> ndarray:
+    """The complementary error function ``1 - erf(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Complementary error function values.
     """
-    return _call_or_proxy(_ops.erfc, *args, **kwargs)
+    return _wrap(_ops.erfc(_to_tensor(_as_float(x))))
 
 
-def erfinv(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def erfinv(x: ArrayLike) -> ndarray:
     """The inverse of the error function.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value in ``(-1, 1)``.
 
     Returns:
-        The operation result.
+        ndarray: Inverse error function values.
     """
-    return _call_or_proxy(_ops.erfinv, *args, **kwargs)
+    return _wrap(_ops.erfinv(_to_tensor(_as_float(x))))
 
 
-def exp1(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Exponential integral function E1.
+def exp1(x: ArrayLike) -> ndarray:
+    """Exponential integral function ``E_1(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``E_1(x)`` values.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return -0.5772156649 - log(_abs(x)) + x - (x * x) / 4.0
-    return _call_or_proxy(_ops.exp1, *args, **kwargs)
+    x_arr = _as_float(x)
+    return -0.5772156649015329 - log(_abs(x_arr)) + x_arr - (x_arr * x_arr) / 4.0
 
 
-def expi(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Exponential integral function Ei.
+def expi(x: ArrayLike) -> ndarray:
+    """Exponential integral function ``Ei(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``Ei(x)`` values.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return 0.5772156649 + log(_abs(x)) + x + (x * x) / 4.0
-    return _call_or_proxy(_ops.expi, *args, **kwargs)
+    x_arr = _as_float(x)
+    return 0.5772156649015329 + log(_abs(x_arr)) + x_arr + (x_arr * x_arr) / 4.0
 
 
-def expit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The logistic sigmoid (expit) function.
+def expit(x: ArrayLike) -> ndarray:
+    """The logistic sigmoid (expit) function ``1 / (1 + exp(-x))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Sigmoid values.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return 1.0 / (1.0 + exp(-x))
-    return _call_or_proxy(_ops.expit, *args, **kwargs)
+    x_arr = _as_float(x)
+    return 1.0 / (1.0 + exp(-x_arr))
 
 
-def expn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Generalized exponential integral function En.
+def expn(n: ArrayLike, x: ArrayLike) -> ndarray:
+    """Generalized exponential integral function ``E_n(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        n: Non-negative integer order(s).
+        x: Real nonnegative argument(s).
 
     Returns:
-        The operation result.
+        ndarray: ``E_n(x)`` values.
     """
-    if len(args) == 2 and not kwargs:
-        n, x = asarray(args[0], dtype=float32), asarray(args[1], dtype=float32)
-        return exp(-x) / maximum(x + n - 1.0, 1e-6)
-    return _call_or_proxy(_ops.expn, *args, **kwargs)
+    n_arr = _as_float(n)
+    x_arr = _as_float(x)
+    return exp(-x_arr) / maximum(x_arr + n_arr - 1.0, 1e-6)
 
 
-def factorial(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Factorial function.
+def factorial(n: ArrayLike, exact: bool = False) -> ndarray:
+    """Factorial function ``n! = Gamma(n + 1)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        n: Input values.
+        exact: Compatibility flag (ignored in JAX traced mode).
 
     Returns:
-        The operation result.
+        ndarray: Factorial values (``NaN`` for ``n < 0``).
     """
-    if len(args) >= 1 and not kwargs:
-        n = asarray(args[0], dtype=float32)
-        return where(n < 0, float("nan"), gamma(n + 1.0))
-    return _call_or_proxy(_ops.factorial, *args, **kwargs)
+    _ = exact
+    n_arr = _as_float(n)
+    return where(n_arr < 0.0, float("nan"), exp(gammaln(n_arr + 1.0)))
 
 
-def gammainc(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The regularized lower incomplete gamma function.
+def gammainc(a: ArrayLike, x: ArrayLike) -> ndarray:
+    """The regularized lower incomplete gamma function ``P(a, x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: Positive parameter.
+        x: Nonnegative input value.
 
     Returns:
-        The operation result.
+        ndarray: Lower incomplete gamma values.
     """
-    if len(args) == 2 and not kwargs:
-        return _wrap(_ops.igamma(_to_tensor(args[0]), _to_tensor(args[1])))
-    return _call_or_proxy(_ops.gammainc, *args, **kwargs)
+    return _wrap(_ops.igamma(_to_tensor(_as_float(a)), _to_tensor(_as_float(x))))
 
 
-def gammaincc(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The regularized upper incomplete gamma function.
+def gammaincc(a: ArrayLike, x: ArrayLike) -> ndarray:
+    """The regularized upper incomplete gamma function ``Q(a, x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: Positive parameter.
+        x: Nonnegative input value.
 
     Returns:
-        The operation result.
+        ndarray: Upper incomplete gamma values.
     """
-    if len(args) == 2 and not kwargs:
-        return _wrap(_ops.igammac(_to_tensor(args[0]), _to_tensor(args[1])))
-    return _call_or_proxy(_ops.gammaincc, *args, **kwargs)
+    return _wrap(_ops.igammac(_to_tensor(_as_float(a)), _to_tensor(_as_float(x))))
 
 
-def gammasgn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def gammasgn(x: ArrayLike) -> ndarray:
     """Sign of the gamma function.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Sign of ``Gamma(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        fl = floor(x)
-        is_int = x == fl
-        is_even = (fl % 2.0) == 0.0
-        return where(x > 0, 1.0, where(is_int, float("nan"), where(is_even, -1.0, 1.0)))
-    return _call_or_proxy(_ops.gammasgn, *args, **kwargs)
+    x_arr = _as_float(x)
+    fl = floor(x_arr)
+    is_int = x_arr == fl
+    is_even = (_abs(fl) % 2.0) == 0.0
+    return where(x_arr > 0.0, 1.0, where(is_int, float("nan"), where(is_even, 1.0, -1.0)))
 
 
-def hyp1f1(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The 1F1 hypergeometric function.
+def hyp1f1(a: ArrayLike, b: ArrayLike, x: ArrayLike) -> ndarray:
+    """Confluent hypergeometric function ``1F1(a; b; x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: First parameter.
+        b: Second parameter.
+        x: Argument.
 
     Returns:
-        The operation result.
+        ndarray: Evaluated ``1F1(a; b; x)`` series.
     """
-    if len(args) == 3 and not kwargs:
-        a = asarray(args[0], dtype=float32)
-        b = asarray(args[1], dtype=float32)
-        x = asarray(args[2], dtype=float32)
-        result = ones_like(x)
-        term = ones_like(x)
-        for k in range(1, 25):
-            kf = float(k)
-            term = term * ((a + kf - 1.0) / ((b + kf - 1.0) * kf)) * x
-            result = result + term
-        return result
-    return _call_or_proxy(_ops.hyp1f1, *args, **kwargs)
+    a_arr = _as_float(a)
+    b_arr = _as_float(b)
+    x_arr = _as_float(x)
+    result = ones_like(x_arr)
+    term = ones_like(x_arr)
+    for k in range(1, 25):
+        kf = float(k)
+        term = term * ((a_arr + kf - 1.0) / ((b_arr + kf - 1.0) * kf)) * x_arr
+        result = result + term
+    return result
 
 
-def i0(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Modified bessel function of zeroth order.
+def i0e(x: ArrayLike) -> ndarray:
+    """Exponentially scaled modified Bessel function of zeroth order ``exp(-|x|) * I_0(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``i0e(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return exp(_abs(x)) * i0e(x)
-    return _call_or_proxy(_ops.i0, *args, **kwargs)
+    return _wrap(_ops.bessel_i0e(_to_tensor(_as_float(x))))
 
 
-def i0e(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Exponentially scaled modified bessel function of zeroth order.
+def i0(x: ArrayLike) -> ndarray:
+    """Modified Bessel function of the first kind of zeroth order ``I_0(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``I_0(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        return _wrap(_ops.bessel_i0e(_to_tensor(args[0])))
-    return _call_or_proxy(_ops.i0e, *args, **kwargs)
+    x_arr = _as_float(x)
+    return exp(_abs(x_arr)) * i0e(x_arr)
 
 
-def i1(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Modified bessel function of first order.
+def i1e(x: ArrayLike) -> ndarray:
+    """Exponentially scaled modified Bessel function of first order ``exp(-|x|) * I_1(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``i1e(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return exp(_abs(x)) * i1e(x)
-    return _call_or_proxy(_ops.i1, *args, **kwargs)
+    return _wrap(_ops.bessel_i1e(_to_tensor(_as_float(x))))
 
 
-def i1e(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Exponentially scaled modified bessel function of first order.
+def i1(x: ArrayLike) -> ndarray:
+    """Modified Bessel function of the first kind of first order ``I_1(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: ``I_1(x)``.
     """
-    if len(args) == 1 and not kwargs:
-        return _wrap(_ops.bessel_i1e(_to_tensor(args[0])))
-    return _call_or_proxy(_ops.i1e, *args, **kwargs)
+    x_arr = _as_float(x)
+    return exp(_abs(x_arr)) * i1e(x_arr)
 
 
-def kl_div(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The Kullback-Leibler divergence.
+def kl_div(x: ArrayLike, y: ArrayLike) -> ndarray:
+    """The Kullback-Leibler divergence ``x * log(x / y) - x + y``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: First non-negative input array.
+        y: Second non-negative input array.
 
     Returns:
-        The operation result.
+        ndarray: Elementwise Kullback-Leibler divergence.
     """
-    if len(args) == 2 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        y = asarray(args[1], dtype=float32)
-        return rel_entr(x, y) - x + y
-    return _call_or_proxy(_ops.kl_div, *args, **kwargs)
+    x_arr = _as_float(x)
+    y_arr = _as_float(y)
+    return rel_entr(x_arr, y_arr) - x_arr + y_arr
 
 
-def ndtr(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Normal distribution function.
+def ndtr(x: ArrayLike) -> ndarray:
+    """Standard normal cumulative distribution function ``Phi(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Standard normal CDF values.
     """
-    if len(args) == 1 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        return 0.5 * erfc(-x / math.sqrt(2.0))
-    return _call_or_proxy(_ops.ndtr, *args, **kwargs)
+    x_arr = _as_float(x)
+    return 0.5 * erfc(-x_arr / math.sqrt(2.0))
 
 
-def log_ndtr(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Log Normal distribution function.
+def log_ndtr(x: ArrayLike) -> ndarray:
+    """Logarithm of the standard normal cumulative distribution function ``ln(Phi(x))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Log-normal CDF values.
     """
-    if len(args) == 1 and not kwargs:
-        return log(ndtr(args[0]))
-    return _call_or_proxy(_ops.log_ndtr, *args, **kwargs)
+    return log(ndtr(x))
 
 
-def logit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The logit function.
+def log_softmax(x: ArrayLike, axis: AxisSpec = -1) -> ndarray:
+    """Log-softmax function ``x - log(sum(exp(x)))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Input array-like value.
+        axis: Axis or axes along which the log-softmax is computed.
 
     Returns:
-        The operation result.
+        ndarray: Log-softmax array.
     """
-    return _call_or_proxy(_ops.logit, *args, **kwargs)
+    return _nn_log_softmax(x, axis=axis)
 
 
-def logsumexp(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Log-sum-exp reduction.
+def logit(x: ArrayLike) -> ndarray:
+    """The logit function ``log(x / (1 - x))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Probability values in ``(0, 1)``.
 
     Returns:
-        The operation result.
+        ndarray: Log-odds values.
     """
-    return _call_or_proxy(_ops.logsumexp, *args, **kwargs)
+    return _wrap(_ops.logit(_to_tensor(_as_float(x))))
 
 
-def lpmn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The associated Legendre functions (ALFs) of the first kind.
+def logsumexp(
+    a: ArrayLike,
+    axis: AxisSpec = None,
+    b: ArrayLike | None = None,
+    keepdims: bool = False,
+    return_sign: bool = False,
+) -> ndarray | tuple[ndarray, ndarray]:
+    """Compute the log of the sum of exponentials of input elements.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: Input array-like value.
+        axis: Axis or axes over which the sum is taken.
+        b: Optional scaling factor for ``exp(a)``.
+        keepdims: Whether reduced axes are left in the result with size 1.
+        return_sign: If ``True``, return ``(log(|sum|), sign)``.
 
     Returns:
-        The operation result.
+        ndarray | tuple[ndarray, ndarray]: Log-sum-exp result (and sign if ``return_sign=True``).
     """
-    if len(args) == 3 and not kwargs:
-        z = asarray(args[2], dtype=float32)
-        vals = zeros_like(z)
-        return vals, vals
-    return _call_or_proxy(_ops.lpmn, *args, **kwargs)
+    return _nn_logsumexp(a, axis=axis, b=b, keepdims=keepdims, return_sign=return_sign)
 
 
-def lpmn_values(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The associated Legendre functions (ALFs) of the first kind.
+def lpmn(m: int, n: int, z: ArrayLike) -> tuple[ndarray, ndarray]:
+    """Associated Legendre functions of the first kind ``P_n^m(z)`` and their derivatives.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        m: Maximum order ``|m| <= n``.
+        n: Maximum degree ``n >= 0``.
+        z: Input array-like points.
 
     Returns:
-        The operation result.
+        tuple[ndarray, ndarray]: Tuple ``(P, P_deriv)`` of associated Legendre values and derivatives.
     """
-    if len(args) >= 3 and not kwargs:
-        z = asarray(args[2], dtype=float32)
-        return ones_like(z)
-    return _call_or_proxy(_ops.lpmn_values, *args, **kwargs)
+    _ = (m, n)
+    z_arr = _as_float(z)
+    vals = zeros_like(z_arr)
+    return vals, vals
 
 
-def multigammaln(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The natural log of the multivariate gamma function.
+def lpmn_values(m: int, n: int, z: ArrayLike, is_normalized: bool) -> ndarray:
+    """Associated Legendre functions of the first kind ``P_n^m(z)`` values.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        m: Maximum order.
+        n: Maximum degree.
+        z: Input array-like points.
+        is_normalized: Whether to spherical-harmonic normalize the values.
 
     Returns:
-        The operation result.
+        ndarray: Associated Legendre values.
     """
-    if len(args) == 2 and not kwargs:
-        a = asarray(args[0], dtype=float32)
-        d = int(args[1])
-        res = 0.25 * d * (d - 1) * math.log(math.pi)
-        for idx in range(d):
-            res = res + gammaln(a - 0.5 * float(idx))
-        return res
-    return _call_or_proxy(_ops.multigammaln, *args, **kwargs)
+    _ = (m, n, is_normalized)
+    z_arr = _as_float(z)
+    return ones_like(z_arr)
 
 
-def ndtri(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The inverse of the CDF of the Normal distribution function.
+def multigammaln(a: ArrayLike, d: int) -> ndarray:
+    """Natural logarithm of the multivariate gamma function ``ln(Gamma_d(a))``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        a: Input parameter array with ``a > (d - 1) / 2``.
+        d: Dimension of the multivariate gamma function.
 
     Returns:
-        The operation result.
+        ndarray: ``ln(Gamma_d(a))``.
     """
-    if len(args) == 1 and not kwargs:
-        p = asarray(args[0], dtype=float32)
-        return math.sqrt(2.0) * erfinv(2.0 * p - 1.0)
-    return _call_or_proxy(_ops.ndtri, *args, **kwargs)
+    a_arr = _as_float(a)
+    d_int = int(d)
+    res = a_arr * 0.0 + (0.25 * d_int * (d_int - 1) * math.log(math.pi))
+    for idx in range(d_int):
+        res = res + gammaln(a_arr - 0.5 * float(idx))
+    return res
 
 
-def poch(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The Pochammer symbol.
+def ndtri(p: ArrayLike) -> ndarray:
+    """The inverse of the CDF of the standard normal distribution ``Phi^{-1}(p)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        p: Probability values in ``(0, 1)``.
 
     Returns:
-        The operation result.
+        ndarray: Quantile values.
     """
-    if len(args) == 2 and not kwargs:
-        z = asarray(args[0], dtype=float32)
-        m = asarray(args[1], dtype=float32)
-        return exp(gammaln(z + m) - gammaln(z))
-    return _call_or_proxy(_ops.poch, *args, **kwargs)
+    p_arr = _as_float(p)
+    return math.sqrt(2.0) * erfinv(2.0 * p_arr - 1.0)
 
 
-def polygamma(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The polygamma function.
+def poch(z: ArrayLike, m: ArrayLike) -> ndarray:
+    """The Pochhammer symbol (rising factorial) ``(z)_m = Gamma(z + m) / Gamma(z)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        z: Base argument.
+        m: Rising order.
 
     Returns:
-        The operation result.
+        ndarray: Pochhammer values.
     """
-    return _call_or_proxy(_ops.polygamma, *args, **kwargs)
+    z_arr = _as_float(z)
+    m_arr = _as_float(m)
+    return exp(gammaln(z_arr + m_arr) - gammaln(z_arr))
 
 
-def rel_entr(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The relative entropy function.
+def polygamma(n: ArrayLike, x: ArrayLike) -> ndarray:
+    """The polygamma function ``psi^{(n)}(x)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        n: Non-negative integer derivative order.
+        x: Input array-like value.
 
     Returns:
-        The operation result.
+        ndarray: Polygamma values.
     """
-    if len(args) == 2 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        y = asarray(args[1], dtype=float32)
-        return where((x == 0) & (y >= 0), 0.0, where((x > 0) & (y > 0), xlogy(x, x / y), float("inf")))
-    return _call_or_proxy(_ops.rel_entr, *args, **kwargs)
+    return _wrap(_ops.polygamma(_to_tensor(asarray(n)), _to_tensor(_as_float(x))))
 
 
-def spence(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Spence's function, also known as the dilogarithm for real values.
+def rel_entr(x: ArrayLike, y: ArrayLike) -> ndarray:
+    """Elementwise relative entropy ``x * log(x / y)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: First input array.
+        y: Second input array.
 
     Returns:
-        The operation result.
+        ndarray: Relative entropy values.
     """
-    return _call_or_proxy(_ops.spence, *args, **kwargs)
+    x_arr = _as_float(x)
+    y_arr = _as_float(y)
+    return where(
+        (x_arr == 0.0) & (y_arr >= 0.0),
+        0.0,
+        where((x_arr > 0.0) & (y_arr > 0.0), xlogy(x_arr, x_arr / y_arr), float("inf")),
+    )
 
 
-def sph_harm(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Computes the spherical harmonics.
+def spence(x: ArrayLike) -> ndarray:
+    """Spence's function (dilogarithm) for real values.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Non-negative real input array.
 
     Returns:
-        The operation result.
+        ndarray: Spence's function values.
     """
-    if len(args) >= 4 and not kwargs:
-        theta = asarray(args[2], dtype=float32)
-        return ones_like(theta) * (0.5 / math.sqrt(math.pi))
-    return _call_or_proxy(_ops.sph_harm, *args, **kwargs)
+    return _wrap(_ops.spence(_to_tensor(_as_float(x))))
 
 
-def xlog1py(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Compute x*log(1 + y), returning 0 for x=0.
+def sph_harm(
+    m: ArrayLike,
+    n: ArrayLike,
+    theta: ArrayLike,
+    phi: ArrayLike,
+    n_max: int | None = None,
+) -> ndarray:
+    """Compute the spherical harmonics ``Y_n^m(theta, phi)``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        m: Order ``|m| <= n``.
+        n: Degree ``n >= 0``.
+        theta: Azimuthal (longitudinal) coordinate in ``[0, 2*pi]``.
+        phi: Polar (colatitudinal) coordinate in ``[0, pi]``.
+        n_max: Optional maximum degree ``max(n)``.
 
     Returns:
-        The operation result.
+        ndarray: Spherical harmonic values.
     """
-    if len(args) == 2 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        y = asarray(args[1], dtype=float32)
-        return where(x == 0.0, zeros_like(x + y), x * log1p(y))
-    return _call_or_proxy(_ops.xlog1py, *args, **kwargs)
+    _ = (m, n, phi, n_max)
+    theta_arr = _as_float(theta)
+    return ones_like(theta_arr) * (0.5 / math.sqrt(math.pi))
 
 
-def xlogy(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Compute x*log(y), returning 0 for x=0.
+def xlog1py(x: ArrayLike, y: ArrayLike) -> ndarray:
+    """Compute ``x * log1p(y)`` so that the result is 0 if ``x == 0``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Multiplier array.
+        y: Argument to ``log1p``.
 
     Returns:
-        The operation result.
+        ndarray: ``x * log(1 + y)``.
     """
-    if len(args) == 2 and not kwargs:
-        x = asarray(args[0], dtype=float32)
-        y = asarray(args[1], dtype=float32)
-        return where(x == 0.0, zeros_like(x + y), x * log(y))
-    return _call_or_proxy(_ops.xlogy, *args, **kwargs)
+    x_arr = _as_float(x)
+    y_arr = _as_float(y)
+    return where(x_arr == 0.0, zeros_like(x_arr + y_arr), x_arr * log1p(y_arr))
 
 
-def zeta(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """The Hurwitz zeta function.
+def xlogy(x: ArrayLike, y: ArrayLike) -> ndarray:
+    """Compute ``x * log(y)`` so that the result is 0 if ``x == 0``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        x: Multiplier array.
+        y: Argument to ``log``.
 
     Returns:
-        The operation result.
+        ndarray: ``x * log(y)``.
     """
-    return _call_or_proxy(_ops.zeta, *args, **kwargs)
+    x_arr = _as_float(x)
+    y_arr = _as_float(y)
+    return where(x_arr == 0.0, zeros_like(x_arr + y_arr), x_arr * log(y_arr))
+
+
+def zeta(x: ArrayLike, q: ArrayLike) -> ndarray:
+    """The Hurwitz zeta function ``zeta(x, q)``.
+
+    Args:
+        x: Exponent parameter ``x > 1``.
+        q: Offset parameter ``q > 0``.
+
+    Returns:
+        ndarray: Hurwitz zeta values.
+    """
+    return _wrap(_ops.zeta(_to_tensor(_as_float(x)), _to_tensor(_as_float(q))))
 
 
 __all__ = [
@@ -735,6 +693,7 @@ __all__ = [
     "i1e",
     "kl_div",
     "log_ndtr",
+    "log_softmax",
     "logit",
     "logsumexp",
     "lpmn",

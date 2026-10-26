@@ -7,55 +7,43 @@ import zero_jax.experimental.x64_context.config.jax_jit as mod
 
 def test_class_JitState() -> None:
     """Test class JitState."""
-    try:
-        mod.JitState()
-    except Exception:
-        pass
+    obj = mod.JitState(disable_jit=True)
+    assert isinstance(obj, mod.JitState)
+    assert obj.disable_jit is True
 
 
 def test_class_PyArgSignature() -> None:
     """Test class PyArgSignature."""
-    try:
-        mod.PyArgSignature()
-    except Exception:
-        pass
+    obj = mod.PyArgSignature("float32", (2, 3), False)
+    assert isinstance(obj, mod.PyArgSignature)
+    assert obj.shape == (2, 3)
 
 
 def test_get_enable_x64() -> None:
     """Test get_enable_x64."""
-    try:
-        mod.get_enable_x64()
-    except Exception:
-        pass
+    assert isinstance(mod.get_enable_x64(), bool)
 
 
 def test_global_state() -> None:
     """Test global_state."""
-    try:
-        mod.global_state()
-    except Exception:
-        pass
+    state = mod.global_state()
+    assert isinstance(state, mod.JitState)
 
 
 def test_set_thread_local_state_initialization_callback() -> None:
     """Test set_thread_local_state_initialization_callback."""
-    try:
-        mod.set_thread_local_state_initialization_callback()
-    except Exception:
-        pass
+    cb = lambda: None
+    assert mod.set_thread_local_state_initialization_callback(cb) is cb
 
 
 def test_swap_thread_local_state_disable_jit() -> None:
     """Test swap_thread_local_state_disable_jit."""
-    try:
-        mod.swap_thread_local_state_disable_jit()
-    except Exception:
-        pass
+    prev = mod.swap_thread_local_state_disable_jit(True)
+    assert isinstance(prev, bool)
+    assert mod.swap_thread_local_state_disable_jit(prev) is True
 
 
 def test_thread_local_state() -> None:
     """Test thread_local_state."""
-    try:
-        mod.thread_local_state()
-    except Exception:
-        pass
+    state = mod.thread_local_state()
+    assert isinstance(state, mod.JitState)

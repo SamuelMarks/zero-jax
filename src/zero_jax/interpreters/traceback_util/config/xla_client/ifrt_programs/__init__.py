@@ -1,86 +1,86 @@
-"""Module ifrt_programs."""
+"""Frontend API routing for ifrt_programs."""
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ConfigValue
-
 
 class CompileOptions:
-    """Stub class for CompileOptions."""
+    """IFRT program compilation options."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CompileOptions.
+    def __init__(self, num_replicas: int = 1, num_partitions: int = 1) -> None:
+        """Initialize ``CompileOptions``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            num_replicas: Number of computation replicas.
+            num_partitions: Number of model partitions.
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.num_replicas: int = int(num_replicas)
+        self.num_partitions: int = int(num_partitions)
 
 
 class Program:
-    """Stub class for Program."""
+    """IFRT executable program container."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Program.
+    def __init__(self, code: str | bytes = b"", kind: str = "hlo") -> None:
+        """Initialize ``Program``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            code: Serialized HLO or plugin program payload.
+            kind: Program format identifier (``"hlo"`` or ``"plugin"``).
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.code: bytes = code.encode("utf-8") if isinstance(code, str) else bytes(code)
+        self.kind: str = str(kind)
 
 
-def make_hlo_program(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for make_hlo_program.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ConfigValue: None stub return value.
-    """
-    return None
-
-
-def make_plugin_compile_options(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for make_plugin_compile_options.
+def make_hlo_program(mlir_module: str | bytes = b"") -> Program:
+    """Create an IFRT HLO :class:`Program` from ``mlir_module``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        mlir_module: Serialized MLIR/StableHLO module bytes or text.
 
     Returns:
-        ConfigValue: None stub return value.
+        Program: Constructed HLO IFRT program.
     """
-    return None
+    return Program(code=mlir_module, kind="hlo")
 
 
-def make_plugin_program(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for make_plugin_program.
+def make_plugin_compile_options() -> CompileOptions:
+    """Create default plugin :class:`CompileOptions`.
+
+    Returns:
+        CompileOptions: Default IFRT plugin compile options.
+    """
+    return CompileOptions()
+
+
+def make_plugin_program(data: str | bytes = b"") -> Program:
+    """Create an IFRT plugin :class:`Program` from ``data``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        data: Serialized plugin program payload.
 
     Returns:
-        ConfigValue: None stub return value.
+        Program: Constructed plugin IFRT program.
     """
-    return None
+    return Program(code=data, kind="plugin")
 
 
-def make_xla_compile_options(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for make_xla_compile_options.
+def make_xla_compile_options(options: CompileOptions | None = None) -> CompileOptions:
+    """Wrap XLA :class:`CompileOptions` for IFRT compilation.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        options: Existing :class:`CompileOptions` or ``None``.
 
     Returns:
-        ConfigValue: None stub return value.
+        CompileOptions: IFRT XLA compile options.
     """
-    return None
+    return options if options is not None else CompileOptions()
+
+
+__all__ = [
+    "CompileOptions",
+    "Program",
+    "make_hlo_program",
+    "make_plugin_compile_options",
+    "make_plugin_program",
+    "make_xla_compile_options",
+]

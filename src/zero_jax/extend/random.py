@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
 
-
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(impl: str = "threefry2x32") -> str:
+    """Return the PRNG implementation identifier.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        impl: PRNG implementation name.
 
     Returns:
-        The operation result.
+        str: PRNG implementation name.
     """
-    return None
+    return impl
 
 
 __all__ = ["stub"]

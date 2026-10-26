@@ -6,9 +6,17 @@ from collections.abc import Sequence, Sized
 
 from ml_switcheroo_compiler.ops.registry import get_op
 
-from zero_jax._types import ArrayLikeSpec, ArrayProtocol
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, ndarray, sqrt, where
-from zero_jax.numpy.lax_numpy import sum as _sum
+from zero_jax._types import ArrayLike, ArrayProtocol, OptionalArrayLike
+from zero_jax.numpy.lax_numpy import (
+    _to_tensor,
+    _wrap,
+    ndarray,
+    sqrt,
+    where,
+)
+from zero_jax.numpy.lax_numpy import (
+    sum as _sum,
+)
 
 
 class Rotation:
@@ -17,7 +25,7 @@ class Rotation:
     This class provides a frontend interface for 3D rotations, matching `jax.scipy.spatial.transform.Rotation`.
     """
 
-    def __init__(self, quat: ArrayLikeSpec, normalize: bool = True) -> None:
+    def __init__(self, quat: ArrayLike, normalize: bool = True) -> None:
         """Initialize the rotation with quaternions.
 
         Args:
@@ -26,13 +34,13 @@ class Rotation:
         """
         if normalize and isinstance(quat, ndarray) and quat.ndim >= 1:
             norm = sqrt(_sum(quat * quat, axis=-1, keepdims=True))
-            self._quat = where(norm > 0.0, quat / where(norm == 0.0, 1.0, norm), quat)
+            self._quat: ArrayLike = where(norm > 0.0, quat / where(norm == 0.0, 1.0, norm), quat)
         else:
             self._quat = quat
         self._normalize = normalize
 
     @classmethod
-    def from_quat(cls, quat: ArrayLikeSpec) -> Rotation:
+    def from_quat(cls, quat: ArrayLike) -> Rotation:
         """Initialize from quaternions.
 
         Args:
@@ -44,7 +52,7 @@ class Rotation:
         return cls(quat)
 
     @classmethod
-    def from_matrix(cls, matrix: ArrayLikeSpec) -> Rotation:
+    def from_matrix(cls, matrix: ArrayLike) -> Rotation:
         """Initialize from rotation matrix.
 
         Args:
@@ -57,7 +65,7 @@ class Rotation:
         return cls(_wrap(op(_to_tensor(matrix))))
 
     @classmethod
-    def from_rotvec(cls, rotvec: ArrayLikeSpec) -> Rotation:
+    def from_rotvec(cls, rotvec: ArrayLike) -> Rotation:
         """Initialize from rotation vector.
 
         Args:
@@ -70,7 +78,7 @@ class Rotation:
         return cls(_wrap(op(_to_tensor(rotvec))))
 
     @classmethod
-    def from_mrp(cls, mrp: ArrayLikeSpec) -> Rotation:
+    def from_mrp(cls, mrp: ArrayLike) -> Rotation:
         """Initialize from Modified Rodrigues Parameters (MRPs).
 
         Args:
@@ -83,7 +91,7 @@ class Rotation:
         return cls(_wrap(op(_to_tensor(mrp))))
 
     @classmethod
-    def from_euler(cls, seq: str, angles: ArrayLikeSpec, degrees: bool = False) -> Rotation:
+    def from_euler(cls, seq: str, angles: ArrayLike, degrees: bool = False) -> Rotation:
         """Initialize from Euler angles.
 
         Args:
@@ -111,7 +119,7 @@ class Rotation:
         return cls(_wrap(op(num)))
 
     @classmethod
-    def random(cls, num: int | None = None, random_state: ArrayLikeSpec = None) -> Rotation:
+    def random(cls, num: int | None = None, random_state: OptionalArrayLike = None) -> Rotation:
         """Generate uniformly distributed rotations.
 
         Args:
@@ -125,7 +133,13 @@ class Rotation:
         return cls(_wrap(op(num, random_state)))
 
     @classmethod
-    def align_vectors(cls, a: ArrayLikeSpec, b: ArrayLikeSpec, weights: ArrayLikeSpec = None, return_sensitivity: bool = False) -> ArrayLikeSpec:
+    def align_vectors(
+        cls,
+        a: ArrayLike,
+        b: ArrayLike,
+        weights: OptionalArrayLike = None,
+        return_sensitivity: bool = False,
+    ) -> ndarray | tuple[ndarray, ...]:
         """Estimate optimal rotation to align two sets of vectors.
 
         Args:
@@ -158,7 +172,7 @@ class Rotation:
             return len(self._quat.shape) == 1
         return True
 
-    def as_quat(self) -> ArrayLikeSpec:
+    def as_quat(self) -> ArrayLike:
         """Represent as quaternions.
 
         Returns:
@@ -166,7 +180,7 @@ class Rotation:
         """
         return self._quat
 
-    def as_matrix(self) -> ArrayLikeSpec:
+    def as_matrix(self) -> ndarray:
         """Represent as rotation matrix.
 
         Returns:
@@ -175,7 +189,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationAsMatrix")
         return _wrap(op(_to_tensor(self._quat)))
 
-    def as_rotvec(self) -> ArrayLikeSpec:
+    def as_rotvec(self) -> ndarray:
         """Represent as rotation vector.
 
         Returns:
@@ -184,7 +198,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationAsRotvec")
         return _wrap(op(_to_tensor(self._quat)))
 
-    def as_mrp(self) -> ArrayLikeSpec:
+    def as_mrp(self) -> ndarray:
         """Represent as Modified Rodrigues Parameters (MRPs).
 
         Returns:
@@ -193,7 +207,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationAsMrp")
         return _wrap(op(_to_tensor(self._quat)))
 
-    def as_euler(self, seq: str, degrees: bool = False) -> ArrayLikeSpec:
+    def as_euler(self, seq: str, degrees: bool = False) -> ndarray:
         """Represent as Euler angles.
 
         Args:
@@ -206,7 +220,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationAsEuler")
         return _wrap(op(_to_tensor(self._quat), seq, degrees))
 
-    def apply(self, vectors: ArrayLikeSpec, inverse: bool = False) -> ArrayLikeSpec:
+    def apply(self, vectors: ArrayLike, inverse: bool = False) -> ndarray:
         """Apply the rotation to a set of vectors.
 
         Args:
@@ -228,7 +242,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationInv")
         return Rotation(_wrap(op(_to_tensor(self._quat))))
 
-    def magnitude(self) -> ArrayLikeSpec:
+    def magnitude(self) -> ndarray:
         """Compute the rotation magnitude values.
 
         Returns:
@@ -237,7 +251,7 @@ class Rotation:
         op = get_op("ScipySpatialRotationMagnitude")
         return _wrap(op(_to_tensor(self._quat)))
 
-    def mean(self, weights: ArrayLikeSpec = None) -> Rotation:
+    def mean(self, weights: OptionalArrayLike = None) -> Rotation:
         """Get the mean of the rotations.
 
         Args:
@@ -299,7 +313,7 @@ class Slerp:
     This class provides a frontend interface for interpolating rotations.
     """
 
-    def __init__(self, times: ArrayLikeSpec, rotations: Rotation) -> None:
+    def __init__(self, times: ArrayLike, rotations: Rotation) -> None:
         """Initialize the interpolator.
 
         Args:
@@ -309,7 +323,7 @@ class Slerp:
         self.times = times
         self.rotations = rotations
 
-    def __call__(self, times: ArrayLikeSpec) -> Rotation:
+    def __call__(self, times: ArrayLike) -> Rotation:
         """Interpolate the rotations at the given times.
 
         Args:

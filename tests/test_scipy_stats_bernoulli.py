@@ -1,35 +1,27 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats.bernoulli."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats.bernoulli as mod
+from tests.conftest import assert_allclose
 
 
 def test_cdf() -> None:
     """Test cdf."""
-    with patch("zero_jax._compiler_proxy_ops.cdf", create=True) as mock_op:
-        mod.cdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.cdf(jnp.array([-1.0, 0.0, 1.0]), 0.3), [0.0, 0.7, 1.0], atol=1e-5)
 
 
 def test_logpmf() -> None:
     """Test logpmf."""
-    with patch("zero_jax._compiler_proxy_ops.logpmf", create=True) as mock_op:
-        mod.logpmf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logpmf(jnp.array([0.0, 1.0]), 0.25), [jnp.log(0.75), jnp.log(0.25)], atol=1e-5)
 
 
 def test_pmf() -> None:
     """Test pmf."""
-    with patch("zero_jax._compiler_proxy_ops.pmf", create=True) as mock_op:
-        mod.pmf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.pmf(jnp.array([0.0, 1.0]), 0.25), [0.75, 0.25], atol=1e-5)
 
 
 def test_ppf() -> None:
     """Test ppf."""
-    with patch("zero_jax._compiler_proxy_ops.ppf", create=True) as mock_op:
-        mod.ppf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.ppf(jnp.array([0.2, 0.9]), 0.5), [0.0, 1.0], atol=1e-5)

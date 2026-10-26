@@ -7,31 +7,25 @@ import zero_jax.experimental.x64_context.config.transfer_guard_lib as mod
 
 def test_class_TransferGuardLevel() -> None:
     """Test class TransferGuardLevel."""
-    try:
-        mod.TransferGuardLevel()
-    except Exception:
-        pass
+    obj = mod.TransferGuardLevel("disallow")
+    assert isinstance(obj, mod.TransferGuardLevel)
+    assert obj.level == "disallow"
 
 
 def test_class_TransferGuardState() -> None:
     """Test class TransferGuardState."""
-    try:
-        mod.TransferGuardState()
-    except Exception:
-        pass
+    obj = mod.TransferGuardState(host_to_device="log")
+    assert isinstance(obj, mod.TransferGuardState)
+    assert obj.host_to_device == "log"
 
 
 def test_global_state() -> None:
     """Test global_state."""
-    try:
-        mod.global_state()
-    except Exception:
-        pass
+    state = mod.global_state()
+    assert isinstance(state, mod.TransferGuardState)
 
 
 def test_thread_local_state() -> None:
     """Test thread_local_state."""
-    try:
-        mod.thread_local_state()
-    except Exception:
-        pass
+    state = mod.thread_local_state()
+    assert isinstance(state, mod.TransferGuardState)

@@ -4,46 +4,52 @@ from __future__ import annotations
 
 import math
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32
 from zero_jax.numpy.lax_numpy import sum as _sum
 from zero_jax.numpy.linalg import inv, slogdet
 
 
-def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpdf(x: ArrayLikeSpec, mean: ArrayLikeSpec, cov: ArrayLikeSpec, allow_singular: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Multivariate normal log probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``mean``, ``cov``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles of shape ``(..., k)``.
+        mean: Mean vector of shape ``(..., k)``.
+        cov: Covariance matrix of shape ``(..., k, k)``.
+        allow_singular: Unused singular covariance flag.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability density.
     """
-    if len(args) >= 3:
-        x = asarray(args[0], dtype=float32)
-        mean = asarray(args[1], dtype=float32)
-        cov = asarray(args[2], dtype=float32)
-        diff = x - mean
-        k = float(diff.shape[-1]) if diff.shape else 1.0
-        _, logdet = slogdet(cov)
-        inv_cov = inv(cov)
-        quad = _sum(diff * (diff @ inv_cov), axis=-1)
-        return -0.5 * (k * math.log(2.0 * math.pi) + logdet + quad)
-    return _ops.logpdf(*args, **kwargs)
+    _ = allow_singular
+    x_arr = asarray(x, dtype=float32)
+    mean_arr = asarray(mean, dtype=float32)
+    cov_arr = asarray(cov, dtype=float32)
+    diff = x_arr - mean_arr
+    k = float(diff.shape[-1]) if diff.shape else 1.0
+    _, logdet = slogdet(cov_arr)
+    inv_cov = inv(cov_arr)
+    quad = _sum(diff * (diff @ inv_cov), axis=-1)
+    return -0.5 * (k * math.log(2.0 * math.pi) + logdet + quad)
 
 
-def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pdf(x: ArrayLikeSpec, mean: ArrayLikeSpec, cov: ArrayLikeSpec, allow_singular: ArrayLikeSpec = None) -> ArrayLikeSpec:
     """Multivariate normal probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``mean``, ``cov``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles of shape ``(..., k)``.
+        mean: Mean vector of shape ``(..., k)``.
+        cov: Covariance matrix of shape ``(..., k, k)``.
+        allow_singular: Unused singular covariance flag.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability density.
     """
-    if len(args) >= 3:
-        return exp(logpdf(*args, **kwargs))
-    return _ops.pdf(*args, **kwargs)
+    return exp(logpdf(x, mean, cov, allow_singular=allow_singular))
+
+
+__all__ = [
+    "logpdf",
+    "pdf",
+]

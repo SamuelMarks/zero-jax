@@ -59,22 +59,14 @@ class Error:
 class ErrorCategory:
     """A category of errors that can be checked by ``checkify``."""
 
-    def __init__(
-        self,
-        name: ConfigValue = "user",
-        id: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
+    def __init__(self, category: str = "user") -> None:
         """Initialize ``ErrorCategory``.
 
         Args:
-            name: Category name string.
-            id: Optional identifier metadata.
-            value: Optional value metadata.
+            category: Category name string (e.g. ``"user"``, ``"nan"``, ``"div"``).
         """
-        self.name = name
-        self.id = id
-        self.value = value
+        self.category: str = str(category)
+        self.name: str = str(category)
 
 
 user_checks = ErrorCategory("user")
@@ -88,7 +80,7 @@ all_checks = ErrorCategory("all")
 
 def checkify(
     fn: VariadicCallable[ArrayLikeSpec],
-    errors: ConfigValue = None,
+    errors: ErrorCategory | frozenset[ErrorCategory] | None = None,
 ) -> VariadicCallable[tuple[Error | None, ArrayLikeSpec]]:
     """Transform a function to functionalize runtime assertions and return ``(error, output)``.
 
@@ -99,6 +91,7 @@ def checkify(
     Returns:
         VariadicCallable[tuple[Error | None, ArrayLikeSpec]]: Transformed function returning ``(error, output)``.
     """
+    _ = errors
 
     def wrapper(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> tuple[Error | None, ArrayLikeSpec]:
         """Execute ``fn`` while capturing any ``check`` assertion failures.

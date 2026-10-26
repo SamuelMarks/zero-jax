@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import math
 from collections.abc import Iterator, Sequence
 from types import TracebackType
 
@@ -18,22 +19,17 @@ class Sharding:
     def __init__(
         self,
         devices: Sequence[ConfigValue] | None = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
+        *,
+        memory_kind: str | None = None,
     ) -> None:
         """Initialize ``Sharding``.
 
         Args:
             devices: Optional sequence of devices covered by this sharding.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
+            memory_kind: Optional memory kind string (e.g. ``"device"`` or ``"pinned_host"``).
         """
-        self._devices = tuple(devices) if devices is not None else ("cpu:0",)
-        self.id = id
-        self.name = name
-        self.value = value
+        self._devices: tuple[ConfigValue, ...] = tuple(devices) if devices is not None else ("cpu:0",)
+        self.memory_kind: str | None = memory_kind
 
     @property
     def device_set(self) -> set[ConfigValue]:
@@ -83,24 +79,15 @@ class PartitionSpec(Sharding):
 
     def __init__(
         self,
-        *args: str | tuple[str, ...] | None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        **kwargs: ConfigValue,
+        *partitions: str | tuple[str, ...] | None,
     ) -> None:
         """Initialize ``PartitionSpec`` with per-dimension axis names.
 
         Args:
-            *args: Axis names (or ``None``) for each tensor dimension.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
-            **kwargs: Additional keyword metadata.
+            *partitions: Axis names (or ``None``) for each tensor dimension.
         """
-        super().__init__(id=id, name=name, value=value)
-        self._partitions: tuple[str | tuple[str, ...] | None, ...] = tuple(args)
-        self.kwargs = kwargs
+        super().__init__()
+        self._partitions: tuple[str | tuple[str, ...] | None, ...] = tuple(partitions)
 
     def __len__(self) -> int:
         """Return the number of partitioned dimensions.
@@ -147,11 +134,6 @@ class Mesh(Sharding):
         axis_types: Sequence[ConfigValue] | None = None,
         size: int | None = None,
         _cached_device_list: Sequence[ConfigValue] | None = None,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-        **kwargs: ConfigValue,
     ) -> None:
         """Initialize ``Mesh`` with devices and axis names.
 
@@ -161,20 +143,13 @@ class Mesh(Sharding):
             axis_types: Optional per-axis :class:`AxisType` specifications.
             size: Optional total device count override.
             _cached_device_list: Optional cached flat device list.
-            *args: Additional positional arguments.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
-            **kwargs: Additional keyword arguments.
         """
-        super().__init__(devices=devices, id=id, name=name, value=value)
-        self.devices = tuple(devices)
-        self.axis_names = tuple(axis_names)
-        self.axis_types = tuple(axis_types) if axis_types is not None else None
-        self.size = size if size is not None else len(self.devices)
-        self._cached_device_list = _cached_device_list
-        self.args = args
-        self.kwargs = kwargs
+        super().__init__(devices=devices)
+        self.devices: tuple[ConfigValue, ...] = tuple(devices)
+        self.axis_names: tuple[str, ...] = tuple(axis_names)
+        self.axis_types: tuple[ConfigValue, ...] | None = tuple(axis_types) if axis_types is not None else None
+        self.size: int = size if size is not None else len(self.devices)
+        self._cached_device_list: Sequence[ConfigValue] | None = _cached_device_list
 
     @property
     def shape(self) -> dict[str, int]:
@@ -199,9 +174,6 @@ class NamedSharding(Sharding):
         *,
         memory_kind: str | None = None,
         _logical_device_ids: tuple[int, ...] | None = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
     ) -> None:
         """Initialize ``NamedSharding``.
 
@@ -210,17 +182,13 @@ class NamedSharding(Sharding):
             spec: The :class:`PartitionSpec` describing dimension partitioning.
             memory_kind: Optional target memory kind (e.g. ``"device"`` or ``"pinned_host"``).
             _logical_device_ids: Optional logical device ID permutation.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
         """
         resolved_mesh = mesh if isinstance(mesh, Mesh) else Mesh()
         resolved_spec = spec if isinstance(spec, PartitionSpec) else PartitionSpec()
-        super().__init__(devices=resolved_mesh.devices, id=id, name=name, value=value)
-        self.mesh = resolved_mesh
-        self.spec = resolved_spec
-        self.memory_kind = memory_kind
-        self._logical_device_ids = _logical_device_ids
+        super().__init__(devices=resolved_mesh.devices, memory_kind=memory_kind)
+        self.mesh: Mesh = resolved_mesh
+        self.spec: PartitionSpec = resolved_spec
+        self._logical_device_ids: tuple[int, ...] | None = _logical_device_ids
 
     @property
     def is_fully_replicated(self) -> bool:
@@ -240,22 +208,15 @@ class SingleDeviceSharding(Sharding):
         device: ConfigValue = "cpu:0",
         *,
         memory_kind: str | None = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
     ) -> None:
         """Initialize ``SingleDeviceSharding``.
 
         Args:
             device: Target device.
             memory_kind: Optional memory kind string.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
         """
-        super().__init__(devices=(device,), id=id, name=name, value=value)
-        self.device = device
-        self.memory_kind = memory_kind
+        super().__init__(devices=(device,), memory_kind=memory_kind)
+        self.device: ConfigValue = device
 
 
 class PositionalSharding(Sharding):
@@ -264,19 +225,16 @@ class PositionalSharding(Sharding):
     def __init__(
         self,
         devices: Sequence[ConfigValue] = ("cpu:0",),
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
+        *,
+        memory_kind: str | None = None,
     ) -> None:
         """Initialize ``PositionalSharding``.
 
         Args:
             devices: Sequence of target devices.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
+            memory_kind: Optional memory kind string.
         """
-        super().__init__(devices=devices, id=id, name=name, value=value)
+        super().__init__(devices=devices, memory_kind=memory_kind)
 
     def replicate(self) -> PositionalSharding:
         """Return a replicated ``PositionalSharding``.
@@ -284,7 +242,7 @@ class PositionalSharding(Sharding):
         Returns:
             PositionalSharding: Replicated sharding instance.
         """
-        return PositionalSharding(devices=self._devices, id=self.id, name=self.name, value=self.value)
+        return PositionalSharding(devices=self._devices, memory_kind=self.memory_kind)
 
 
 class PmapSharding(Sharding):
@@ -294,22 +252,16 @@ class PmapSharding(Sharding):
         self,
         devices: Sequence[ConfigValue] = ("cpu:0",),
         sharding_spec: ConfigValue = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
     ) -> None:
         """Initialize ``PmapSharding``.
 
         Args:
             devices: Sequence of pmap devices.
             sharding_spec: Optional sharding specification.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
         """
-        super().__init__(devices=devices, id=id, name=name, value=value)
-        self.devices = tuple(devices)
-        self.sharding_spec = sharding_spec
+        super().__init__(devices=devices)
+        self.devices: tuple[ConfigValue, ...] = tuple(devices)
+        self.sharding_spec: ConfigValue = sharding_spec
 
 
 class GSPMDSharding(Sharding):
@@ -319,21 +271,18 @@ class GSPMDSharding(Sharding):
         self,
         devices: Sequence[ConfigValue] = ("cpu:0",),
         op_sharding: ConfigValue = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
+        *,
+        memory_kind: str | None = None,
     ) -> None:
         """Initialize ``GSPMDSharding``.
 
         Args:
             devices: Sequence of devices.
             op_sharding: Optional HLO OpSharding representation.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
+            memory_kind: Optional memory kind string.
         """
-        super().__init__(devices=devices, id=id, name=name, value=value)
-        self.op_sharding = op_sharding
+        super().__init__(devices=devices, memory_kind=memory_kind)
+        self.op_sharding: ConfigValue = op_sharding
 
 
 class AbstractDevice:
@@ -385,8 +334,6 @@ class AbstractMesh:
         self.axis_names = tuple(axis_names)
         self.axis_types = axis_types
         self.abstract_device = abstract_device
-        import math
-
         self.size = size if size is not None else (int(math.prod(self.axis_sizes)) if self.axis_sizes else 1)
         self.args = args
         self.kwargs = kwargs
@@ -468,8 +415,8 @@ class UnreducedKind:
         self.kwds = kwds
 
 
-_ACTIVE_MESH: Mesh | None = None
-_ACTIVE_ABSTRACT_MESH: AbstractMesh | None = None
+_MESH_STACK: list[Mesh | None] = [None]
+_ABSTRACT_MESH_STACK: list[AbstractMesh | None] = [None]
 
 
 class set_mesh:
@@ -481,11 +428,10 @@ class set_mesh:
         Args:
             mesh: The :class:`Mesh` to set as active, or ``None`` to clear.
         """
-        global _ACTIVE_MESH
-        self.prev_mesh = _ACTIVE_MESH
-        self.prev_abstract_mesh = _ACTIVE_ABSTRACT_MESH
+        self.prev_mesh = _MESH_STACK[-1]
+        self.prev_abstract_mesh = _ABSTRACT_MESH_STACK[-1]
         self.mesh = mesh
-        _ACTIVE_MESH = mesh
+        _MESH_STACK[-1] = mesh
 
     def __enter__(self) -> Mesh | None:
         """Enter the mesh context.
@@ -509,8 +455,7 @@ class set_mesh:
             exc_tb: Exception traceback if raised.
         """
         _ = (exc_type, exc_val, exc_tb)
-        global _ACTIVE_MESH
-        _ACTIVE_MESH = self.prev_mesh
+        _MESH_STACK[-1] = self.prev_mesh
 
 
 class use_abstract_mesh:
@@ -522,10 +467,9 @@ class use_abstract_mesh:
         Args:
             mesh: The :class:`AbstractMesh` to activate inside the context.
         """
-        global _ACTIVE_ABSTRACT_MESH
-        self.prev = _ACTIVE_ABSTRACT_MESH
+        self.prev = _ABSTRACT_MESH_STACK[-1]
         self.mesh = mesh
-        _ACTIVE_ABSTRACT_MESH = mesh
+        _ABSTRACT_MESH_STACK[-1] = mesh
 
     def __enter__(self) -> AbstractMesh:
         """Enter the abstract mesh context.
@@ -549,8 +493,7 @@ class use_abstract_mesh:
             exc_tb: Exception traceback if raised.
         """
         _ = (exc_type, exc_val, exc_tb)
-        global _ACTIVE_ABSTRACT_MESH
-        _ACTIVE_ABSTRACT_MESH = self.prev
+        _ABSTRACT_MESH_STACK[-1] = self.prev
 
 
 def get_mesh() -> Mesh:
@@ -559,7 +502,8 @@ def get_mesh() -> Mesh:
     Returns:
         Mesh: Currently active :class:`Mesh`.
     """
-    return _ACTIVE_MESH if _ACTIVE_MESH is not None else Mesh()
+    active = _MESH_STACK[-1]
+    return active if active is not None else Mesh()
 
 
 def get_abstract_mesh() -> AbstractMesh:
@@ -568,7 +512,8 @@ def get_abstract_mesh() -> AbstractMesh:
     Returns:
         AbstractMesh: Currently active :class:`AbstractMesh`.
     """
-    return _ACTIVE_ABSTRACT_MESH if _ACTIVE_ABSTRACT_MESH is not None else AbstractMesh()
+    active = _ABSTRACT_MESH_STACK[-1]
+    return active if active is not None else AbstractMesh()
 
 
 def auto_axes(

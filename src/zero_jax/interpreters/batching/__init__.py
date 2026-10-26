@@ -12,7 +12,7 @@ from zero_jax._types import ArrayLikeSpec, ConfigValue
 class Array:
     """Array base class for JAX."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -20,14 +20,12 @@ class Array:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -129,7 +127,7 @@ def GetIdx(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
 class IndexedAxisSize:
     """IndexedAxisSize(idx: 'core.Var', lengths: 'Array | core.Var | Tracer')."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -137,21 +135,19 @@ class IndexedAxisSize:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Jumble:
     """Jumble(aval: 'JumbleTy', data: 'Array')."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -159,14 +155,12 @@ class Jumble:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -188,7 +182,7 @@ class JumbleAxis:
 class JumbleTy:
     """JumbleTy(binder: 'core.Var', length: 'int | Tracer | core.Var', elt_ty: 'core.DShapedArray')."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -196,14 +190,12 @@ class JumbleTy:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -254,7 +246,7 @@ not_mapped = NotMapped()
 class RaggedAxis:
     """RaggedAxis(stacked_axis: 'int', ragged_axes: 'tuple[tuple[int, ArrayLikeSpec], ...]')."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -262,14 +254,12 @@ class RaggedAxis:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 

@@ -1,101 +1,27 @@
-"""Module jax_jit."""
+"""Frontend API routing for jax.interpreters.partial_eval.config.jax_jit."""
 
 from __future__ import annotations
 
-import typing
+from zero_jax._config_internal import (
+    JitState,
+    PyArgSignature,
+    get_enable_x64,
+    set_thread_local_state_initialization_callback,
+    swap_thread_local_state_disable_jit,
+)
+from zero_jax._config_internal import (
+    global_jit_state as global_state,
+)
+from zero_jax._config_internal import (
+    thread_local_jit_state as thread_local_state,
+)
 
-import ml_switcheroo_compiler
-
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
-
-
-def JitState(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``JitState``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def PyArgSignature(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``PyArgSignature``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def get_enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``get_enable_x64``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def global_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``global_state``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def set_thread_local_state_initialization_callback(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``set_thread_local_state_initialization_callback``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def swap_thread_local_state_disable_jit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``swap_thread_local_state_disable_jit``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def thread_local_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``thread_local_state``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
+__all__ = [
+    "JitState",
+    "PyArgSignature",
+    "get_enable_x64",
+    "global_state",
+    "set_thread_local_state_initialization_callback",
+    "swap_thread_local_state_disable_jit",
+    "thread_local_state",
+]

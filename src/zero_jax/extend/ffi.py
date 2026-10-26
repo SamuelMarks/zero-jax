@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
 
-
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(target_name: str = "ffi") -> str:
+    """Return the registered FFI target name.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        target_name: Foreign function interface target identifier.
 
     Returns:
-        The operation result.
+        str: Target identifier.
     """
-    return None
+    return target_name
 
 
 __all__ = ["stub"]

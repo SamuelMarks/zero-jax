@@ -2,68 +2,57 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ConfigValue
+from zero_jax.api.core import default_backend as _core_default_backend
+from zero_jax.lax import Device
 
 from . import xla_client
 
 
-def default_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for default_backend.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+def default_backend() -> str:
+    """Return the platform name of the default XLA backend.
 
     Returns:
-        ArrayLikeSpec: Result.
+        str: Default backend platform string (e.g. ``"cpu"``).
     """
-    if not args and not kwargs:
-        try:
-            return _ops.default_backend()
-        except AttributeError:
-            from zero_jax.api.core import default_backend as _core_default_backend
-
-            return _core_default_backend()
-    return _ops.default_backend(*args, **kwargs)
+    return _core_default_backend()
 
 
-def get_backend(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for get_backend.
+def get_backend(platform: str | None = None) -> Device:
+    """Return the XLA backend client/device for ``platform``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        platform: Optional backend platform name (defaults to ``"cpu"``).
 
     Returns:
-        ArrayLikeSpec: Result.
+        Device: Backend device descriptor.
     """
-    if not args and not kwargs:
-        try:
-            return _ops.get_backend()
-        except AttributeError:
-            from zero_jax.lax import Device
-
-            return Device()
-    return _ops.get_backend(*args, **kwargs)
+    return Device(platform=platform or "cpu")
 
 
-def get_compile_options(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for get_compile_options.
+def get_compile_options(
+    num_replicas: int = 1,
+    num_partitions: int = 1,
+    device_assignment: tuple[int, ...] | None = None,
+    use_spmd_partitioning: bool = True,
+) -> dict[str, ConfigValue]:
+    """Return a dictionary of XLA compilation options.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        num_replicas: Number of computation replicas.
+        num_partitions: Number of model partitions.
+        device_assignment: Optional tuple of device IDs.
+        use_spmd_partitioning: Whether SPMD partitioning is enabled.
 
     Returns:
-        ArrayLikeSpec: Result.
+        dict[str, ConfigValue]: Compilation options mapping.
     """
-    if not args and not kwargs:
-        try:
-            return _ops.get_compile_options()
-        except AttributeError:
-            return {}
-    return _ops.get_compile_options(*args, **kwargs)
+    return {
+        "num_replicas": num_replicas,
+        "num_partitions": num_partitions,
+        "device_assignment": device_assignment,
+        "use_spmd_partitioning": use_spmd_partitioning,
+    }
 
 
 __all__ = ["default_backend", "get_backend", "get_compile_options", "xla_client"]

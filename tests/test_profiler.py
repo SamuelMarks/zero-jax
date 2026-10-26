@@ -1,75 +1,60 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.profiler."""
 
 from __future__ import annotations
-
-from unittest.mock import patch
 
 import zero_jax.profiler as mod
 
 
 def test_StepTraceAnnotation() -> None:
     """Test StepTraceAnnotation."""
-    obj = mod.StepTraceAnnotation()
-    assert obj is not None
+    with mod.StepTraceAnnotation("train_step", step_num=3) as obj:
+        assert obj.name == "train_step"
+        assert obj.step_num == 3
 
 
 def test_TraceAnnotation() -> None:
     """Test TraceAnnotation."""
-    obj = mod.TraceAnnotation()
-    assert obj is not None
+    with mod.TraceAnnotation("forward") as obj:
+        assert obj.name == "forward"
 
 
 def test_annotate_function() -> None:
     """Test annotate_function."""
-    with patch("zero_jax._compiler_proxy_ops.annotate_function", create=True) as mock_op:
-        mod.annotate_function()
-        mock_op.assert_called_once_with()
+    fn = mod.annotate_function(lambda x: x + 2, name="add2")
+    assert fn(5) == 7
 
 
 def test_device_memory_profile() -> None:
     """Test device_memory_profile."""
-    with patch("zero_jax._compiler_proxy_ops.device_memory_profile", create=True) as mock_op:
-        mod.device_memory_profile()
-        mock_op.assert_called_once_with()
+    assert mod.device_memory_profile("cpu") == b""
 
 
 def test_save_device_memory_profile() -> None:
     """Test save_device_memory_profile."""
-    with patch("zero_jax._compiler_proxy_ops.save_device_memory_profile", create=True) as mock_op:
-        mod.save_device_memory_profile()
-        mock_op.assert_called_once_with()
+    mod.save_device_memory_profile("/tmp/mem.prof", backend="cpu")
 
 
 def test_start_server() -> None:
     """Test start_server."""
-    with patch("zero_jax._compiler_proxy_ops.start_server", create=True) as mock_op:
-        mod.start_server()
-        mock_op.assert_called_once_with()
+    mod.start_server(9001)
 
 
 def test_start_trace() -> None:
     """Test start_trace."""
-    with patch("zero_jax._compiler_proxy_ops.start_trace", create=True) as mock_op:
-        mod.start_trace()
-        mock_op.assert_called_once_with()
+    mod.start_trace("/tmp/trace")
 
 
 def test_stop_server() -> None:
     """Test stop_server."""
-    with patch("zero_jax._compiler_proxy_ops.stop_server", create=True) as mock_op:
-        mod.stop_server()
-        mock_op.assert_called_once_with()
+    mod.stop_server()
 
 
 def test_stop_trace() -> None:
     """Test stop_trace."""
-    with patch("zero_jax._compiler_proxy_ops.stop_trace", create=True) as mock_op:
-        mod.stop_trace()
-        mock_op.assert_called_once_with()
+    mod.stop_trace()
 
 
 def test_trace() -> None:
     """Test trace."""
-    with patch("zero_jax._compiler_proxy_ops.trace", create=True) as mock_op:
-        mod.trace()
-        mock_op.assert_called_once_with()
+    with mod.trace("/tmp/trace") as ctx:
+        assert ctx is None

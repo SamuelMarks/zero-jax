@@ -1,62 +1,21 @@
-"""Module transfer_guard_lib."""
+"""Frontend API routing for jax.interpreters.partial_eval.config.transfer_guard_lib."""
 
 from __future__ import annotations
 
-import typing
+from zero_jax._config_internal import (
+    TransferGuardLevel,
+    TransferGuardState,
+)
+from zero_jax._config_internal import (
+    global_transfer_guard_state as global_state,
+)
+from zero_jax._config_internal import (
+    thread_local_transfer_guard_state as thread_local_state,
+)
 
-import ml_switcheroo_compiler
-
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
-
-
-def TransferGuardLevel(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``TransferGuardLevel``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def TransferGuardState(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``TransferGuardState``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def global_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``global_state``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-def thread_local_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``thread_local_state``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
+__all__ = [
+    "TransferGuardLevel",
+    "TransferGuardState",
+    "global_state",
+    "thread_local_state",
+]

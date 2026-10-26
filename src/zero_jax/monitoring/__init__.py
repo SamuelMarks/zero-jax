@@ -2,94 +2,65 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
 from zero_jax._types import ArrayLikeSpec, ConfigValue, VariadicCallable
 
 _EVENT_LISTENERS: list[VariadicCallable[ConfigValue]] = []
 _DURATION_LISTENERS: list[VariadicCallable[ConfigValue]] = []
 
 
-def clear_event_listeners(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Clear event listeners.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
+def clear_event_listeners() -> None:
+    """Clear all registered event and duration listeners."""
     _EVENT_LISTENERS.clear()
     _DURATION_LISTENERS.clear()
-    if not args and not kwargs:
-        try:
-            return _ops.clear_event_listeners()
-        except AttributeError:
-            return None
-    return None
 
 
-def record_event(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Record an event.
+def record_event(event: str, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> None:
+    """Record a named monitoring event.
 
     Args:
-        *args: Input parameter ``args`` (``event``).
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        event: Event name string.
+        *args: Additional positional event arguments.
+        **kwargs: Additional keyword event arguments.
     """
-    if args:
-        for cb in _EVENT_LISTENERS:
-            cb(*args, **kwargs)
-        return None
-    return _ops.record_event(*args, **kwargs)
+    for cb in _EVENT_LISTENERS:
+        cb(event, *args, **kwargs)
 
 
-def record_event_duration_secs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Record an event duration in seconds (float).
+def record_event_duration_secs(event: str, duration: float, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> None:
+    """Record an event duration in seconds.
 
     Args:
-        *args: Input parameter ``args`` (``event``, ``duration``).
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        event: Event name string.
+        duration: Elapsed duration in seconds.
+        *args: Additional positional event arguments.
+        **kwargs: Additional keyword event arguments.
     """
-    if args:
-        for cb in _DURATION_LISTENERS:
-            cb(*args, **kwargs)
-        return None
-    return _ops.record_event_duration_secs(*args, **kwargs)
+    for cb in _DURATION_LISTENERS:
+        cb(event, duration, *args, **kwargs)
 
 
-def register_event_duration_secs_listener(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Register a callback to be invoked during record_event_duration_secs().
+def register_event_duration_secs_listener(callback: VariadicCallable[ConfigValue]) -> None:
+    """Register a callback to be invoked during :func:`record_event_duration_secs`.
 
     Args:
-        *args: Input parameter ``args`` (``callback``).
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        callback: Listener callable accepting ``(event, duration, *args, **kwargs)``.
     """
-    if args and callable(args[0]):
-        _DURATION_LISTENERS.append(args[0])
-        return None
-    return _ops.register_event_duration_secs_listener(*args, **kwargs)
+    _DURATION_LISTENERS.append(callback)
 
 
-def register_event_listener(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Register a callback to be invoked during record_event().
+def register_event_listener(callback: VariadicCallable[ConfigValue]) -> None:
+    """Register a callback to be invoked during :func:`record_event`.
 
     Args:
-        *args: Input parameter ``args`` (``callback``).
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        callback: Listener callable accepting ``(event, *args, **kwargs)``.
     """
-    if args and callable(args[0]):
-        _EVENT_LISTENERS.append(args[0])
-        return None
-    return _ops.register_event_listener(*args, **kwargs)
+    _EVENT_LISTENERS.append(callback)
+
+
+__all__ = [
+    "clear_event_listeners",
+    "record_event",
+    "record_event_duration_secs",
+    "register_event_duration_secs_listener",
+    "register_event_listener",
+]

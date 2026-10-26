@@ -2,57 +2,41 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+_CACHE_DIR: list[str | None] = [None]
 
 
-def initialize_cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """This API is deprecated; use set_cache_dir instead.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.initialize_cache(*args, **kwargs)
-
-
-def is_initialized(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Deprecated.
+def initialize_cache(path: str, max_cache_size_bytes: int = -1) -> None:
+    """Initialize the persistent compilation cache directory (deprecated; prefer ``set_cache_dir``).
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        path: Filesystem path for cached compiled executables.
+        max_cache_size_bytes: Optional maximum cache size in bytes.
+    """
+    _ = max_cache_size_bytes
+    _CACHE_DIR[0] = str(path)
+
+
+def is_initialized() -> bool:
+    """Return whether the compilation cache directory has been initialized.
 
     Returns:
-        The operation result.
+        bool: ``True`` if a cache directory is configured, else ``False``.
     """
-    return _ops.is_initialized(*args, **kwargs)
+    return _CACHE_DIR[0] is not None
 
 
-def reset_cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Get back to pristine, uninitialized state.
+def reset_cache() -> None:
+    """Reset the compilation cache back to its uninitialized state."""
+    _CACHE_DIR[0] = None
+
+
+def set_cache_dir(path: str) -> None:
+    """Set the persistent compilation cache directory.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        path: Filesystem path for cached compiled executables.
     """
-    return _ops.reset_cache(*args, **kwargs)
+    _CACHE_DIR[0] = str(path)
 
 
-def set_cache_dir(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Sets the persistent compilation cache directory.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.set_cache_dir(*args, **kwargs)
+__all__ = ["initialize_cache", "is_initialized", "reset_cache", "set_cache_dir"]

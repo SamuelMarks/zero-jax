@@ -1,21 +1,18 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats.betabinom."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats.betabinom as mod
+from tests.conftest import assert_allclose
 
 
 def test_logpmf() -> None:
     """Test logpmf."""
-    with patch("zero_jax._compiler_proxy_ops.logpmf", create=True) as mock_op:
-        mod.logpmf()
-        mock_op.assert_called_once_with()
+    res = mod.logpmf(jnp.array([0.0, 1.0, 2.0]), 2.0, 1.0, 1.0)
+    assert_allclose(jnp.exp(res), [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], atol=1e-5)
 
 
 def test_pmf() -> None:
     """Test pmf."""
-    with patch("zero_jax._compiler_proxy_ops.pmf", create=True) as mock_op:
-        mod.pmf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.pmf(jnp.array([0.0, 1.0, 2.0]), 2.0, 1.0, 1.0), [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], atol=1e-5)

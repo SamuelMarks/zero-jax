@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 import ml_switcheroo_compiler.ops as _original_ops
-from ml_switcheroo_compiler.core.config import config as _core_config
 from ml_switcheroo_compiler.core.shape import TensorOrScalar
-from ml_switcheroo_compiler.core.tensor import Tensor
 from ml_switcheroo_compiler.ops.base import OpDef, get_op
-from ml_switcheroo_compiler.ops.shape import dynamic_slicing as _dynamic_slicing
-from ml_switcheroo_compiler.ops.shape.utils import _emit_shape_node
 
 import zero_jax._proxy as _proxy
-from zero_jax._proxy.linalg_ops import *
-from zero_jax._proxy.math_ops import *
-from zero_jax._proxy.nn_ops import *
-from zero_jax._proxy.random_ops import *
-from zero_jax._proxy.scipy_ops import *
 from zero_jax._types import VariadicCallable
 
 
@@ -501,6 +490,7 @@ sort_complex: OpDef = get_op("SortComplex")()
 sort_key_val: OpDef = get_op("SortKeyVal")()
 spence: OpDef = get_op("Spence")()
 squeeze: OpDef = get_op("Squeeze")()
+stable_unique: OpDef = get_op("Unique")()
 strided_slice: OpDef = get_op("StridedSlice")()
 sum: OpDef = get_op("Sum")()
 svd: OpDef = get_op("Svd")()
@@ -953,7 +943,6 @@ split_list_checked: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("s
 split_merge: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("split_merge")
 spmd_mode: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("spmd_mode")
 squareplus: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("squareplus")
-stable_unique: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("stable_unique")
 standard_jvp: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("standard_jvp")
 standard_jvp2: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("standard_jvp2")
 start_server: VariadicCallable[TensorOrScalar] = _make_unimplemented_op("start_server")

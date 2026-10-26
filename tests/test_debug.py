@@ -1,55 +1,49 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.debug."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import zero_jax.debug as mod
+import zero_jax.numpy as jnp
 
 
 def test_DebugEffect() -> None:
     """Test DebugEffect."""
-    obj = mod.DebugEffect()
-    assert obj is not None
+    obj = mod.DebugEffect(id="dbg1", name="effect", value=1)
+    assert obj.id == "dbg1"
+    assert obj.name == "effect"
+    assert obj.value == 1
 
 
 def test_breakpoint() -> None:
     """Test breakpoint."""
-    with patch("zero_jax._compiler_proxy_ops.breakpoint", create=True) as mock_op:
-        mod.breakpoint()
-        mock_op.assert_called_once_with()
+    mod.breakpoint(backend="cli", filter_frames=True)
 
 
 def test_callback() -> None:
     """Test callback."""
-    with patch("zero_jax._compiler_proxy_ops.callback", create=True) as mock_op:
-        mod.callback()
-        mock_op.assert_called_once_with()
+    seen: list[int] = []
+    mod.callback(lambda x: seen.append(x), 7)
+    assert seen == [7]
 
 
 def test_inspect_array_sharding() -> None:
     """Test inspect_array_sharding."""
-    with patch("zero_jax._compiler_proxy_ops.inspect_array_sharding", create=True) as mock_op:
-        mod.inspect_array_sharding()
-        mock_op.assert_called_once_with()
+    seen: list[str] = []
+    mod.inspect_array_sharding(1, callback=lambda s: seen.append(str(s)))
+    assert seen == ["None"]
 
 
 def test_print() -> None:
     """Test print."""
-    with patch("zero_jax._compiler_proxy_ops.print", create=True) as mock_op:
-        mod.print()
-        mock_op.assert_called_once_with()
+    mod.print("val={x}", x=3)
 
 
 def test_visualize_array_sharding() -> None:
     """Test visualize_array_sharding."""
-    with patch("zero_jax._compiler_proxy_ops.visualize_array_sharding", create=True) as mock_op:
-        mod.visualize_array_sharding()
-        mock_op.assert_called_once_with()
+    out = mod.visualize_array_sharding(jnp.ones((2, 2)))
+    assert "Array" in out
 
 
 def test_visualize_sharding() -> None:
     """Test visualize_sharding."""
-    with patch("zero_jax._compiler_proxy_ops.visualize_sharding", create=True) as mock_op:
-        mod.visualize_sharding()
-        mock_op.assert_called_once_with()
+    assert mod.visualize_sharding("cpu") == "cpu"

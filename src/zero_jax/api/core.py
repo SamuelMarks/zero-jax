@@ -5,9 +5,9 @@ from __future__ import annotations
 import typing
 from collections.abc import Sequence
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue, DTypeSpec, ShapeTuple, T
+from zero_jax._types import ArrayLikeSpec, DTypeSpec, IndexSpec, ShapeTuple, T
 from zero_jax.numpy.lax_numpy import ndarray
-from zero_jax.sharding import NamedSharding
+from zero_jax.sharding import NamedSharding, Sharding
 
 if typing.TYPE_CHECKING:
     from zero_jax import Device
@@ -26,7 +26,7 @@ class ShapeDtypeStruct:
         self,
         shape: ShapeTuple,
         dtype: DTypeSpec,
-        sharding: ConfigValue | NamedSharding = None,
+        sharding: Sharding | NamedSharding | None = None,
     ) -> None:
         """Initialize ``ShapeDtypeStruct``.
 
@@ -48,7 +48,7 @@ class Shard:
         index: The index slice of this shard.
     """
 
-    def __init__(self, device: ConfigValue, index: ConfigValue) -> None:
+    def __init__(self, device: Device | str | None, index: IndexSpec) -> None:
         """Initialize ``Shard``.
 
         Args:
@@ -160,7 +160,7 @@ def host_ids() -> list[int]:
     return [0]
 
 
-def device_put(x: T, device: ConfigValue = None) -> T:
+def device_put(x: T, device: Device | Sharding | str | None = None) -> T:
     """Transfer data to the specified device.
 
     Args:
@@ -173,7 +173,7 @@ def device_put(x: T, device: ConfigValue = None) -> T:
     return x
 
 
-def device_put_replicated(x: T, devices: Sequence[ConfigValue]) -> list[T]:
+def device_put_replicated(x: T, devices: Sequence[Device | str | None]) -> list[T]:
     """Replicate data across the specified sequence of devices.
 
     Args:
@@ -186,7 +186,7 @@ def device_put_replicated(x: T, devices: Sequence[ConfigValue]) -> list[T]:
     return [x for _ in devices]
 
 
-def device_put_sharded(shards: Sequence[ArrayLikeSpec], devices: Sequence[ConfigValue]) -> ndarray:
+def device_put_sharded(shards: Sequence[ArrayLikeSpec], devices: Sequence[Device | str | None]) -> ndarray:
     """Construct an array from a sequence of shards on the specified devices.
 
     Args:

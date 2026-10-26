@@ -1,77 +1,76 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.signal."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.signal as mod
+from tests.conftest import assert_allclose
 
 
 def test_convolve() -> None:
     """Test convolve."""
-    with patch("zero_jax._compiler_proxy_ops.convolve", create=True) as mock_op:
-        mod.convolve()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.convolve(jnp.array([1.0, 2.0]), jnp.array([3.0, 4.0])), [3.0, 10.0, 8.0])
 
 
 def test_convolve2d() -> None:
     """Test convolve2d."""
-    with patch("zero_jax._compiler_proxy_ops.convolve2d", create=True) as mock_op:
-        mod.convolve2d()
-        mock_op.assert_called_once_with()
+    a = jnp.ones((2, 2))
+    out = mod.convolve2d(a, a)
+    assert out.shape == (3, 3)
+    assert_allclose(out[1, 1], 4.0)
 
 
 def test_correlate() -> None:
     """Test correlate."""
-    with patch("zero_jax._compiler_proxy_ops.correlate", create=True) as mock_op:
-        mod.correlate()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.correlate(jnp.array([1.0, 2.0]), jnp.array([3.0, 4.0])), [4.0, 11.0, 6.0])
 
 
 def test_correlate2d() -> None:
     """Test correlate2d."""
-    with patch("zero_jax._compiler_proxy_ops.correlate2d", create=True) as mock_op:
-        mod.correlate2d()
-        mock_op.assert_called_once_with()
+    a = jnp.ones((2, 2))
+    out = mod.correlate2d(a, a)
+    assert out.shape == (3, 3)
+    assert_allclose(out[1, 1], 4.0)
 
 
 def test_csd() -> None:
     """Test csd."""
-    with patch("zero_jax._compiler_proxy_ops.csd", create=True) as mock_op:
-        mod.csd()
-        mock_op.assert_called_once_with()
+    freqs, pxy = mod.csd(jnp.ones((8,)), jnp.ones((8,)))
+    assert freqs.shape == (5,)
+    assert pxy.shape == (5,)
 
 
 def test_detrend() -> None:
     """Test detrend."""
-    with patch("zero_jax._compiler_proxy_ops.detrend", create=True) as mock_op:
-        mod.detrend()
-        mock_op.assert_called_once_with()
+    x = jnp.array([1.0, 2.0, 3.0, 4.0])
+    assert_allclose(mod.detrend(x, type="linear"), [0.0, 0.0, 0.0, 0.0], atol=1e-5)
+    assert_allclose(mod.detrend(jnp.array([2.0, 2.0, 2.0]), type="constant"), [0.0, 0.0, 0.0], atol=1e-5)
 
 
 def test_fftconvolve() -> None:
     """Test fftconvolve."""
-    with patch("zero_jax._compiler_proxy_ops.fftconvolve", create=True) as mock_op:
-        mod.fftconvolve()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.fftconvolve(jnp.array([1.0, 2.0]), jnp.array([3.0, 4.0])), [3.0, 10.0, 8.0])
+    assert mod.fftconvolve(jnp.ones((2, 2)), jnp.ones((2, 2))).shape == (3, 3)
 
 
 def test_istft() -> None:
     """Test istft."""
-    with patch("zero_jax._compiler_proxy_ops.istft", create=True) as mock_op:
-        mod.istft()
-        mock_op.assert_called_once_with()
+    _, _, zxx = mod.stft(jnp.ones((8,)), nperseg=4)
+    t, x_rec = mod.istft(zxx, nperseg=4)
+    assert t.shape == x_rec.shape
 
 
 def test_stft() -> None:
     """Test stft."""
-    with patch("zero_jax._compiler_proxy_ops.stft", create=True) as mock_op:
-        mod.stft()
-        mock_op.assert_called_once_with()
+    freqs, times, zxx = mod.stft(jnp.ones((8,)), nperseg=4)
+    assert freqs.shape == (5,)
+    assert times.shape == (1,)
+    assert zxx.shape == (5, 1)
 
 
 def test_welch() -> None:
     """Test welch."""
-    with patch("zero_jax._compiler_proxy_ops.welch", create=True) as mock_op:
-        mod.welch()
-        mock_op.assert_called_once_with()
+    freqs, pxx = mod.welch(jnp.ones((8,)))
+    assert freqs.shape == (5,)
+    assert pxx.shape == (5,)
+    assert_allclose(pxx[0], 8.0, atol=1e-5)

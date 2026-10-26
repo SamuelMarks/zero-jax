@@ -7,7 +7,7 @@ import typing
 import ml_switcheroo_compiler
 
 import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec, ArrayProtocol, ConfigValue, VariadicCallable
 
 from . import fft, linalg
 from .config import *

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import math
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32, log
 from zero_jax.scipy.special import log_ndtr, ndtr, ndtri
 
@@ -27,147 +26,137 @@ def _norm_z(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1
     return (x_arr - loc_arr) / scale_arr, scale_arr
 
 
-def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal log probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability density.
     """
-    if args:
-        x = args[0]
-        loc = args[1] if len(args) > 1 else kwargs.get("loc", 0.0)
-        scale = args[2] if len(args) > 2 else kwargs.get("scale", 1.0)
-        z, s = _norm_z(x, loc, scale)
-        return -0.5 * z * z - 0.5 * math.log(2.0 * math.pi) - log(s)
-    return _ops.logpdf(*args, **kwargs)
+    z, s = _norm_z(x, loc, scale)
+    return -0.5 * z * z - 0.5 * math.log(2.0 * math.pi) - log(s)
 
 
-def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability density.
     """
-    if args:
-        return exp(logpdf(*args, **kwargs))
-    return _ops.pdf(*args, **kwargs)
+    return exp(logpdf(x, loc, scale))
 
 
-def cdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def cdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal cumulative distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated cumulative distribution.
     """
-    if args:
-        x = args[0]
-        loc = args[1] if len(args) > 1 else kwargs.get("loc", 0.0)
-        scale = args[2] if len(args) > 2 else kwargs.get("scale", 1.0)
-        z, _ = _norm_z(x, loc, scale)
-        return ndtr(z)
-    return _ops.cdf(*args, **kwargs)
+    z, _ = _norm_z(x, loc, scale)
+    return ndtr(z)
 
 
-def logcdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logcdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal log cumulative distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log cumulative distribution.
     """
-    if args:
-        x = args[0]
-        loc = args[1] if len(args) > 1 else kwargs.get("loc", 0.0)
-        scale = args[2] if len(args) > 2 else kwargs.get("scale", 1.0)
-        z, _ = _norm_z(x, loc, scale)
-        return log_ndtr(z)
-    return _ops.logcdf(*args, **kwargs)
+    z, _ = _norm_z(x, loc, scale)
+    return log_ndtr(z)
 
 
-def sf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def sf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal distribution survival function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated survival function.
     """
-    if args:
-        x = args[0]
-        loc = args[1] if len(args) > 1 else kwargs.get("loc", 0.0)
-        scale = args[2] if len(args) > 2 else kwargs.get("scale", 1.0)
-        z, _ = _norm_z(x, loc, scale)
-        return ndtr(-z)
-    return _ops.sf(*args, **kwargs)
+    z, _ = _norm_z(x, loc, scale)
+    return ndtr(-z)
 
 
-def logsf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logsf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal distribution log survival function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log survival function.
     """
-    if args:
-        x = args[0]
-        loc = args[1] if len(args) > 1 else kwargs.get("loc", 0.0)
-        scale = args[2] if len(args) > 2 else kwargs.get("scale", 1.0)
-        z, _ = _norm_z(x, loc, scale)
-        return log_ndtr(-z)
-    return _ops.logsf(*args, **kwargs)
+    z, _ = _norm_z(x, loc, scale)
+    return log_ndtr(-z)
 
 
-def ppf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def ppf(q: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal distribution percent point function.
 
     Args:
-        *args: Input parameter ``args`` (``q``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        q: Lower tail probability.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Quantile corresponding to ``q``.
     """
-    if args:
-        q = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return ndtri(q) * scale + loc
-    return _ops.ppf(*args, **kwargs)
+    q_arr = asarray(q, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return ndtri(q_arr) * scale_arr + loc_arr
 
 
-def isf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def isf(q: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Normal distribution inverse survival function.
 
     Args:
-        *args: Input parameter ``args`` (``q``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        q: Upper tail probability.
+        loc: Distribution mean.
+        scale: Distribution standard deviation.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Quantile corresponding to upper tail ``q``.
     """
-    if args:
-        q = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return -ndtri(q) * scale + loc
-    return _ops.isf(*args, **kwargs)
+    q_arr = asarray(q, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return -ndtri(q_arr) * scale_arr + loc_arr
+
+
+__all__ = [
+    "_norm_z",
+    "cdf",
+    "isf",
+    "logcdf",
+    "logpdf",
+    "logsf",
+    "pdf",
+    "ppf",
+    "sf",
+]

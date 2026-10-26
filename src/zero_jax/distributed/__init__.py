@@ -2,30 +2,30 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from collections.abc import Sequence
 
 _INITIALIZED: bool = False
 
 
-def initialize(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Initializes the JAX distributed system.
+def initialize(
+    coordinator_address: str | None = None,
+    num_processes: int | None = None,
+    process_id: int | None = None,
+    local_device_ids: int | Sequence[int] | None = None,
+    initialization_timeout: int = 300,
+) -> None:
+    """Initialize the JAX distributed system.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        coordinator_address: IP address and port of coordinator process.
+        num_processes: Total number of processes in the cluster.
+        process_id: ID of the current process.
+        local_device_ids: Optional local device IDs managed by this process.
+        initialization_timeout: Timeout in seconds.
     """
     global _INITIALIZED
+    _ = (coordinator_address, num_processes, process_id, local_device_ids, initialization_timeout)
     _INITIALIZED = True
-    if not args and not kwargs:
-        try:
-            return _ops.initialize()
-        except AttributeError:
-            return None
-    return None
 
 
 def is_initialized() -> bool:
@@ -37,21 +37,10 @@ def is_initialized() -> bool:
     return _INITIALIZED
 
 
-def shutdown(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Shuts down the distributed system.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
+def shutdown() -> None:
+    """Shut down the distributed system."""
     global _INITIALIZED
     _INITIALIZED = False
-    if not args and not kwargs:
-        try:
-            return _ops.shutdown()
-        except AttributeError:
-            return None
-    return None
+
+
+__all__ = ["initialize", "is_initialized", "shutdown"]

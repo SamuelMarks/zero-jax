@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
 
-
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(name: str = "linear_util") -> str:
+    """Return the linear_util transformation label.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Optional transformation label.
 
     Returns:
-        The operation result.
+        str: Transformation label.
     """
-    return None
+    return name
 
 
 __all__ = ["stub"]

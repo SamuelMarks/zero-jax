@@ -8,6 +8,7 @@ import zero_jax.stages as mod
 def test_class_ArgInfo() -> None:
     """Test class ArgInfo."""
     info = mod.ArgInfo(aval="float32[2]", donated=True, shape=(2,), dtype="float32")
+    assert info._aval == "float32[2]"
     assert info.donated is True
     assert info.shape == (2,)
     assert info.dtype == "float32"
@@ -50,4 +51,5 @@ def test_class_Wrapped_Traced_Lowered_Compiled() -> None:
     assert compiled(7) == 7
 
     empty_compiled = mod.Compiled()
+    assert empty_compiled.as_text() == "HloModule compiled_module"
     assert empty_compiled(7) is None

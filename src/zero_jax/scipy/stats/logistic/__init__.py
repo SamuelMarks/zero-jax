@@ -2,113 +2,116 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32, log
 from zero_jax.scipy.special import expit, logit
 
 
-def cdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def cdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic cumulative distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated cumulative distribution.
     """
-    if args:
-        x = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return expit((x - loc) / scale)
-    return _ops.cdf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return expit((x_arr - loc_arr) / scale_arr)
 
 
-def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic log probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability density.
     """
-    if args:
-        x = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        z = (x - loc) / scale
-        return -z - 2.0 * log(1.0 + exp(-z)) - log(scale)
-    return _ops.logpdf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    z = (x_arr - loc_arr) / scale_arr
+    return -z - 2.0 * log(1.0 + exp(-z)) - log(scale_arr)
 
 
-def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability density.
     """
-    if args:
-        return exp(logpdf(*args, **kwargs))
-    return _ops.pdf(*args, **kwargs)
+    return exp(logpdf(x, loc, scale))
 
 
-def sf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def sf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic distribution survival function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated survival function.
     """
-    if args:
-        x = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return expit(-(x - loc) / scale)
-    return _ops.sf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return expit(-(x_arr - loc_arr) / scale_arr)
 
 
-def ppf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def ppf(q: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic distribution percent point function.
 
     Args:
-        *args: Input parameter ``args`` (``q``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        q: Lower tail probability.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Quantile corresponding to ``q``.
     """
-    if args:
-        q = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return loc + scale * logit(q)
-    return _ops.ppf(*args, **kwargs)
+    q_arr = asarray(q, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return loc_arr + scale_arr * logit(q_arr)
 
 
-def isf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def isf(q: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Logistic distribution inverse survival function.
 
     Args:
-        *args: Input parameter ``args`` (``q``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        q: Upper tail probability.
+        loc: Location parameter.
+        scale: Scale parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Quantile corresponding to upper tail ``q``.
     """
-    if args:
-        q = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return loc - scale * logit(q)
-    return _ops.isf(*args, **kwargs)
+    q_arr = asarray(q, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return loc_arr - scale_arr * logit(q_arr)
+
+
+__all__ = [
+    "cdf",
+    "isf",
+    "logpdf",
+    "pdf",
+    "ppf",
+    "sf",
+]

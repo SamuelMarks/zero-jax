@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
+from zero_jax.api.core import default_backend
 
 
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(platform: str | None = None) -> str:
+    """Return the active or requested backend platform identifier.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        platform: Optional backend platform override.
 
     Returns:
-        The operation result.
+        str: Backend platform name.
     """
-    return None
+    return platform if platform is not None else default_backend()
 
 
 __all__ = ["stub"]

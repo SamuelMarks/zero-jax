@@ -2,4 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from weakref import ReferenceType, WeakKeyDictionary, WeakValueDictionary, ref
+
+__all__ = [
+    "ReferenceType",
+    "WeakKeyDictionary",
+    "WeakValueDictionary",
+    "ref",
+]

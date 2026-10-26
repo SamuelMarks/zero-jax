@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+import math
+from collections.abc import Sequence
 
 from zero_jax._types import PyTree, VariadicCallable
+from zero_jax.numpy import reshape, stack, zeros_like
+from zero_jax.numpy import sum as jnp_sum
+from zero_jax.numpy.lax_numpy import _to_tensor
+from zero_jax.tree_util import tree_flatten, tree_unflatten
 
 from .transformations import grad, value_and_grad
 
@@ -193,11 +198,11 @@ def jvp(
     Returns:
         tuple[PyTree, ...]: ``(primal_out, tangent_out)`` or ``(primal_out, tangent_out, aux)`` when ``has_aux=True``.
     """
-    from zero_jax.numpy import sum as jnp_sum
-    from zero_jax.tree_util import tree_flatten, tree_map
-
     if isinstance(fun, CustomJVPWrapper) and fun.jvp_fun is not None:
-        return fun.jvp_fun(tuple(primals), tuple(tangents))
+        nondiff = [primals[i] for i in fun.nondiff_argnums if i < len(primals)]
+        diff_primals = tuple(p for i, p in enumerate(primals) if i not in fun.nondiff_argnums)
+        diff_tangents = tuple(t for i, t in enumerate(tangents) if i not in fun.nondiff_argnums)
+        return fun.jvp_fun(*nondiff, diff_primals, diff_tangents) if nondiff else fun.jvp_fun(diff_primals, diff_tangents)
 
     raw_out = fun(*primals)
     if has_aux and isinstance(raw_out, tuple) and len(raw_out) == 2:
@@ -217,6 +222,8 @@ def jvp(
         r = fun(*args)
         return r[0] if (has_aux and isinstance(r, tuple) and len(r) == 2) else r
 
+    all_argnums = tuple(range(len(primals)))
+
     def _leaf_jvp(out_leaf: PyTree, leaf_idx: int) -> PyTree:
         """Compute directional derivative for the ``leaf_idx``-th output leaf.
 
@@ -227,6 +234,8 @@ def jvp(
         Returns:
             PyTree: Directional derivative matching ``out_leaf``.
         """
+        if not primals:
+            return out_leaf * 0.0
 
         def _scalar_comp(*args: PyTree) -> PyTree:
             """Extract and sum the ``leaf_idx``-th leaf of ``_pure_fun(*args)``.
@@ -240,17 +249,15 @@ def jvp(
             leaves, _ = tree_flatten(_pure_fun(*args))
             return jnp_sum(leaves[leaf_idx])
 
+        g_vals = grad(_scalar_comp, argnums=all_argnums)(*primals)
         total_tangent: PyTree = None
-        for arg_idx, t_val in enumerate(tangents):
-            g_val = grad(_scalar_comp, argnums=arg_idx)(*primals)
+        for g_val, t_val in zip(g_vals, tangents):
             contrib = jnp_sum(g_val * t_val)
             total_tangent = contrib if total_tangent is None else (total_tangent + contrib)
-        return total_tangent if total_tangent is not None else out_leaf * 0.0
+        return total_tangent
 
     out_leaves, out_def = tree_flatten(primal_out)
     tangent_leaves = [_leaf_jvp(leaf, idx) for idx, leaf in enumerate(out_leaves)]
-    from zero_jax.tree_util import tree_unflatten
-
     tangent_out = tree_unflatten(out_def, tangent_leaves)
     if has_aux:
         return primal_out, tangent_out, aux
@@ -272,13 +279,11 @@ def vjp(
     Returns:
         tuple[PyTree, ...]: ``(primal_out, vjp_fun)`` or ``(primal_out, vjp_fun, aux)`` when ``has_aux=True``.
     """
-    from zero_jax.numpy import sum as jnp_sum
-    from zero_jax.tree_util import tree_flatten, tree_map
-
     if isinstance(fun, CustomVJPWrapper) and fun.fwd is not None and fun.bwd is not None:
         fwd_fn = fun.fwd
         bwd_fn = fun.bwd
         primal_out, residuals = fwd_fn(*primals)
+        nondiff = [primals[i] for i in fun.nondiff_argnums if i < len(primals)]
 
         def _custom_vjp_fun(cotangent: PyTree) -> tuple[PyTree, ...]:
             """Evaluate custom VJP backward rule.
@@ -289,7 +294,7 @@ def vjp(
             Returns:
                 tuple[PyTree, ...]: Tuple of input cotangents.
             """
-            res = bwd_fn(residuals, cotangent)
+            res = bwd_fn(*nondiff, residuals, cotangent) if nondiff else bwd_fn(residuals, cotangent)
             return res if isinstance(res, tuple) else (res,)
 
         return (primal_out, _custom_vjp_fun, None) if has_aux else (primal_out, _custom_vjp_fun)
@@ -300,11 +305,13 @@ def vjp(
     else:
         primal_out, aux = raw_out, None
 
+    all_argnums = tuple(range(len(primals)))
+
     def vjp_fun(cotangent: PyTree) -> tuple[PyTree, ...]:
         """Pull back ``cotangent`` through ``fun`` at ``primals``.
 
         Args:
-            cotangent: Output cotangent matching ``primal_out``.
+            cotangent: Output cotangent matching ``primimal_out``.
 
         Returns:
             tuple[PyTree, ...]: Tuple of cotangents with respect to ``primals``.
@@ -329,10 +336,7 @@ def vjp(
                 total = total + term
             return total
 
-        grads: list[PyTree] = []
-        for idx in range(len(primals)):
-            grads.append(grad(_weighted_scalar, argnums=idx)(*primals))
-        return tuple(grads)
+        return grad(_weighted_scalar, argnums=all_argnums)(*primals)
 
     if has_aux:
         return primal_out, vjp_fun, aux
@@ -435,8 +439,7 @@ def jacrev(
     Returns:
         VariadicCallable[PyTree]: Function that evaluates the Jacobian of ``fun``.
     """
-    from zero_jax.numpy import reshape, stack
-    from zero_jax.numpy.lax_numpy import _to_tensor
+    _ = holomorphic
 
     def wrapper(*args: PyTree, **kwargs: PyTree) -> PyTree:
         """Evaluate the Jacobian at ``args`` and ``kwargs``.
@@ -453,8 +456,6 @@ def jacrev(
         t_out = _to_tensor(out)
         if not t_out.shape:
             return grad(fun, argnums=argnums, has_aux=has_aux, allow_int=allow_int)(*args, **kwargs)
-
-        import math
 
         num_elems = int(math.prod(t_out.shape))
         rows = []
@@ -526,9 +527,6 @@ def hessian(
     Returns:
         VariadicCallable[PyTree]: A function that evaluates the Hessian.
     """
-    from zero_jax.numpy import reshape, stack, zeros_like
-    from zero_jax.numpy.lax_numpy import _to_tensor
-
     grad_fn = grad(fun, argnums=argnums, has_aux=has_aux, holomorphic=holomorphic)
 
     def wrapper(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -555,8 +553,6 @@ def hessian(
             if has_aux and isinstance(g_plus, tuple) and len(g_plus) == 2:
                 return (g_plus[0] - g_minus[0]) / (2.0 * eps), g_plus[1]
             return (g_plus - g_minus) / (2.0 * eps)
-
-        import math
 
         num_elems = int(math.prod(t_x.shape))
         flat_x = reshape(x, (num_elems,))

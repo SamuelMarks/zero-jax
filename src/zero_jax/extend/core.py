@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
 
-
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(name: str = "core") -> str:
+    """Return the extend.core primitive namespace identifier.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Optional primitive or namespace label.
 
     Returns:
-        The operation result.
+        str: Namespace label.
     """
-    return None
+    return name
 
 
 __all__ = ["stub"]

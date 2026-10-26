@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from ml_switcheroo_ir import DType
 
-import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._config_internal import config as _internal_config
 from zero_jax._types import ArrayLikeSpec, ArrayProtocol, ConfigValue, DTypeSpec, NamedProtocol
 
 _FLOAT_INFO: dict[str, tuple[int, float, float, float]] = {
@@ -12,6 +12,11 @@ _FLOAT_INFO: dict[str, tuple[int, float, float, float]] = {
     "float16": (16, 0.0009765625, -65504.0, 65504.0),
     "float32": (32, 1.1920928955078125e-07, -3.4028234663852886e38, 3.4028234663852886e38),
     "float64": (64, 2.220446049250313e-16, -1.7976931348623157e308, 1.7976931348623157e308),
+    "float8_e4m3b11fnuz": (8, 0.125, -30.0, 30.0),
+    "float8_e4m3fn": (8, 0.125, -448.0, 448.0),
+    "float8_e4m3fnuz": (8, 0.125, -240.0, 240.0),
+    "float8_e5m2": (8, 0.25, -57344.0, 57344.0),
+    "float8_e5m2fnuz": (8, 0.25, -57344.0, 57344.0),
 }
 
 _INT_INFO: dict[str, tuple[int, int, int]] = {
@@ -41,6 +46,8 @@ def _resolve_dtype_name(dtype: ConfigValue = None) -> str:
         return "float32"
     if isinstance(dtype, DType):
         return str(dtype.value).lower()
+    if isinstance(dtype, type) and issubclass(dtype, _ExtendedScalar):
+        return dtype.dtype_name
     if isinstance(dtype, NamedProtocol):
         return dtype.name.lower()
     if isinstance(dtype, str):
@@ -53,6 +60,8 @@ def _resolve_dtype_name(dtype: ConfigValue = None) -> str:
         return "bool"
     if dtype is complex:
         return "complex64"
+    if callable(dtype):
+        return dtype.__name__.lower()
     return str(dtype).lower()
 
 
@@ -61,23 +70,34 @@ class _ExtendedScalar:
 
     dtype_name: str = "extended"
 
-    def __init__(
-        self,
-        value: ConfigValue = 0,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-    ) -> None:
+    def __init__(self, value: int | float = 0) -> None:
         """Initialize an extended scalar value.
 
         Args:
-            value: Numerical or configuration value.
-            id: Optional identifier metadata.
-            name: Optional name override.
+            value: Numerical scalar value.
         """
-        self.value = value
-        self.id = id
-        self.name = str(name) if name is not None else self.dtype_name
-        self.dtype = DType(self.dtype_name) if self.dtype_name in ("bfloat16", "float16", "float32", "float64", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "bool") else self.dtype_name
+        self.value: int | float = value
+        self.name: str = self.dtype_name
+        self.dtype: DType | str = (
+            DType(self.dtype_name)
+            if self.dtype_name
+            in (
+                "bfloat16",
+                "float16",
+                "float32",
+                "float64",
+                "int8",
+                "int16",
+                "int32",
+                "int64",
+                "uint8",
+                "uint16",
+                "uint32",
+                "uint64",
+                "bool",
+            )
+            else self.dtype_name
+        )
 
 
 class bfloat16(_ExtendedScalar):
@@ -143,69 +163,41 @@ class prng_key(_ExtendedScalar):
 class finfo:
     """Machine limits for floating-point types."""
 
-    def __init__(
-        self,
-        dtype: ConfigValue = "float32",
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
+    def __init__(self, dtype: ConfigValue = "float32") -> None:
         """Initialize floating-point machine limit properties for ``dtype``.
 
         Args:
             dtype: Floating-point dtype or scalar value.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
         """
         dtype_str = _resolve_dtype_name(dtype)
         bits, eps, min_val, max_val = _FLOAT_INFO.get(dtype_str, _FLOAT_INFO["float32"])
-        self.dtype = dtype_str
-        self.bits = bits
-        self.eps = eps
-        self.min = min_val
-        self.max = max_val
-        self.tiny = float(2.0 ** (-126 if bits <= 32 else -1022))
-        self.id = id
-        self.name = name
-        self.value = value
+        self.dtype: str = dtype_str
+        self.bits: int = bits
+        self.eps: float = eps
+        self.min: float = min_val
+        self.max: float = max_val
+        self.tiny: float = float(2.0 ** (-126 if bits <= 32 else -1022))
 
 
 class iinfo:
     """Machine limits for integer types."""
 
-    def __init__(
-        self,
-        int_type: ConfigValue = "int32",
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
+    def __init__(self, int_type: ConfigValue = "int32") -> None:
         """Initialize integer machine limit properties for ``int_type``.
 
         Args:
             int_type: Integer dtype or scalar value.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
         """
         dtype_str = _resolve_dtype_name(int_type)
         bits, min_val, max_val = _INT_INFO.get(dtype_str, _INT_INFO["int32"])
-        self.dtype = dtype_str
-        self.bits = bits
-        self.min = min_val
-        self.max = max_val
-        self.id = id
-        self.name = name
-        self.value = value
+        self.dtype: str = dtype_str
+        self.bits: int = bits
+        self.min: int = min_val
+        self.max: int = max_val
 
 
-def float0(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> str:
+def float0() -> str:
     """Return the symbolic tangent dtype ``"float0"`` for integer/boolean primals.
-
-    Args:
-        *args: Optional positional arguments.
-        **kwargs: Optional keyword arguments.
 
     Returns:
         str: The ``"float0"`` dtype identifier.
@@ -223,7 +215,14 @@ def canonicalize_dtype(dtype: DTypeSpec = "float32", allow_extended_dtype: bool 
     Returns:
         str: Canonicalized dtype name (e.g. ``"float32"`` or ``"int32"``).
     """
+    _ = allow_extended_dtype
     name = _resolve_dtype_name(dtype)
+    if _internal_config.jax_enable_x64:
+        if name == "double":
+            return "float64"
+        if name == "long":
+            return "int64"
+        return name
     if name in ("float64", "double"):
         return "float32"
     if name in ("int64", "long"):
@@ -249,7 +248,20 @@ def issubdtype(arg1: DTypeSpec = "float32", arg2: DTypeSpec = "float32") -> bool
     n2 = _resolve_dtype_name(arg2)
     if n1 == n2:
         return True
-    floating = {"bfloat16", "float16", "float32", "float64", "floating", "inexact", "number"}
+    floating = {
+        "bfloat16",
+        "float16",
+        "float32",
+        "float64",
+        "float8_e4m3b11fnuz",
+        "float8_e4m3fn",
+        "float8_e4m3fnuz",
+        "float8_e5m2",
+        "float8_e5m2fnuz",
+        "floating",
+        "inexact",
+        "number",
+    }
     signed_int = {"int4", "int8", "int16", "int32", "int64", "signedinteger", "integer", "number"}
     unsigned_int = {"uint4", "uint8", "uint16", "uint32", "uint64", "unsignedinteger", "integer", "number"}
     complex_types = {"complex64", "complex128", "complexfloating", "inexact", "number"}

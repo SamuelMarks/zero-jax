@@ -1,21 +1,17 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.typing."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.typing as mod
+from tests.conftest import assert_allclose
 
 
 def test_ArrayLike() -> None:
     """Test ArrayLike."""
-    with patch("zero_jax._compiler_proxy_ops.ArrayLike", create=True) as mock_op:
-        mod.ArrayLike()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.ArrayLike([1.0, 2.0]), [1.0, 2.0])
 
 
 def test_DTypeLike() -> None:
     """Test DTypeLike."""
-    with patch("zero_jax._compiler_proxy_ops.DTypeLike", create=True) as mock_op:
-        mod.DTypeLike()
-        mock_op.assert_called_once_with()
+    assert mod.DTypeLike("float32") == jnp.float32

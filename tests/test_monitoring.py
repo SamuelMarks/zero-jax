@@ -1,45 +1,54 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.monitoring."""
 
 from __future__ import annotations
-
-from unittest.mock import patch
 
 import zero_jax.monitoring as mod
 
 
 def test_clear_event_listeners() -> None:
     """Test clear_event_listeners."""
-    with patch("zero_jax._compiler_proxy_ops.clear_event_listeners", create=True) as mock_op:
-        mod.clear_event_listeners()
-        mock_op.assert_called_once_with()
+    events: list[str] = []
+    mod.register_event_listener(lambda e: events.append(str(e)))
+    mod.clear_event_listeners()
+    mod.record_event("ignored")
+    assert events == []
 
 
 def test_record_event() -> None:
     """Test record_event."""
-    with patch("zero_jax._compiler_proxy_ops.record_event", create=True) as mock_op:
-        mod.record_event()
-        mock_op.assert_called_once_with()
+    events: list[str] = []
+    mod.clear_event_listeners()
+    mod.register_event_listener(lambda e: events.append(str(e)))
+    mod.record_event("compile")
+    assert events == ["compile"]
+    mod.clear_event_listeners()
 
 
 def test_record_event_duration_secs() -> None:
     """Test record_event_duration_secs."""
-    with patch("zero_jax._compiler_proxy_ops.record_event_duration_secs", create=True) as mock_op:
-        mod.record_event_duration_secs()
-        mock_op.assert_called_once_with()
+    durations: list[tuple[str, float]] = []
+    mod.clear_event_listeners()
+    mod.register_event_duration_secs_listener(lambda e, d: durations.append((str(e), float(d))))
+    mod.record_event_duration_secs("jit", 0.25)
+    assert durations == [("jit", 0.25)]
+    mod.clear_event_listeners()
 
 
 def test_register_event_duration_secs_listener() -> None:
     """Test register_event_duration_secs_listener."""
-    with patch(
-        "zero_jax._compiler_proxy_ops.register_event_duration_secs_listener",
-        create=True,
-    ) as mock_op:
-        mod.register_event_duration_secs_listener()
-        mock_op.assert_called_once_with()
+    durations: list[float] = []
+    mod.clear_event_listeners()
+    mod.register_event_duration_secs_listener(lambda _e, d: durations.append(float(d)))
+    mod.record_event_duration_secs("trace", 1.5)
+    assert durations == [1.5]
+    mod.clear_event_listeners()
 
 
 def test_register_event_listener() -> None:
     """Test register_event_listener."""
-    with patch("zero_jax._compiler_proxy_ops.register_event_listener", create=True) as mock_op:
-        mod.register_event_listener()
-        mock_op.assert_called_once_with()
+    events: list[str] = []
+    mod.clear_event_listeners()
+    mod.register_event_listener(lambda e: events.append(str(e)))
+    mod.record_event("start")
+    assert events == ["start"]
+    mod.clear_event_listeners()

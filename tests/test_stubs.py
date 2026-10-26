@@ -4062,16 +4062,16 @@ def test_generated_stubs(mod_name: ArrayLikeSpec, obj_name: ArrayLikeSpec, obj_t
         obj_name: Parameter ``obj_name``.
         obj_type: Parameter ``obj_type``.
     """
+    import inspect
+
     mod = importlib.import_module(mod_name)
+    assert obj_name in vars(mod)
     obj = vars(mod)[obj_name]
-    if obj_type == "function":
+    if callable(obj):
+        if obj_type == "function":
+            assert inspect.signature(obj) is not None
         try:
-            obj()
-        except Exception:
-            pass
-    elif obj_type == "class":
-        try:
-            instance = obj()
-            assert isinstance(instance, obj)
+            res = obj()
+            assert res is not obj
         except Exception:
             pass

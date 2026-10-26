@@ -3,3 +3,5 @@
 from __future__ import annotations
 
 from . import vq
+
+__all__ = ["vq"]

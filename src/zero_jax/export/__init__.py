@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from collections.abc import Callable, Sequence
+
+from zero_jax._types import PyTree, VariadicCallable
 
 
 class DisabledSafetyCheck:
@@ -19,23 +21,28 @@ class DisabledSafetyCheck:
         self.value = value
 
     @classmethod
-    def apply(cls, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    def apply(cls, kind: str = "custom", value: str = "") -> DisabledSafetyCheck:
         """Construct a ``DisabledSafetyCheck`` instance.
 
         Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
+            kind: Safety check category.
+            value: Target name or platform.
 
         Returns:
-            The operation result.
+            DisabledSafetyCheck: Constructed check instance.
         """
-        return cls()
+        return cls(kind=kind, value=value)
 
 
 class Exported:
     """Exported JAX function representation."""
 
-    def __init__(self, fun_name: str = "exported", platforms: tuple[str, ...] = ("cpu",), fun: ConfigValue = None) -> None:
+    def __init__(
+        self,
+        fun_name: str = "exported",
+        platforms: tuple[str, ...] = ("cpu",),
+        fun: VariadicCallable[PyTree] | None = None,
+    ) -> None:
         """Initialize ``Exported``.
 
         Args:
@@ -47,7 +54,7 @@ class Exported:
         self.platforms = platforms
         self._fun = fun
 
-    def call(self, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    def call(self, *args: PyTree, **kwargs: PyTree) -> PyTree:
         """Invoke the exported function.
 
         Args:
@@ -55,7 +62,7 @@ class Exported:
             **kwargs: Keyword arguments.
 
         Returns:
-            ArrayLikeSpec: Execution result.
+            PyTree: Execution result.
         """
         if callable(self._fun):
             return self._fun(*args, **kwargs)
@@ -70,89 +77,91 @@ class Exported:
         Returns:
             bytearray: Serialized payload.
         """
+        _ = vjp_order
         return bytearray(self.fun_name.encode("utf-8"))
 
     @classmethod
-    def apply(cls, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    def apply(cls, fun_name: str = "exported", platforms: tuple[str, ...] = ("cpu",)) -> Exported:
         """Construct an ``Exported`` instance.
 
         Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
+            fun_name: Name of the exported function.
+            platforms: Tuple of lowering platforms.
 
         Returns:
-            The operation result.
+            Exported: Constructed ``Exported`` instance.
         """
-        return cls()
+        return cls(fun_name=fun_name, platforms=platforms)
 
 
 class SymbolicScope:
     """Scope for symbolic dimension expressions."""
 
-    def __init__(self, constraints: tuple[str, ...] = ()) -> None:
+    def __init__(self, constraints: Sequence[str] = ()) -> None:
         """Initialize ``SymbolicScope``.
 
         Args:
-            constraints: Tuple of symbolic dimension constraint strings.
+            constraints: Sequence of symbolic dimension constraint strings.
         """
         self.constraints = tuple(constraints)
 
     @classmethod
-    def apply(cls, *args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+    def apply(cls, constraints: Sequence[str] = ()) -> SymbolicScope:
         """Construct a ``SymbolicScope`` instance.
 
         Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
+            constraints: Sequence of symbolic dimension constraint strings.
 
         Returns:
-            The operation result.
+            SymbolicScope: Constructed scope instance.
         """
-        return cls()
+        return cls(constraints=constraints)
 
 
-def default_export_platform(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def default_export_platform() -> str:
     """Return the default export platform string.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        str: Default platform name (``"cpu"``).
     """
     return "cpu"
 
 
-def deserialize(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def deserialize(payload: bytes | bytearray = b"") -> Exported:
     """Deserialize an :class:`Exported` payload.
 
     Args:
-        *args: Input parameter ``args`` (``payload``).
-        **kwargs: Input parameter ``kwargs``.
+        payload: Serialized byte buffer.
 
     Returns:
-        The operation result.
+        Exported: Deserialized :class:`Exported` object.
     """
-    if args and isinstance(args[0], (bytes, bytearray)):
-        return Exported(fun_name=bytes(args[0]).decode("utf-8", errors="ignore") or "exported")
+    if payload:
+        return Exported(fun_name=bytes(payload).decode("utf-8", errors="ignore") or "exported")
     return Exported()
 
 
-def export(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def export(
+    fun_jax: VariadicCallable[PyTree] | None = None,
+    *,
+    lowering_platforms: Sequence[str] | None = None,
+    disabled_checks: Sequence[DisabledSafetyCheck] = (),
+) -> VariadicCallable[Exported] | Exported:
     """Export a JAX function to an :class:`Exported` producer callable.
 
     Args:
-        *args: Input parameter ``args`` (``fun``).
-        **kwargs: Input parameter ``kwargs``.
+        fun_jax: Function to export.
+        lowering_platforms: Optional sequence of target lowering platforms.
+        disabled_checks: Sequence of safety checks to disable.
 
     Returns:
-        The operation result.
+        VariadicCallable[Exported] | Exported: Producer callable or :class:`Exported` instance.
     """
-    fun = args[0] if args else None
+    _ = disabled_checks
+    plats = tuple(lowering_platforms) if lowering_platforms is not None else ("cpu",)
 
-    def _produce(*trace_args: ArrayLikeSpec, **trace_kwargs: ArrayLikeSpec) -> Exported:
-        """Trace ``fun`` on ``trace_args`` and return an :class:`Exported` object.
+    def _produce(*trace_args: PyTree, **trace_kwargs: PyTree) -> Exported:
+        """Trace ``fun_jax`` on ``trace_args`` and return an :class:`Exported` object.
 
         Args:
             *trace_args: Example positional arguments.
@@ -161,77 +170,82 @@ def export(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
         Returns:
             Exported: Exported representation.
         """
-        return Exported(fun=fun)
+        _ = (trace_args, trace_kwargs)
+        return Exported(platforms=plats, fun=fun_jax)
 
-    return _produce if callable(fun) else Exported()
+    return _produce if callable(fun_jax) else Exported(platforms=plats)
 
 
-def is_symbolic_dim(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def is_symbolic_dim(d: int | str | None = None) -> bool:
     """Return ``True`` if ``d`` is a symbolic dimension expression.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        d: Dimension value to inspect.
 
     Returns:
-        The operation result.
+        bool: ``True`` if ``d`` is a symbolic dimension string.
     """
-    if args:
-        return isinstance(args[0], str)
-    return False
+    return isinstance(d, str)
 
 
-def maximum_supported_calling_convention_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def maximum_supported_calling_convention_version() -> int:
     """Return the maximum supported export calling convention version.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        int: Maximum calling convention version number.
     """
     return 9
 
 
-def minimum_supported_calling_convention_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def minimum_supported_calling_convention_version() -> int:
     """Return the minimum supported export calling convention version.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        int: Minimum calling convention version number.
     """
     return 9
 
 
-def symbolic_args_specs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def symbolic_args_specs(
+    args: PyTree = None,
+    shapes_specs: PyTree = None,
+    constraints: Sequence[str] = (),
+    scope: SymbolicScope | None = None,
+) -> PyTree:
     """Construct a PyTree of ``ShapeDtypeStruct`` specs with symbolic dimensions.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        args: PyTree of arguments or shape/dtype descriptors.
+        shapes_specs: Symbolic shape specification matching ``args``.
+        constraints: Sequence of symbolic dimension constraints.
+        scope: Optional symbolic scope.
 
     Returns:
-        The operation result.
+        PyTree: Symbolic argument specifications.
     """
-    return args[0] if args else None
+    _ = (shapes_specs, constraints, scope)
+    return args
 
 
-def symbolic_shape(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def symbolic_shape(
+    shape_spec: str | None = None,
+    *,
+    constraints: Sequence[str] = (),
+    scope: SymbolicScope | None = None,
+) -> tuple[int | str, ...]:
     """Parse a comma-separated symbolic shape specification into a tuple of dimensions.
 
     Args:
-        *args: Input parameter ``args`` (``shape_spec``).
-        **kwargs: Input parameter ``kwargs``.
+        shape_spec: Comma-separated dimension specification string.
+        constraints: Optional sequence of symbolic constraints.
+        scope: Optional symbolic scope.
 
     Returns:
-        The operation result.
+        tuple[int | str, ...]: Parsed tuple of integer and symbolic dimensions.
     """
-    if args and isinstance(args[0], str):
-        parts = [p.strip() for p in args[0].split(",") if p.strip()]
+    _ = (constraints, scope)
+    if isinstance(shape_spec, str):
+        parts = [p.strip() for p in shape_spec.split(",") if p.strip()]
         return tuple(int(p) if p.isdigit() else p for p in parts)
     return ()
 

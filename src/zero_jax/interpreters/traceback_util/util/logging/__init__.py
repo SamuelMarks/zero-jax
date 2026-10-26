@@ -2,4 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from logging import Logger, getLogger
+
+__all__ = [
+    "Logger",
+    "getLogger",
+]

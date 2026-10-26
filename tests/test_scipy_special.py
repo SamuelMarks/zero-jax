@@ -1,301 +1,234 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.special."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
+import math
 
+import zero_jax.numpy as jnp
 import zero_jax.scipy.special as mod
+from tests.conftest import assert_allclose
 
 
 def test_bernoulli() -> None:
     """Test bernoulli."""
-    with patch("zero_jax._compiler_proxy_ops.bernoulli", create=True) as mock_op:
-        mod.bernoulli()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.bernoulli(4), [1.0, -0.5, 1.0 / 6.0, 0.0, -1.0 / 30.0])
 
 
 def test_bessel_jn() -> None:
     """Test bessel_jn."""
-    with patch("zero_jax._compiler_proxy_ops.bessel_jn", create=True) as mock_op:
-        mod.bessel_jn()
-        mock_op.assert_called_once_with()
+    res = mod.bessel_jn(jnp.array([0.0]), v=1)
+    assert res.shape == (2, 1)
+    assert_allclose(res[0], [1.0], atol=1e-4)
 
 
 def test_beta() -> None:
     """Test beta."""
-    with patch("zero_jax._compiler_proxy_ops.beta", create=True) as mock_op:
-        mod.beta()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.beta(1.0, 1.0), 1.0)
+    assert_allclose(mod.beta(jnp.array([2, 3]), jnp.array([2, 3])), [1.0 / 6.0, 1.0 / 30.0], atol=1e-5)
 
 
 def test_betainc() -> None:
     """Test betainc."""
-    with patch("zero_jax._compiler_proxy_ops.betainc", create=True) as mock_op:
-        mod.betainc()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.betainc(1.0, 1.0, 0.5), 0.5, atol=1e-5)
 
 
 def test_betaln() -> None:
     """Test betaln."""
-    with patch("zero_jax._compiler_proxy_ops.betaln", create=True) as mock_op:
-        mod.betaln()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.betaln(1.0, 1.0), 0.0, atol=1e-5)
 
 
 def test_digamma() -> None:
     """Test digamma."""
-    with patch("zero_jax._compiler_proxy_ops.digamma", create=True) as mock_op:
-        mod.digamma()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.digamma(1.0), -0.57721566, atol=1e-4)
 
 
 def test_entr() -> None:
     """Test entr."""
-    with patch("zero_jax._compiler_proxy_ops.entr", create=True) as mock_op:
-        mod.entr()
-        mock_op.assert_called_once_with()
+    res = mod.entr(jnp.array([0.0, 1.0, math.e]))
+    assert_allclose(res, [0.0, 0.0, -math.e], atol=1e-5)
 
 
 def test_erf() -> None:
     """Test erf."""
-    with patch("zero_jax._compiler_proxy_ops.erf", create=True) as mock_op:
-        mod.erf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.erf(0.0), 0.0)
 
 
 def test_erfc() -> None:
     """Test erfc."""
-    with patch("zero_jax._compiler_proxy_ops.erfc", create=True) as mock_op:
-        mod.erfc()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.erfc(0.0), 1.0)
 
 
 def test_erfinv() -> None:
     """Test erfinv."""
-    with patch("zero_jax._compiler_proxy_ops.erfinv", create=True) as mock_op:
-        mod.erfinv()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.erfinv(0.0), 0.0)
 
 
 def test_exp1() -> None:
     """Test exp1."""
-    with patch("zero_jax._compiler_proxy_ops.exp1", create=True) as mock_op:
-        mod.exp1()
-        mock_op.assert_called_once_with()
+    res = mod.exp1(1.0)
+    assert_allclose(res, -0.5772156649 + 1.0 - 0.25, atol=1e-5)
 
 
 def test_expi() -> None:
     """Test expi."""
-    with patch("zero_jax._compiler_proxy_ops.expi", create=True) as mock_op:
-        mod.expi()
-        mock_op.assert_called_once_with()
+    res = mod.expi(1.0)
+    assert_allclose(res, 0.5772156649 + 1.0 + 0.25, atol=1e-5)
 
 
 def test_expit() -> None:
     """Test expit."""
-    with patch("zero_jax._compiler_proxy_ops.expit", create=True) as mock_op:
-        mod.expit()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.expit(0.0), 0.5)
 
 
 def test_expn() -> None:
     """Test expn."""
-    with patch("zero_jax._compiler_proxy_ops.expn", create=True) as mock_op:
-        mod.expn()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.expn(1.0, 1.0), math.exp(-1.0))
 
 
 def test_factorial() -> None:
     """Test factorial."""
-    with patch("zero_jax._compiler_proxy_ops.factorial", create=True) as mock_op:
-        mod.factorial()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.factorial(jnp.array([0.0, 1.0, 4.0])), [1.0, 1.0, 24.0], atol=1e-5)
 
 
 def test_gamma() -> None:
     """Test gamma."""
-    with patch("zero_jax._compiler_proxy_ops.gamma", create=True) as mock_op:
-        mod.gamma()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.gamma(jnp.array([1.0, 4.0])), [1.0, 6.0], atol=1e-5)
 
 
 def test_gammainc() -> None:
     """Test gammainc."""
-    with patch("zero_jax._compiler_proxy_ops.gammainc", create=True) as mock_op:
-        mod.gammainc()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.gammainc(1.0, 1.0), 1.0 - math.exp(-1.0), atol=1e-4)
 
 
 def test_gammaincc() -> None:
     """Test gammaincc."""
-    with patch("zero_jax._compiler_proxy_ops.gammaincc", create=True) as mock_op:
-        mod.gammaincc()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.gammaincc(1.0, 1.0), math.exp(-1.0), atol=1e-4)
 
 
 def test_gammaln() -> None:
     """Test gammaln."""
-    with patch("zero_jax._compiler_proxy_ops.gammaln", create=True) as mock_op:
-        mod.gammaln()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.gammaln(1.0), 0.0, atol=1e-5)
 
 
 def test_gammasgn() -> None:
     """Test gammasgn."""
-    with patch("zero_jax._compiler_proxy_ops.gammasgn", create=True) as mock_op:
-        mod.gammasgn()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.gammasgn(jnp.array([-1.5, -0.5, 1.5])), [1.0, -1.0, 1.0])
 
 
 def test_hyp1f1() -> None:
     """Test hyp1f1."""
-    with patch("zero_jax._compiler_proxy_ops.hyp1f1", create=True) as mock_op:
-        mod.hyp1f1()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.hyp1f1(1.0, 1.0, 1.0), math.e, atol=1e-4)
 
 
 def test_i0() -> None:
     """Test i0."""
-    with patch("zero_jax._compiler_proxy_ops.i0", create=True) as mock_op:
-        mod.i0()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.i0(0.0), 1.0, atol=1e-5)
 
 
 def test_i0e() -> None:
     """Test i0e."""
-    with patch("zero_jax._compiler_proxy_ops.i0e", create=True) as mock_op:
-        mod.i0e()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.i0e(0.0), 1.0, atol=1e-5)
 
 
 def test_i1() -> None:
     """Test i1."""
-    with patch("zero_jax._compiler_proxy_ops.i1", create=True) as mock_op:
-        mod.i1()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.i1(0.0), 0.0, atol=1e-5)
 
 
 def test_i1e() -> None:
     """Test i1e."""
-    with patch("zero_jax._compiler_proxy_ops.i1e", create=True) as mock_op:
-        mod.i1e()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.i1e(0.0), 0.0, atol=1e-5)
 
 
 def test_kl_div() -> None:
     """Test kl_div."""
-    with patch("zero_jax._compiler_proxy_ops.kl_div", create=True) as mock_op:
-        mod.kl_div()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.kl_div(1.0, 1.0), 0.0, atol=1e-5)
 
 
 def test_log_ndtr() -> None:
     """Test log_ndtr."""
-    with patch("zero_jax._compiler_proxy_ops.log_ndtr", create=True) as mock_op:
-        mod.log_ndtr()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.log_ndtr(0.0), math.log(0.5), atol=1e-5)
+
+
+def test_log_softmax() -> None:
+    """Test log_softmax."""
+    assert_allclose(mod.log_softmax(jnp.array([0.0, 0.0])), [-math.log(2.0), -math.log(2.0)], atol=1e-5)
 
 
 def test_logit() -> None:
     """Test logit."""
-    with patch("zero_jax._compiler_proxy_ops.logit", create=True) as mock_op:
-        mod.logit()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logit(0.5), 0.0, atol=1e-5)
 
 
 def test_logsumexp() -> None:
     """Test logsumexp."""
-    with patch("zero_jax._compiler_proxy_ops.logsumexp", create=True) as mock_op:
-        mod.logsumexp()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logsumexp(jnp.array([0.0, 0.0])), math.log(2.0), atol=1e-5)
 
 
 def test_lpmn() -> None:
     """Test lpmn."""
-    with patch("zero_jax._compiler_proxy_ops.lpmn", create=True) as mock_op:
-        mod.lpmn()
-        mock_op.assert_called_once_with()
+    p, pd = mod.lpmn(1, 2, jnp.array([0.0, 1.0]))
+    assert_allclose(p, [0.0, 0.0])
+    assert_allclose(pd, [0.0, 0.0])
 
 
 def test_lpmn_values() -> None:
     """Test lpmn_values."""
-    with patch("zero_jax._compiler_proxy_ops.lpmn_values", create=True) as mock_op:
-        mod.lpmn_values()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.lpmn_values(1, 2, jnp.array([0.0, 1.0]), True), [1.0, 1.0])
 
 
 def test_multigammaln() -> None:
     """Test multigammaln."""
-    with patch("zero_jax._compiler_proxy_ops.multigammaln", create=True) as mock_op:
-        mod.multigammaln()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.multigammaln(1.0, 1), 0.0, atol=1e-5)
 
 
 def test_ndtr() -> None:
     """Test ndtr."""
-    with patch("zero_jax._compiler_proxy_ops.ndtr", create=True) as mock_op:
-        mod.ndtr()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.ndtr(0.0), 0.5, atol=1e-5)
 
 
 def test_ndtri() -> None:
     """Test ndtri."""
-    with patch("zero_jax._compiler_proxy_ops.ndtri", create=True) as mock_op:
-        mod.ndtri()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.ndtri(0.5), 0.0, atol=1e-5)
 
 
 def test_poch() -> None:
     """Test poch."""
-    with patch("zero_jax._compiler_proxy_ops.poch", create=True) as mock_op:
-        mod.poch()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.poch(2.0, 2.0), 6.0, atol=1e-5)
 
 
 def test_polygamma() -> None:
     """Test polygamma."""
-    with patch("zero_jax._compiler_proxy_ops.polygamma", create=True) as mock_op:
-        mod.polygamma()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.polygamma(1, 1.0), (math.pi**2) / 6.0, atol=1e-3)
 
 
 def test_rel_entr() -> None:
     """Test rel_entr."""
-    with patch("zero_jax._compiler_proxy_ops.rel_entr", create=True) as mock_op:
-        mod.rel_entr()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.rel_entr(0.0, 1.0), 0.0)
+    assert_allclose(mod.rel_entr(2.0, 1.0), 2.0 * math.log(2.0), atol=1e-5)
 
 
 def test_spence() -> None:
     """Test spence."""
-    with patch("zero_jax._compiler_proxy_ops.spence", create=True) as mock_op:
-        mod.spence()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.spence(1.0), 0.0, atol=1e-5)
 
 
 def test_sph_harm() -> None:
     """Test sph_harm."""
-    with patch("zero_jax._compiler_proxy_ops.sph_harm", create=True) as mock_op:
-        mod.sph_harm()
-        mock_op.assert_called_once_with()
+    res = mod.sph_harm(jnp.array([0]), jnp.array([0]), jnp.array([0.0]), jnp.array([0.0]))
+    assert_allclose(res, [0.5 / math.sqrt(math.pi)], atol=1e-5)
 
 
 def test_xlog1py() -> None:
     """Test xlog1py."""
-    with patch("zero_jax._compiler_proxy_ops.xlog1py", create=True) as mock_op:
-        mod.xlog1py()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.xlog1py(jnp.array([0.0, 2.0]), jnp.array([5.0, math.e - 1.0])), [0.0, 2.0], atol=1e-5)
 
 
 def test_xlogy() -> None:
     """Test xlogy."""
-    with patch("zero_jax._compiler_proxy_ops.xlogy", create=True) as mock_op:
-        mod.xlogy()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.xlogy(jnp.array([0.0, 2.0]), jnp.array([0.0, math.e])), [0.0, 2.0], atol=1e-5)
 
 
 def test_zeta() -> None:
     """Test zeta."""
-    with patch("zero_jax._compiler_proxy_ops.zeta", create=True) as mock_op:
-        mod.zeta()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.zeta(2.0, 1.0), (math.pi**2) / 6.0, atol=1e-3)

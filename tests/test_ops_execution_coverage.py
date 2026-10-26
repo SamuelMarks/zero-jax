@@ -136,41 +136,48 @@ def test_api_ad_and_misc_and_transformations_branches() -> None:
     vmap_scalar = zero_jax.vmap(lambda x: x + 1.0)
     assert vmap_scalar(jnp.array(2.0)).shape == ()
 
+    # jit with arr.at[0].set
+    jit_at = zero_jax.jit(lambda x: x.at[0].set(9.0))
+    assert jnp.allclose(jit_at(jnp.array([1.0, 2.0])), jnp.array([9.0, 2.0]))
+
 
 def test_experimental_export_extend_and_flatten_util() -> None:
     """Cover experimental, export, extend, partial_eval.config, and flatten_util."""
     # experimental/__init__.py
-    earr = exp_mod.EArray(1, id="1", name="e", value=2, dummy=3)
-    assert earr.id == "1"
-    with pytest.raises(AttributeError):
-        exp_mod.disable_x64()
-    with pytest.raises(AttributeError):
-        exp_mod.enable_x64()
-    with pytest.raises(AttributeError):
-        exp_mod.io_callback()
+    from zero_jax._config_internal import config as _zcfg
+
+    earr = exp_mod.EArray(1)
+    assert earr.shape == ()
+    with exp_mod.enable_x64(True):
+        assert _zcfg.jax_enable_x64 is True
+    with exp_mod.disable_x64():
+        assert _zcfg.jax_enable_x64 is False
+    assert exp_mod.io_callback(lambda x: x + 1, None, 4) == 5
 
     # compilation_cache
-    with pytest.raises(AttributeError):
-        comp_cache.initialize_cache("/tmp")
-    with pytest.raises(AttributeError):
-        comp_cache.is_initialized()
-    with pytest.raises(AttributeError):
-        comp_cache.reset_cache()
-    with pytest.raises(AttributeError):
-        comp_cache.set_cache_dir("/tmp")
+    comp_cache.initialize_cache(path="/tmp/zjax_cache")
+    assert comp_cache.is_initialized() is True
+    comp_cache.reset_cache()
+    comp_cache.set_cache_dir(path="/tmp/zjax_cache2")
+    assert comp_cache.is_initialized() is True
+    comp_cache.reset_cache()
 
     # x64_context
-    with pytest.raises(AttributeError):
-        x64_ctx.contextmanager()
-    with pytest.raises(AttributeError):
-        x64_ctx.disable_x64()
-    with pytest.raises(AttributeError):
-        x64_ctx.enable_x64()
-    with pytest.raises(AttributeError):
-        x64_log_cfg.disable_all_debug_logging()
-    with pytest.raises(AttributeError):
-        x64_log_cfg.enable_debug_logging()
-    assert x64_prof is not None
+    with x64_ctx.enable_x64(True):
+        assert _zcfg.jax_enable_x64 is True
+    with x64_ctx.disable_x64():
+        assert _zcfg.jax_enable_x64 is False
+
+    @x64_ctx.contextmanager
+    def _dummy_cm() -> zero_jax._types.PyTree:
+        """Dummy generator for contextmanager test."""
+        yield 42
+
+    with _dummy_cm() as cm_val:
+        assert cm_val == 42
+    assert x64_log_cfg.enable_debug_logging("jax") == "jax"
+    assert x64_log_cfg.disable_all_debug_logging() is False
+    assert x64_prof.__name__.endswith("profiler")
 
     # export
     assert isinstance(export_mod.DisabledSafetyCheck.apply(), export_mod.DisabledSafetyCheck)
@@ -181,20 +188,23 @@ def test_experimental_export_extend_and_flatten_util() -> None:
     assert callable(export_mod.export(lambda x: x))
 
     # extend
-    assert ext_backend.stub() is None
-    assert ext_core.stub() is None
-    assert ext_ffi.stub() is None
-    assert ext_lu.stub() is None
-    assert ext_random.stub() is None
-    assert ext_src_info.stub() is None
+    assert ext_backend.stub() == "cpu"
+    assert ext_core.stub() == "core"
+    assert ext_ffi.stub() == "ffi"
+    assert ext_lu.stub() == "linear_util"
+    assert ext_random.stub() == "threefry2x32"
+    assert ext_src_info.stub() == "<unknown>"
 
     # partial_eval.config
     import sys
 
     pe_cfg_real = sys.modules["zero_jax.interpreters.partial_eval.config"]
-    assert pe_cfg_real.transfer_guard("allow") is None
-    assert pe_cfg_real.transfer_guard_device_to_device("allow") is None
-    assert pe_cfg_real.transfer_guard_device_to_host("allow") is None
+    with pe_cfg_real.transfer_guard("allow"):
+        pass
+    with pe_cfg_real.transfer_guard_device_to_device("allow") as tg_val:
+        assert tg_val == "allow"
+    with pe_cfg_real.transfer_guard_device_to_host("allow") as tg_val2:
+        assert tg_val2 == "allow"
 
     # flatten_util: empty PyTree, scalar PyTree, array PyTree
     flat_empty, unflatten_empty = ravel_pytree([])
@@ -427,20 +437,23 @@ def test_numpy_constants_fft_linalg_and_lax_numpy_branches() -> None:
     assert jnp.isscalar(None) is True
     assert jnp.isscalar([1, 2]) is False
 
-    assert jnp.partition(jnp.array([3, 1, 2]), 1) is not None
-    assert jnp.uint(3) is not None
-    assert jnp.uint4(3) is not None
-    assert jnp.average(jnp.array([1.0, 2.0]), weights=jnp.array([1.0, 1.0])) is not None
+    assert jnp.partition(jnp.array([3, 1, 2]), 1).shape == (3,)
+    assert jnp.array_equal(jnp.array([1.0, float("nan")]), jnp.array([1.0, float("nan")]), equal_nan=True) is True
+    assert jnp.var(jnp.array([1.0, 2.0, 3.0]), ddof=1) == 1.0
+    assert int(jnp.uint(3).item()) == 3
+    assert int(jnp.uint4(3).item()) == 3
+    assert jnp.average(jnp.array([1.0, 2.0]), weights=jnp.array([1.0, 1.0])) == 1.5
     frac, integ = jnp.modf(jnp.array([1.5, 2.5]))
     assert frac.shape == (2,) and integ.shape == (2,)
     with pytest.raises(ValueError):
         jnp.modf(jnp.array([1.5]), out=jnp.array([0.0]))
-    with pytest.raises(AttributeError):
-        jnp.stable_unique(jnp.array([2, 1, 2]))
+    assert jnp.unique_values(jnp.array([2, 1, 2])).shape == (2,)
+    from tests.conftest import _infer_shape
     from zero_jax.numpy.lax_numpy import _safe_bool
 
+    assert _infer_shape(5) == ()
     assert _safe_bool(True) is True
-    assert jnp.unravel_index(2, (2, 2)) is not None
+    assert len(jnp.unravel_index(2, (2, 2))) == 2
     vec_fn = jnp.vectorize(lambda x: x + 1, excluded={1})
     assert vec_fn(jnp.array([1, 2])).shape == (2,)
     vec_tuple_fn = jnp.vectorize(lambda x: (x, x + 1))
@@ -554,7 +567,9 @@ def test_config_internal_mock_p_and_ndarray_methods_coverage() -> None:
             """
             return x
 
-    zero_jax.closure_convert(_WithMixedAttrs())
+    mixed = _WithMixedAttrs()
+    assert mixed(2.0) == 2.0
+    zero_jax.closure_convert(mixed)
     non_fn: zero_jax._types.VariadicCallable[zero_jax._types.PyTree] = 123
     zero_jax.closure_convert(non_fn)
 
@@ -623,6 +638,8 @@ def test_extended_numpy_linalg_fft_and_window_branches(tmp_path: zero_jax._types
     bin_file = tmp_path / "nums.bin"
     bin_file.write_bytes(b"\x01\x02\x03")
     assert jnp.fromfile(str(bin_file), count=2).shape == (2,)
+    with pytest.raises(FileNotFoundError):
+        jnp.fromfile(str(tmp_path / "nonexistent.bin"))
 
     with pytest.raises(TypeError):
         jnp.fromfunction(None, (2,))
@@ -835,8 +852,8 @@ def test_scipy_special_stats_and_submodules_execution() -> None:
     assert sp_mod.signal.fftconvolve(x, x).shape == (3,)
     assert sp_mod.signal.fftconvolve(m2, m2).shape == (3, 3)
     _f_s, _t_s, zxx = sp_mod.signal.stft(jnp.ones((16,)), nperseg=4)
-    assert zxx is not None
-    assert sp_mod.signal.istft(zxx, nperseg=4)[1] is not None
+    assert zxx.shape[0] > 0
+    assert sp_mod.signal.istft(zxx, nperseg=4)[1].shape[0] > 0
     assert len(sp_mod.signal.welch(jnp.ones((16,)))) == 2
 
     lin_op = sp_mod.sparse.linalg.LinearOperator((2, 2), matvec=lambda v: v * 2.0)
@@ -907,7 +924,6 @@ def test_scipy_special_stats_and_submodules_execution() -> None:
     mon_mod.record_event_duration_secs("my_ev", 1.5)
     assert durs == [1.5]
     mon_mod.clear_event_listeners()
-    mon_mod.clear_event_listeners("extra")
 
     with prof_mod.StepTraceAnnotation("step", step_num=1) as sta:
         assert sta.name == "step"
@@ -915,11 +931,11 @@ def test_scipy_special_stats_and_submodules_execution() -> None:
         assert ta.name == "trace"
     assert prof_mod.annotate_function(lambda v: v)(5) == 5
     assert prof_mod.device_memory_profile("cpu") == b""
-    assert prof_mod.save_device_memory_profile("mem.prof") is None
-    assert prof_mod.start_server(9999) is None
-    assert prof_mod.stop_server(9999) is None
-    assert prof_mod.start_trace("/tmp") is None
-    assert prof_mod.stop_trace("/tmp") is None
+    prof_mod.save_device_memory_profile("mem.prof")
+    prof_mod.start_server(9999)
+    prof_mod.stop_server()
+    prof_mod.start_trace("/tmp")
+    prof_mod.stop_trace()
     with prof_mod.trace("/tmp"):
         pass
 
@@ -928,14 +944,7 @@ def test_scipy_special_stats_and_submodules_execution() -> None:
     dist_mod.initialize("addr")
     dist_mod.shutdown()
     assert dist_mod.is_initialized() is False
-    dist_mod.shutdown("addr")
 
     assert xb_mod.default_backend() == "cpu"
     assert xb_mod.get_backend().platform == "cpu"
-    assert xb_mod.get_compile_options() == {}
-    with pytest.raises(AttributeError):
-        xb_mod.default_backend("cpu")
-    with pytest.raises(AttributeError):
-        xb_mod.get_backend("cpu")
-    with pytest.raises(AttributeError):
-        xb_mod.get_compile_options("cpu")
+    assert xb_mod.get_compile_options()["num_replicas"] == 1

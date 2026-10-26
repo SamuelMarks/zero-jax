@@ -2,31 +2,18 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ConfigValue
-
 
 class _BaseJAXException(Exception):
     """Base exception class for JAX-compatible error types."""
 
-    def __init__(
-        self,
-        *args: ConfigValue,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
-        """Initialize the JAX exception with message arguments and optional metadata.
+    def __init__(self, message: str = "") -> None:
+        """Initialize the JAX exception with an error message.
 
         Args:
-            *args: Positional exception message arguments.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
+            message: Human-readable exception message.
         """
-        super().__init__(*args)
-        self.id = id
-        self.name = name
-        self.value = value
+        super().__init__(message)
+        self.message: str = str(message)
 
 
 class ConcretizationTypeError(_BaseJAXException, TypeError):
@@ -52,25 +39,36 @@ class NonConcreteBooleanIndexError(_BaseJAXException, IndexError):
 class SimplifiedTraceback:
     """Context manager and helper for simplified JAX tracebacks."""
 
-    def __init__(
-        self,
-        frames: ConfigValue = None,
-        id: ConfigValue = None,
-        name: ConfigValue = None,
-        value: ConfigValue = None,
-    ) -> None:
+    def __init__(self, frames: list[str] | tuple[str, ...] | None = None) -> None:
         """Initialize a ``SimplifiedTraceback`` instance.
 
         Args:
-            frames: Optional sequence of traceback frames.
-            id: Optional identifier metadata.
-            name: Optional name metadata.
-            value: Optional value metadata.
+            frames: Optional sequence of traceback frame descriptions.
         """
-        self.frames = frames
-        self.id = id
-        self.name = name
-        self.value = value
+        self.frames: list[str] = list(frames) if frames is not None else []
+
+    def __enter__(self) -> SimplifiedTraceback:
+        """Enter the simplified traceback context.
+
+        Returns:
+            SimplifiedTraceback: Self reference.
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: BaseException | None,
+    ) -> None:
+        """Exit the simplified traceback context without suppressing exceptions.
+
+        Args:
+            exc_type: Exception type if raised.
+            exc_val: Exception instance if raised.
+            exc_tb: Traceback object if raised.
+        """
+        _ = (exc_type, exc_val, exc_tb)
 
 
 class TracerArrayConversionError(_BaseJAXException, TypeError):

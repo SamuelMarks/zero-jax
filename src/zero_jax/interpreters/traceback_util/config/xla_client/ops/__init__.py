@@ -1,1905 +1,762 @@
-"""Module ops."""
+"""Canonical XLA client operation node classes."""
 
 from __future__ import annotations
 
-import typing
+from zero_jax._types import ConfigValue
 
-import ml_switcheroo_compiler
+Tuple = tuple
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
 
+class _XlaOpNode:
+    """Base class for XLA builder operation descriptors."""
 
-class Abs:
-    """Frontend class for ``Abs``."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
-
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
-
-
-class Acos:
-    """Frontend class for ``Acos``."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
-
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
-
-
-class Acosh:
-    """Frontend class for ``Acosh``."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
-
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
-
-
-class Add:
-    """Frontend class for ``Add``."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
-
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
-
-
-class AfterAll:
-    """Frontend class for ``AfterAll``."""
-
     def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
+        """Initialize ``_XlaOpNode``.
 
         Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
+            *args: Positional operation arguments.
+            **kwargs: Keyword operation arguments.
         """
+        self.args = args
+        self.kwargs = kwargs
 
 
-class And:
-    """Frontend class for ``And``."""
+class Abs(_XlaOpNode):
+    """XLA operation descriptor for ``Abs``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Acos(_XlaOpNode):
+    """XLA operation descriptor for ``Acos``."""
 
 
-class Asin:
-    """Frontend class for ``Asin``."""
+class Acosh(_XlaOpNode):
+    """XLA operation descriptor for ``Acosh``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Add(_XlaOpNode):
+    """XLA operation descriptor for ``Add``."""
 
 
-class Asinh:
-    """Frontend class for ``Asinh``."""
+class AfterAll(_XlaOpNode):
+    """XLA operation descriptor for ``AfterAll``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class AllGather(_XlaOpNode):
+    """XLA operation descriptor for ``AllGather``."""
 
 
-class Atan:
-    """Frontend class for ``Atan``."""
+class AllReduce(_XlaOpNode):
+    """XLA operation descriptor for ``AllReduce``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class AllToAll(_XlaOpNode):
+    """XLA operation descriptor for ``AllToAll``."""
 
 
-class Atan2:
-    """Frontend class for ``Atan2``."""
+class And(_XlaOpNode):
+    """XLA operation descriptor for ``And``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ApproxTopK(_XlaOpNode):
+    """XLA operation descriptor for ``ApproxTopK``."""
 
 
-class Atanh:
-    """Frontend class for ``Atanh``."""
+class ApproxTopKFallback(_XlaOpNode):
+    """XLA operation descriptor for ``ApproxTopKFallback``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ApproxTopKReductionOutputSize(_XlaOpNode):
+    """XLA operation descriptor for ``ApproxTopKReductionOutputSize``."""
 
 
-class Call:
-    """Frontend class for ``Call``."""
+class Asin(_XlaOpNode):
+    """XLA operation descriptor for ``Asin``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Asinh(_XlaOpNode):
+    """XLA operation descriptor for ``Asinh``."""
 
 
-class Cbrt:
-    """Frontend class for ``Cbrt``."""
+class Atan(_XlaOpNode):
+    """XLA operation descriptor for ``Atan``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Atan2(_XlaOpNode):
+    """XLA operation descriptor for ``Atan2``."""
 
 
-class Ceil:
-    """Frontend class for ``Ceil``."""
+class Atanh(_XlaOpNode):
+    """XLA operation descriptor for ``Atanh``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class BesselI0e(_XlaOpNode):
+    """XLA operation descriptor for ``BesselI0e``."""
 
 
-class Cholesky:
-    """Frontend class for ``Cholesky``."""
+class BesselI1e(_XlaOpNode):
+    """XLA operation descriptor for ``BesselI1e``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class BitcastConvertType(_XlaOpNode):
+    """XLA operation descriptor for ``BitcastConvertType``."""
 
 
-class Clamp:
-    """Frontend class for ``Clamp``."""
+class Broadcast(_XlaOpNode):
+    """XLA operation descriptor for ``Broadcast``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class BroadcastInDim(_XlaOpNode):
+    """XLA operation descriptor for ``BroadcastInDim``."""
 
 
-class Collapse:
-    """Frontend class for ``Collapse``."""
+class Call(_XlaOpNode):
+    """XLA operation descriptor for ``Call``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Cbrt(_XlaOpNode):
+    """XLA operation descriptor for ``Cbrt``."""
 
 
-class Complex:
-    """Frontend class for ``Complex``."""
+class Ceil(_XlaOpNode):
+    """XLA operation descriptor for ``Ceil``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Cholesky(_XlaOpNode):
+    """XLA operation descriptor for ``Cholesky``."""
 
 
-class Conj:
-    """Frontend class for ``Conj``."""
+class Clamp(_XlaOpNode):
+    """XLA operation descriptor for ``Clamp``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Clz(_XlaOpNode):
+    """XLA operation descriptor for ``Clz``."""
 
 
-class Constant:
-    """Frontend class for ``Constant``."""
+class Collapse(_XlaOpNode):
+    """XLA operation descriptor for ``Collapse``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class CollectivePermute(_XlaOpNode):
+    """XLA operation descriptor for ``CollectivePermute``."""
 
 
-class Cos:
-    """Frontend class for ``Cos``."""
+class Complex(_XlaOpNode):
+    """XLA operation descriptor for ``Complex``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ConcatInDim(_XlaOpNode):
+    """XLA operation descriptor for ``ConcatInDim``."""
 
 
-class Cosh:
-    """Frontend class for ``Cosh``."""
+class Conditional(_XlaOpNode):
+    """XLA operation descriptor for ``Conditional``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Conj(_XlaOpNode):
+    """XLA operation descriptor for ``Conj``."""
 
 
-class Digamma:
-    """Frontend class for ``Digamma``."""
+class Constant(_XlaOpNode):
+    """XLA operation descriptor for ``Constant``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ConstantLiteral(_XlaOpNode):
+    """XLA operation descriptor for ``ConstantLiteral``."""
 
 
-class Div:
-    """Frontend class for ``Div``."""
+class ConvGeneralDilated(_XlaOpNode):
+    """XLA operation descriptor for ``ConvGeneralDilated``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ConvertElementType(_XlaOpNode):
+    """XLA operation descriptor for ``ConvertElementType``."""
 
 
-class Eigh:
-    """Frontend class for ``Eigh``."""
+class Cos(_XlaOpNode):
+    """XLA operation descriptor for ``Cos``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Cosh(_XlaOpNode):
+    """XLA operation descriptor for ``Cosh``."""
 
 
-class Eq:
-    """Frontend class for ``Eq``."""
+class CreateToken(_XlaOpNode):
+    """XLA operation descriptor for ``CreateToken``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class CrossReplicaSum(_XlaOpNode):
+    """XLA operation descriptor for ``CrossReplicaSum``."""
 
 
-class Erf:
-    """Frontend class for ``Erf``."""
+class CustomCall(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCall``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class CustomCallApiVersion(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCallApiVersion``."""
 
 
-class ErfInv:
-    """Frontend class for ``ErfInv``."""
+class CustomCallSchedule(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCallSchedule``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class CustomCallWithAliasing(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCallWithAliasing``."""
 
 
-class Erfc:
-    """Frontend class for ``Erfc``."""
+class CustomCallWithComputation(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCallWithComputation``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class CustomCallWithLayout(_XlaOpNode):
+    """XLA operation descriptor for ``CustomCallWithLayout``."""
 
 
-class Exp:
-    """Frontend class for ``Exp``."""
+class Digamma(_XlaOpNode):
+    """XLA operation descriptor for ``Digamma``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Div(_XlaOpNode):
+    """XLA operation descriptor for ``Div``."""
 
 
-class Expm1:
-    """Frontend class for ``Expm1``."""
+class Dot(_XlaOpNode):
+    """XLA operation descriptor for ``Dot``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class DotGeneral(_XlaOpNode):
+    """XLA operation descriptor for ``DotGeneral``."""
 
 
-class Floor:
-    """Frontend class for ``Floor``."""
+class DynamicReshape(_XlaOpNode):
+    """XLA operation descriptor for ``DynamicReshape``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class DynamicSlice(_XlaOpNode):
+    """XLA operation descriptor for ``DynamicSlice``."""
 
 
-class Ge:
-    """Frontend class for ``Ge``."""
+class DynamicUpdateSlice(_XlaOpNode):
+    """XLA operation descriptor for ``DynamicUpdateSlice``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Eigh(_XlaOpNode):
+    """XLA operation descriptor for ``Eigh``."""
 
 
-class Gt:
-    """Frontend class for ``Gt``."""
+class Eq(_XlaOpNode):
+    """XLA operation descriptor for ``Eq``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Erf(_XlaOpNode):
+    """XLA operation descriptor for ``Erf``."""
 
 
-class Igamma:
-    """Frontend class for ``Igamma``."""
+class ErfInv(_XlaOpNode):
+    """XLA operation descriptor for ``ErfInv``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Erfc(_XlaOpNode):
+    """XLA operation descriptor for ``Erfc``."""
 
 
-class Igammac:
-    """Frontend class for ``Igammac``."""
+class Exp(_XlaOpNode):
+    """XLA operation descriptor for ``Exp``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Expm1(_XlaOpNode):
+    """XLA operation descriptor for ``Expm1``."""
 
 
-class Imag:
-    """Frontend class for ``Imag``."""
+class Fft(_XlaOpNode):
+    """XLA operation descriptor for ``Fft``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Floor(_XlaOpNode):
+    """XLA operation descriptor for ``Floor``."""
 
 
-class Iota:
-    """Frontend class for ``Iota``."""
+class Gather(_XlaOpNode):
+    """XLA operation descriptor for ``Gather``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Ge(_XlaOpNode):
+    """XLA operation descriptor for ``Ge``."""
 
 
-class IsFinite:
-    """Frontend class for ``IsFinite``."""
+class GetDimensionSize(_XlaOpNode):
+    """XLA operation descriptor for ``GetDimensionSize``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class GetTupleElement(_XlaOpNode):
+    """XLA operation descriptor for ``GetTupleElement``."""
 
 
-LU: ArrayLikeSpec = None
+class Gt(_XlaOpNode):
+    """XLA operation descriptor for ``Gt``."""
 
 
-class Le:
-    """Frontend class for ``Le``."""
+class Igamma(_XlaOpNode):
+    """XLA operation descriptor for ``Igamma``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class IgammaGradA(_XlaOpNode):
+    """XLA operation descriptor for ``IgammaGradA``."""
 
 
-class Lgamma:
-    """Frontend class for ``Lgamma``."""
+class Igammac(_XlaOpNode):
+    """XLA operation descriptor for ``Igammac``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Imag(_XlaOpNode):
+    """XLA operation descriptor for ``Imag``."""
 
 
-class Log:
-    """Frontend class for ``Log``."""
+class InfeedWithToken(_XlaOpNode):
+    """XLA operation descriptor for ``InfeedWithToken``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Iota(_XlaOpNode):
+    """XLA operation descriptor for ``Iota``."""
 
 
-class Log1p:
-    """Frontend class for ``Log1p``."""
+class IsFinite(_XlaOpNode):
+    """XLA operation descriptor for ``IsFinite``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class LU(_XlaOpNode):
+    """XLA operation descriptor for ``LU``."""
 
 
-class Lt:
-    """Frontend class for ``Lt``."""
+class Le(_XlaOpNode):
+    """XLA operation descriptor for ``Le``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Lgamma(_XlaOpNode):
+    """XLA operation descriptor for ``Lgamma``."""
 
 
-class Map:
-    """Frontend class for ``Map``."""
+class Log(_XlaOpNode):
+    """XLA operation descriptor for ``Log``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Log1p(_XlaOpNode):
+    """XLA operation descriptor for ``Log1p``."""
 
 
-class Max:
-    """Frontend class for ``Max``."""
+class Lt(_XlaOpNode):
+    """XLA operation descriptor for ``Lt``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Map(_XlaOpNode):
+    """XLA operation descriptor for ``Map``."""
 
 
-class Min:
-    """Frontend class for ``Min``."""
+class Max(_XlaOpNode):
+    """XLA operation descriptor for ``Max``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Min(_XlaOpNode):
+    """XLA operation descriptor for ``Min``."""
 
 
-class Mul:
-    """Frontend class for ``Mul``."""
+class Mul(_XlaOpNode):
+    """XLA operation descriptor for ``Mul``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Ne(_XlaOpNode):
+    """XLA operation descriptor for ``Ne``."""
 
 
-class Ne:
-    """Frontend class for ``Ne``."""
+class Neg(_XlaOpNode):
+    """XLA operation descriptor for ``Neg``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class NextAfter(_XlaOpNode):
+    """XLA operation descriptor for ``NextAfter``."""
 
 
-class Neg:
-    """Frontend class for ``Neg``."""
+class Not(_XlaOpNode):
+    """XLA operation descriptor for ``Not``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class OptimizationBarrier(_XlaOpNode):
+    """XLA operation descriptor for ``OptimizationBarrier``."""
 
 
-class Not:
-    """Frontend class for ``Not``."""
+class Or(_XlaOpNode):
+    """XLA operation descriptor for ``Or``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class OutfeedWithToken(_XlaOpNode):
+    """XLA operation descriptor for ``OutfeedWithToken``."""
 
 
-class Or:
-    """Frontend class for ``Or``."""
+class Pad(_XlaOpNode):
+    """XLA operation descriptor for ``Pad``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Parameter(_XlaOpNode):
+    """XLA operation descriptor for ``Parameter``."""
 
 
-class Pad:
-    """Frontend class for ``Pad``."""
+class PopulationCount(_XlaOpNode):
+    """XLA operation descriptor for ``PopulationCount``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Pow(_XlaOpNode):
+    """XLA operation descriptor for ``Pow``."""
 
 
-class Pow:
-    """Frontend class for ``Pow``."""
+class ProductOfElementaryHouseholderReflectors(_XlaOpNode):
+    """XLA operation descriptor for ``ProductOfElementaryHouseholderReflectors``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class QR(_XlaOpNode):
+    """XLA operation descriptor for ``QR``."""
 
 
-QR: ArrayLikeSpec = None
+class QrDecomposition(_XlaOpNode):
+    """XLA operation descriptor for ``QrDecomposition``."""
 
 
-class Real:
-    """Frontend class for ``Real``."""
+class RandomAlgorithm(_XlaOpNode):
+    """XLA operation descriptor for ``RandomAlgorithm``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class RandomGammaGrad(_XlaOpNode):
+    """XLA operation descriptor for ``RandomGammaGrad``."""
 
 
-class Reduce:
-    """Frontend class for ``Reduce``."""
+class Real(_XlaOpNode):
+    """XLA operation descriptor for ``Real``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Reciprocal(_XlaOpNode):
+    """XLA operation descriptor for ``Reciprocal``."""
 
 
-class Rem:
-    """Frontend class for ``Rem``."""
+class RecvFromHost(_XlaOpNode):
+    """XLA operation descriptor for ``RecvFromHost``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Reduce(_XlaOpNode):
+    """XLA operation descriptor for ``Reduce``."""
 
 
-class Rev:
-    """Frontend class for ``Rev``."""
+class ReducePrecision(_XlaOpNode):
+    """XLA operation descriptor for ``ReducePrecision``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ReduceScatter(_XlaOpNode):
+    """XLA operation descriptor for ``ReduceScatter``."""
 
 
-class Round:
-    """Frontend class for ``Round``."""
+class ReduceWindowWithGeneralPadding(_XlaOpNode):
+    """XLA operation descriptor for ``ReduceWindowWithGeneralPadding``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class RegularizedIncompleteBeta(_XlaOpNode):
+    """XLA operation descriptor for ``RegularizedIncompleteBeta``."""
 
 
-class Rsqrt:
-    """Frontend class for ``Rsqrt``."""
+class Rem(_XlaOpNode):
+    """XLA operation descriptor for ``Rem``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class RemoveDynamicDimension(_XlaOpNode):
+    """XLA operation descriptor for ``RemoveDynamicDimension``."""
 
 
-SVD: ArrayLikeSpec = None
+class ReplicaId(_XlaOpNode):
+    """XLA operation descriptor for ``ReplicaId``."""
 
 
-class Sign:
-    """Frontend class for ``Sign``."""
+class Reshape(_XlaOpNode):
+    """XLA operation descriptor for ``Reshape``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Rev(_XlaOpNode):
+    """XLA operation descriptor for ``Rev``."""
 
 
-class Sin:
-    """Frontend class for ``Sin``."""
+class RngBitGenerator(_XlaOpNode):
+    """XLA operation descriptor for ``RngBitGenerator``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class RngNormal(_XlaOpNode):
+    """XLA operation descriptor for ``RngNormal``."""
 
 
-class Sinh:
-    """Frontend class for ``Sinh``."""
+class RngUniform(_XlaOpNode):
+    """XLA operation descriptor for ``RngUniform``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Round(_XlaOpNode):
+    """XLA operation descriptor for ``Round``."""
 
 
-class Sqrt:
-    """Frontend class for ``Sqrt``."""
+class Rsqrt(_XlaOpNode):
+    """XLA operation descriptor for ``Rsqrt``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class SVD(_XlaOpNode):
+    """XLA operation descriptor for ``SVD``."""
 
 
-class Square:
-    """Frontend class for ``Square``."""
+class Scatter(_XlaOpNode):
+    """XLA operation descriptor for ``Scatter``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Select(_XlaOpNode):
+    """XLA operation descriptor for ``Select``."""
 
 
-class Sub:
-    """Frontend class for ``Sub``."""
+class SelectAndScatterWithGeneralPadding(_XlaOpNode):
+    """XLA operation descriptor for ``SelectAndScatterWithGeneralPadding``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class SendToHost(_XlaOpNode):
+    """XLA operation descriptor for ``SendToHost``."""
 
 
-class Tan:
-    """Frontend class for ``Tan``."""
+class SetDimensionSize(_XlaOpNode):
+    """XLA operation descriptor for ``SetDimensionSize``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ShiftLeft(_XlaOpNode):
+    """XLA operation descriptor for ``ShiftLeft``."""
 
 
-class Tanh:
-    """Frontend class for ``Tanh``."""
+class ShiftRightArithmetic(_XlaOpNode):
+    """XLA operation descriptor for ``ShiftRightArithmetic``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class ShiftRightLogical(_XlaOpNode):
+    """XLA operation descriptor for ``ShiftRightLogical``."""
 
 
-class Tuple:
-    """Frontend class for ``Tuple``."""
+class Sign(_XlaOpNode):
+    """XLA operation descriptor for ``Sign``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Sin(_XlaOpNode):
+    """XLA operation descriptor for ``Sin``."""
 
 
-class While:
-    """Frontend class for ``While``."""
+class Sinh(_XlaOpNode):
+    """XLA operation descriptor for ``Sinh``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Slice(_XlaOpNode):
+    """XLA operation descriptor for ``Slice``."""
 
 
-class Xor:
-    """Frontend class for ``Xor``."""
+class SliceInDim(_XlaOpNode):
+    """XLA operation descriptor for ``SliceInDim``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Sort(_XlaOpNode):
+    """XLA operation descriptor for ``Sort``."""
 
 
-class Zeta:
-    """Frontend class for ``Zeta``."""
+class Sqrt(_XlaOpNode):
+    """XLA operation descriptor for ``Sqrt``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Execute ``__init__``.
 
-        Args:
-            *args: Input parameter ``args``.
-            **kwargs: Input parameter ``kwargs``.
-        """
+class Square(_XlaOpNode):
+    """XLA operation descriptor for ``Square``."""
 
 
-class AllGather:
-    """Stub class for AllGather."""
+class Sub(_XlaOpNode):
+    """XLA operation descriptor for ``Sub``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize AllGather.
 
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+class Tan(_XlaOpNode):
+    """XLA operation descriptor for ``Tan``."""
 
 
-class AllReduce:
-    """Stub class for AllReduce."""
+class Tanh(_XlaOpNode):
+    """XLA operation descriptor for ``Tanh``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize AllReduce.
 
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+class TopK(_XlaOpNode):
+    """XLA operation descriptor for ``TopK``."""
 
 
-class AllToAll:
-    """Stub class for AllToAll."""
+class Transpose(_XlaOpNode):
+    """XLA operation descriptor for ``Transpose``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize AllToAll.
 
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+class TriangularSolve(_XlaOpNode):
+    """XLA operation descriptor for ``TriangularSolve``."""
 
 
-class ApproxTopK:
-    """Stub class for ApproxTopK."""
+class TriangularSolveOptions_Transpose(_XlaOpNode):
+    """XLA operation descriptor for ``TriangularSolveOptions_Transpose``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ApproxTopK.
 
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+class While(_XlaOpNode):
+    """XLA operation descriptor for ``While``."""
 
 
-class ApproxTopKFallback:
-    """Stub class for ApproxTopKFallback."""
+class Xor(_XlaOpNode):
+    """XLA operation descriptor for ``Xor``."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ApproxTopKFallback.
 
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+class Zeta(_XlaOpNode):
+    """XLA operation descriptor for ``Zeta``."""
 
 
-class ApproxTopKReductionOutputSize:
-    """Stub class for ApproxTopKReductionOutputSize."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ApproxTopKReductionOutputSize.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class BesselI0e:
-    """Stub class for BesselI0e."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize BesselI0e.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class BesselI1e:
-    """Stub class for BesselI1e."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize BesselI1e.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class BitcastConvertType:
-    """Stub class for BitcastConvertType."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize BitcastConvertType.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Broadcast:
-    """Stub class for Broadcast."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Broadcast.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class BroadcastInDim:
-    """Stub class for BroadcastInDim."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize BroadcastInDim.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Clz:
-    """Stub class for Clz."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Clz.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CollectivePermute:
-    """Stub class for CollectivePermute."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CollectivePermute.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ConcatInDim:
-    """Stub class for ConcatInDim."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ConcatInDim.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Conditional:
-    """Stub class for Conditional."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Conditional.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ConstantLiteral:
-    """Stub class for ConstantLiteral."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ConstantLiteral.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ConvGeneralDilated:
-    """Stub class for ConvGeneralDilated."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ConvGeneralDilated.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ConvertElementType:
-    """Stub class for ConvertElementType."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ConvertElementType.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CreateToken:
-    """Stub class for CreateToken."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CreateToken.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CrossReplicaSum:
-    """Stub class for CrossReplicaSum."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CrossReplicaSum.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCall:
-    """Stub class for CustomCall."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCall.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCallApiVersion:
-    """Stub class for CustomCallApiVersion."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCallApiVersion.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCallSchedule:
-    """Stub class for CustomCallSchedule."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCallSchedule.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCallWithAliasing:
-    """Stub class for CustomCallWithAliasing."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCallWithAliasing.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCallWithComputation:
-    """Stub class for CustomCallWithComputation."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCallWithComputation.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class CustomCallWithLayout:
-    """Stub class for CustomCallWithLayout."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize CustomCallWithLayout.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Dot:
-    """Stub class for Dot."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Dot.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class DotGeneral:
-    """Stub class for DotGeneral."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize DotGeneral.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class DynamicReshape:
-    """Stub class for DynamicReshape."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize DynamicReshape.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class DynamicSlice:
-    """Stub class for DynamicSlice."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize DynamicSlice.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class DynamicUpdateSlice:
-    """Stub class for DynamicUpdateSlice."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize DynamicUpdateSlice.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Fft:
-    """Stub class for Fft."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Fft.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Gather:
-    """Stub class for Gather."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Gather.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class GetDimensionSize:
-    """Stub class for GetDimensionSize."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize GetDimensionSize.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class GetTupleElement:
-    """Stub class for GetTupleElement."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize GetTupleElement.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class IgammaGradA:
-    """Stub class for IgammaGradA."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize IgammaGradA.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class InfeedWithToken:
-    """Stub class for InfeedWithToken."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize InfeedWithToken.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class NextAfter:
-    """Stub class for NextAfter."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize NextAfter.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class OptimizationBarrier:
-    """Stub class for OptimizationBarrier."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize OptimizationBarrier.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class OutfeedWithToken:
-    """Stub class for OutfeedWithToken."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize OutfeedWithToken.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Parameter:
-    """Stub class for Parameter."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Parameter.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class PopulationCount:
-    """Stub class for PopulationCount."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize PopulationCount.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ProductOfElementaryHouseholderReflectors:
-    """Stub class for ProductOfElementaryHouseholderReflectors."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ProductOfElementaryHouseholderReflectors.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class QrDecomposition:
-    """Stub class for QrDecomposition."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize QrDecomposition.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RandomAlgorithm:
-    """Stub class for RandomAlgorithm."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RandomAlgorithm.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RandomGammaGrad:
-    """Stub class for RandomGammaGrad."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RandomGammaGrad.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Reciprocal:
-    """Stub class for Reciprocal."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Reciprocal.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RecvFromHost:
-    """Stub class for RecvFromHost."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RecvFromHost.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ReducePrecision:
-    """Stub class for ReducePrecision."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ReducePrecision.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ReduceScatter:
-    """Stub class for ReduceScatter."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ReduceScatter.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ReduceWindowWithGeneralPadding:
-    """Stub class for ReduceWindowWithGeneralPadding."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ReduceWindowWithGeneralPadding.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RegularizedIncompleteBeta:
-    """Stub class for RegularizedIncompleteBeta."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RegularizedIncompleteBeta.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RemoveDynamicDimension:
-    """Stub class for RemoveDynamicDimension."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RemoveDynamicDimension.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ReplicaId:
-    """Stub class for ReplicaId."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ReplicaId.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Reshape:
-    """Stub class for Reshape."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Reshape.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RngBitGenerator:
-    """Stub class for RngBitGenerator."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RngBitGenerator.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RngNormal:
-    """Stub class for RngNormal."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RngNormal.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class RngUniform:
-    """Stub class for RngUniform."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize RngUniform.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Scatter:
-    """Stub class for Scatter."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Scatter.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Select:
-    """Stub class for Select."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Select.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class SelectAndScatterWithGeneralPadding:
-    """Stub class for SelectAndScatterWithGeneralPadding."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize SelectAndScatterWithGeneralPadding.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class SendToHost:
-    """Stub class for SendToHost."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize SendToHost.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class SetDimensionSize:
-    """Stub class for SetDimensionSize."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize SetDimensionSize.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ShiftLeft:
-    """Stub class for ShiftLeft."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ShiftLeft.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ShiftRightArithmetic:
-    """Stub class for ShiftRightArithmetic."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ShiftRightArithmetic.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class ShiftRightLogical:
-    """Stub class for ShiftRightLogical."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ShiftRightLogical.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Slice:
-    """Stub class for Slice."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Slice.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class SliceInDim:
-    """Stub class for SliceInDim."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize SliceInDim.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Sort:
-    """Stub class for Sort."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Sort.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class TopK:
-    """Stub class for TopK."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize TopK.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class Transpose:
-    """Stub class for Transpose."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize Transpose.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class TriangularSolve:
-    """Stub class for TriangularSolve."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize TriangularSolve.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
-
-
-class TriangularSolveOptions_Transpose:
-    """Stub class for TriangularSolveOptions_Transpose."""
-
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize TriangularSolveOptions_Transpose.
-
-        Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
-        """
-        self.args = args
-        self.kwargs = kwargs
+__all__ = [
+    "Abs",
+    "Acos",
+    "Acosh",
+    "Add",
+    "AfterAll",
+    "AllGather",
+    "AllReduce",
+    "AllToAll",
+    "And",
+    "ApproxTopK",
+    "ApproxTopKFallback",
+    "ApproxTopKReductionOutputSize",
+    "Asin",
+    "Asinh",
+    "Atan",
+    "Atan2",
+    "Atanh",
+    "BesselI0e",
+    "BesselI1e",
+    "BitcastConvertType",
+    "Broadcast",
+    "BroadcastInDim",
+    "Call",
+    "Cbrt",
+    "Ceil",
+    "Cholesky",
+    "Clamp",
+    "Clz",
+    "Collapse",
+    "CollectivePermute",
+    "Complex",
+    "ConcatInDim",
+    "Conditional",
+    "Conj",
+    "Constant",
+    "ConstantLiteral",
+    "ConvGeneralDilated",
+    "ConvertElementType",
+    "Cos",
+    "Cosh",
+    "CreateToken",
+    "CrossReplicaSum",
+    "CustomCall",
+    "CustomCallApiVersion",
+    "CustomCallSchedule",
+    "CustomCallWithAliasing",
+    "CustomCallWithComputation",
+    "CustomCallWithLayout",
+    "Digamma",
+    "Div",
+    "Dot",
+    "DotGeneral",
+    "DynamicReshape",
+    "DynamicSlice",
+    "DynamicUpdateSlice",
+    "Eigh",
+    "Eq",
+    "Erf",
+    "ErfInv",
+    "Erfc",
+    "Exp",
+    "Expm1",
+    "Fft",
+    "Floor",
+    "Gather",
+    "Ge",
+    "GetDimensionSize",
+    "GetTupleElement",
+    "Gt",
+    "Igamma",
+    "IgammaGradA",
+    "Igammac",
+    "Imag",
+    "InfeedWithToken",
+    "Iota",
+    "IsFinite",
+    "LU",
+    "Le",
+    "Lgamma",
+    "Log",
+    "Log1p",
+    "Lt",
+    "Map",
+    "Max",
+    "Min",
+    "Mul",
+    "Ne",
+    "Neg",
+    "NextAfter",
+    "Not",
+    "OptimizationBarrier",
+    "Or",
+    "OutfeedWithToken",
+    "Pad",
+    "Parameter",
+    "PopulationCount",
+    "Pow",
+    "ProductOfElementaryHouseholderReflectors",
+    "QR",
+    "QrDecomposition",
+    "RandomAlgorithm",
+    "RandomGammaGrad",
+    "Real",
+    "Reciprocal",
+    "RecvFromHost",
+    "Reduce",
+    "ReducePrecision",
+    "ReduceScatter",
+    "ReduceWindowWithGeneralPadding",
+    "RegularizedIncompleteBeta",
+    "Rem",
+    "RemoveDynamicDimension",
+    "ReplicaId",
+    "Reshape",
+    "Rev",
+    "RngBitGenerator",
+    "RngNormal",
+    "RngUniform",
+    "Round",
+    "Rsqrt",
+    "SVD",
+    "Scatter",
+    "Select",
+    "SelectAndScatterWithGeneralPadding",
+    "SendToHost",
+    "SetDimensionSize",
+    "ShiftLeft",
+    "ShiftRightArithmetic",
+    "ShiftRightLogical",
+    "Sign",
+    "Sin",
+    "Sinh",
+    "Slice",
+    "SliceInDim",
+    "Sort",
+    "Sqrt",
+    "Square",
+    "Sub",
+    "Tan",
+    "Tanh",
+    "TopK",
+    "Transpose",
+    "TriangularSolve",
+    "TriangularSolveOptions_Transpose",
+    "Tuple",
+    "While",
+    "Xor",
+    "Zeta",
+    "_XlaOpNode",
+]

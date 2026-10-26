@@ -128,7 +128,7 @@ def ResAvalUpdater(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSp
 class AbstractedAxisName:
     """Frontend class for ``AbstractedAxisName``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -136,21 +136,19 @@ class AbstractedAxisName:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class BoundedAxisSize:
     """Frontend class for ``BoundedAxisSize``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -158,21 +156,19 @@ class BoundedAxisSize:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class ConstVar:
     """Frontend class for ``ConstVar``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -180,21 +176,19 @@ class ConstVar:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DebugInfo:
     """Frontend class for ``DebugInfo``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -202,21 +196,19 @@ class DebugInfo:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class DynamicJaxprTracer:
     """Frontend class for ``DynamicJaxprTracer``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -224,21 +216,19 @@ class DynamicJaxprTracer:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class FreeVar:
     """Frontend class for ``FreeVar``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -246,21 +236,19 @@ class FreeVar:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Jaxpr:
     """Frontend class for ``Jaxpr``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -268,21 +256,19 @@ class Jaxpr:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class JaxprEqnRecipe:
     """Frontend class for ``JaxprEqnRecipe``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -290,21 +276,19 @@ class JaxprEqnRecipe:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class JaxprStackFrame:
     """Frontend class for ``JaxprStackFrame``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -312,21 +296,19 @@ class JaxprStackFrame:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class JaxprTrace:
     """Frontend class for ``JaxprTrace``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -334,21 +316,19 @@ class JaxprTrace:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class JaxprTracer:
     """Frontend class for ``JaxprTracer``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -356,21 +336,19 @@ class JaxprTracer:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class LambdaBinding:
     """Frontend class for ``LambdaBinding``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -378,21 +356,19 @@ class LambdaBinding:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PartialEvalCustomResult:
     """Frontend class for ``PartialEvalCustomResult``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -400,21 +376,19 @@ class PartialEvalCustomResult:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class PartialVal:
     """Frontend class for ``PartialVal``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -422,21 +396,19 @@ class PartialVal:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class TracerAsName:
     """Frontend class for ``TracerAsName``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -444,21 +416,19 @@ class TracerAsName:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class TracerId:
     """Frontend class for ``TracerId``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -466,21 +436,19 @@ class TracerId:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
 class Val:
     """Frontend class for ``Val``."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -488,14 +456,12 @@ class Val:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 

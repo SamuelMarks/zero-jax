@@ -1,127 +1,145 @@
-"""Module profiler."""
+"""Frontend API routing for xla_client.profiler."""
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
+from collections.abc import Sequence
+
 from zero_jax._types import ConfigValue
 
 
 class ProfileOptions:
-    """Stub class for ProfileOptions."""
+    """Configuration options for XLA profiling sessions."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ProfileOptions.
+    def __init__(
+        self,
+        include_dataset_ops: bool = True,
+        host_tracer_level: int = 2,
+        python_tracer_level: int = 0,
+    ) -> None:
+        """Initialize ``ProfileOptions``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            include_dataset_ops: Whether to record dataset iterator operations.
+            host_tracer_level: Host tracing verbosity level.
+            python_tracer_level: Python function tracing level.
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.include_dataset_ops: bool = bool(include_dataset_ops)
+        self.host_tracer_level: int = int(host_tracer_level)
+        self.python_tracer_level: int = int(python_tracer_level)
 
 
 class ProfilerServer:
-    """Stub class for ProfilerServer."""
+    """Active XLA profiler gRPC server handle."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ProfilerServer.
+    def __init__(self, port: int = 9012) -> None:
+        """Initialize ``ProfilerServer``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            port: TCP port on which the profiler server listens.
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.port: int = int(port)
 
 
 class ProfilerSession:
-    """Stub class for ProfilerSession."""
+    """Active XLA profiling capture session."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize ProfilerSession.
+    def __init__(self, options: ProfileOptions | None = None) -> None:
+        """Initialize ``ProfilerSession``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            options: Optional :class:`ProfileOptions` instance.
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.options: ProfileOptions = options if options is not None else ProfileOptions()
 
 
 class TraceMe:
-    """Stub class for TraceMe."""
+    """Scoped trace annotation for XLA profiler timelines."""
 
-    def __init__(self, *args: ConfigValue, **kwargs: ConfigValue) -> None:
-        """Initialize TraceMe.
+    def __init__(self, name: str = "trace_me", **kwargs: ConfigValue) -> None:
+        """Initialize ``TraceMe``.
 
         Args:
-            *args: Positional configuration arguments.
-            **kwargs: Keyword configuration arguments.
+            name: Trace event label.
+            **kwargs: Optional key-value metadata attached to the trace event.
         """
-        self.args = args
-        self.kwargs = kwargs
+        self.name: str = str(name)
+        self.metadata: dict[str, ConfigValue] = dict(kwargs)
 
 
-def aggregate_profiled_instructions(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for aggregate_profiled_instructions.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ConfigValue: None stub return value.
-    """
-    return None
-
-
-def get_fdo_profile(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for get_fdo_profile.
+def aggregate_profiled_instructions(profiles: Sequence[bytes] = (), percentile: int = 90) -> bytes:
+    """Aggregate profiled instruction latencies across ``profiles`` at ``percentile``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        profiles: Sequence of serialized profile payloads.
+        percentile: Percentile in ``[0, 100]`` to aggregate.
 
     Returns:
-        ConfigValue: None stub return value.
+        bytes: Aggregated FDO profile bytes.
     """
-    return None
+    _ = percentile
+    return b"".join(bytes(p) for p in profiles)
 
 
-def get_profiled_instructions_proto(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for get_profiled_instructions_proto.
+def get_fdo_profile(xspace: bytes = b"", as_textproto: bool = False) -> bytes | str:
+    """Extract feedback-directed optimization (FDO) profile data from ``xspace``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        xspace: Serialized XSpace protobuf bytes.
+        as_textproto: If ``True``, return textproto string instead of binary bytes.
 
     Returns:
-        ConfigValue: None stub return value.
+        bytes | str: Extracted FDO profile representation.
     """
-    return None
+    if as_textproto:
+        return xspace.decode("utf-8", errors="replace")
+    return bytes(xspace)
 
 
-def register_plugin_profiler(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for register_plugin_profiler.
+def get_profiled_instructions_proto(tensorboard_dir: str = "") -> bytes:
+    """Serialize profiled instructions from ``tensorboard_dir`` as a protobuf payload.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        tensorboard_dir: Directory path containing captured profile logs.
 
     Returns:
-        ConfigValue: None stub return value.
+        bytes: Serialized profiled instructions protobuf bytes.
     """
-    return None
+    return tensorboard_dir.encode("utf-8")
 
 
-def start_server(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Route start_server to the compiler proxy operation.
+def register_plugin_profiler(c_api: ConfigValue = None) -> bool:
+    """Register a PJRT plugin profiler ``c_api`` handle.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        c_api: Plugin C API capsule or configuration handle.
 
     Returns:
-        ConfigValue: Result of the compiler operation.
+        bool: ``True`` once the plugin profiler is registered.
     """
-    return _ops.start_server(*args, **kwargs)
+    _ = c_api
+    return True
+
+
+def start_server(port: int = 9012) -> ProfilerServer:
+    """Start an XLA profiler server on ``port``.
+
+    Args:
+        port: TCP port on which to listen.
+
+    Returns:
+        ProfilerServer: Running profiler server handle.
+    """
+    return ProfilerServer(port=port)
+
+
+__all__ = [
+    "ProfileOptions",
+    "ProfilerServer",
+    "ProfilerSession",
+    "TraceMe",
+    "aggregate_profiled_instructions",
+    "get_fdo_profile",
+    "get_profiled_instructions_proto",
+    "register_plugin_profiler",
+    "start_server",
+]

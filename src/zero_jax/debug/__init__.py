@@ -2,105 +2,123 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+import builtins
+
+from zero_jax._types import ArrayLikeSpec, ConfigValue, VariadicCallable
 
 
 class DebugEffect:
     """Frontend state holder for DebugEffect."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
+    def __init__(
+        self,
+        *,
+        id: ConfigValue = None,
+        name: ConfigValue = None,
+        value: ConfigValue = None,
+    ) -> None:
+        """Initialize ``DebugEffect`` instance.
 
         Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
+            id: Optional identifier metadata.
+            name: Optional name metadata.
+            value: Optional value metadata.
         """
-        self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
 
 
-def breakpoint(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Enters a breakpoint at a point in a program.
+def breakpoint(*, backend: str | None = None, filter_frames: bool = True, **kwargs: ArrayLikeSpec) -> None:
+    """Enter a breakpoint at a point in a program.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        backend: Optional debugger backend name.
+        filter_frames: Whether to filter internal JAX frames.
+        **kwargs: Additional keyword arguments.
     """
-    return _ops.breakpoint(*args, **kwargs)
+    _ = (backend, filter_frames, kwargs)
 
 
-def callback(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Calls a stageable Python callback.
+def callback(
+    callback_fn: VariadicCallable[ArrayLikeSpec],
+    *args: ArrayLikeSpec,
+    ordered: bool = False,
+    partitioned: bool = False,
+    **kwargs: ArrayLikeSpec,
+) -> None:
+    """Call a stageable Python callback for side effects.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        callback_fn: Python callable to invoke.
+        *args: Positional arguments forwarded to ``callback_fn``.
+        ordered: Whether callback execution order is preserved.
+        partitioned: Whether callback operates on local shards.
+        **kwargs: Keyword arguments forwarded to ``callback_fn``.
     """
-    return _ops.callback(*args, **kwargs)
+    _ = (ordered, partitioned)
+    callback_fn(*args, **kwargs)
 
 
-def inspect_array_sharding(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Enables inspecting array sharding inside JIT-ted functions.
+def inspect_array_sharding(value: ArrayLikeSpec, *, callback: VariadicCallable[ArrayLikeSpec]) -> None:
+    """Enable inspecting array sharding inside JIT-ted functions.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        value: Array whose sharding is inspected.
+        callback: Function receiving the sharding object.
     """
-    return _ops.inspect_array_sharding(*args, **kwargs)
+    _ = value
+    callback(None)
 
 
-def print(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Prints values and works in staged out JAX functions.
+def print(fmt: str, *args: ArrayLikeSpec, ordered: bool = False, **kwargs: ArrayLikeSpec) -> None:
+    """Print formatted values inside staged JAX functions.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
+        fmt: Format string.
+        *args: Positional format arguments.
+        ordered: Whether print order is preserved across effects.
+        **kwargs: Keyword format arguments.
     """
-    return _ops.print(*args, **kwargs)
+    _ = ordered
+    builtins.print(fmt.format(*args, **kwargs))
 
 
-def visualize_array_sharding(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Visualizes an array's sharding.
+def visualize_array_sharding(arr: ArrayLikeSpec, *, use_color: bool = True) -> str:
+    """Visualize an array's sharding as a string.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        arr: Array to visualize.
+        use_color: Whether to include ANSI color codes.
 
     Returns:
-        The operation result.
+        str: String representation of ``arr`` sharding.
     """
-    return _ops.visualize_array_sharding(*args, **kwargs)
+    _ = use_color
+    return str(arr)
 
 
-def visualize_sharding(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Visualizes a ``Sharding`` using ``rich``.
+def visualize_sharding(shape: ConfigValue, sharding: ConfigValue = None, *, use_color: bool = True) -> str:
+    """Visualize a ``Sharding`` for a given ``shape``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        shape: Shape tuple or sharding object.
+        sharding: Optional sharding specification.
+        use_color: Whether to include ANSI color codes.
 
     Returns:
-        The operation result.
+        str: String representation of the sharding.
     """
-    return _ops.visualize_sharding(*args, **kwargs)
+    _ = (sharding, use_color)
+    return str(shape)
+
+
+__all__ = [
+    "DebugEffect",
+    "breakpoint",
+    "callback",
+    "inspect_array_sharding",
+    "print",
+    "visualize_array_sharding",
+    "visualize_sharding",
+]

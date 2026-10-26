@@ -13,7 +13,7 @@ from zero_jax._types import ArrayLikeSpec, ConfigValue
 class AbstractToken:
     """Represents a token type in the abstract interpretation."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -21,14 +21,12 @@ class AbstractToken:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -36,7 +34,7 @@ class AbstractToken:
 class AbstractValue:
     """Base class for all abstract values in JAX."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -44,14 +42,12 @@ class AbstractValue:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -106,7 +102,7 @@ class ConcreteArray:
 class ConcretizationTypeError(Exception):
     """This error occurs when a JAX Tracer object is used in a context where a concrete value is needed."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -114,14 +110,12 @@ class ConcretizationTypeError(Exception):
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -137,7 +131,7 @@ class DShapedArray:
 class DropVar:
     """Represents a dropped variable that is not used."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -145,14 +139,12 @@ class DropVar:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -187,7 +179,7 @@ class InDBIdx:
 class InconclusiveDimensionOperation(Exception):
     """Raised when we cannot conclusively compute with symbolic dimensions."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -195,14 +187,12 @@ class InconclusiveDimensionOperation(Exception):
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -240,7 +230,7 @@ class JaxprEqn:
 class JaxprPpContext:
     """Context for Jaxpr pretty printing."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -248,14 +238,12 @@ class JaxprPpContext:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -273,7 +261,7 @@ class JaxprPpSettings:
 class JaxprTypeError(Exception):
     """Error raised when a Jaxpr is ill-typed."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -281,14 +269,12 @@ class JaxprTypeError(Exception):
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 
@@ -1490,7 +1476,7 @@ class ShapedArray:
 class Token:
     """A token used for ordering effects."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
+    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, **kwargs: ConfigValue) -> None:
         """Initialize instance with optional configuration attributes.
 
         Args:
@@ -1498,14 +1484,12 @@ class Token:
             id: Optional identifier.
             name: Optional name.
             value: Optional value.
-            dummy: Optional test placeholder attribute.
             **kwargs: Additional keyword attributes.
         """
         self.args = args
         self.id = id
         self.name = name
         self.value = value
-        self.dummy = dummy
         self.kwargs = kwargs
 
 

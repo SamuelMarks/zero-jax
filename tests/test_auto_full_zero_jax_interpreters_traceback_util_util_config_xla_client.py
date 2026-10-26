@@ -7,63 +7,47 @@ import zero_jax.interpreters.traceback_util.util.config.xla_client as mod
 
 def test_class_Client() -> None:
     """Test class Client."""
-    try:
-        mod.Client()
-    except Exception:
-        pass
+    obj = mod.Client()
+    assert isinstance(obj, mod.Client)
 
 
 def test_class_FftType() -> None:
     """Test class FftType."""
-    try:
-        mod.FftType()
-    except Exception:
-        pass
+    obj = mod.FftType()
+    assert isinstance(obj, mod.FftType)
 
 
 def test_class_Frame() -> None:
     """Test class Frame."""
-    try:
-        mod.Frame()
-    except Exception:
-        pass
+    obj = mod.Frame()
+    assert isinstance(obj, mod.Frame)
 
 
 def test_class_Layout() -> None:
     """Test class Layout."""
-    try:
-        mod.Layout()
-    except Exception:
-        pass
+    obj = mod.Layout()
+    assert isinstance(obj, mod.Layout)
 
 
 def test_class_Mapping() -> None:
     """Test class Mapping."""
-    try:
-        mod.Mapping()
-    except Exception:
-        pass
+    obj = mod.Mapping()
+    assert isinstance(obj, mod.Mapping)
 
 
 def test_class_Memory() -> None:
     """Test class Memory."""
-    try:
-        mod.Memory()
-    except Exception:
-        pass
+    obj = mod.Memory()
+    assert isinstance(obj, mod.Memory)
 
 
 def test_class_Shape() -> None:
     """Test class Shape."""
-    try:
-        mod.Shape()
-    except Exception:
-        pass
+    obj = mod.Shape()
+    assert isinstance(obj, mod.Shape)
 
 
 def test_class_XlaOp() -> None:
     """Test class XlaOp."""
-    try:
-        mod.XlaOp()
-    except Exception:
-        pass
+    obj = mod.XlaOp()
+    assert isinstance(obj, mod.XlaOp)

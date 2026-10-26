@@ -2,20 +2,30 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from . import datetime, os, pathlib, subprocess
+
+__version__: str = "0.0.5"
+__version_info__: tuple[int, int, int] = (0, 0, 5)
 
 
-def annotations(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub for annotations.
+def annotations(name: str = "__future__.annotations") -> str:
+    """Return the canonical annotation feature name for ``jax.version``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Annotation feature identifier string.
 
     Returns:
-        The operation result.
+        str: The canonical annotation feature identifier.
     """
-    return None
+    return name
 
 
-from . import datetime, os, pathlib, subprocess
+__all__ = [
+    "__version__",
+    "__version_info__",
+    "annotations",
+    "datetime",
+    "os",
+    "pathlib",
+    "subprocess",
+]

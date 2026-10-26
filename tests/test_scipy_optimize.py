@@ -69,6 +69,7 @@ def test_minimize(mock_get_op: mock.MagicMock) -> None:
         return x**2
 
     x0 = jnp.array([0.5])
+    assert dummy_fun(x0).shape == (1,)
     args = (1,)
 
     res = mod.minimize(

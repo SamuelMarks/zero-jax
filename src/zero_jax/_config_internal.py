@@ -7,8 +7,9 @@ import os
 from collections.abc import Iterator
 
 from ml_switcheroo_compiler.core.config import config as _compiler_config
+from ml_switcheroo_ir import DType
 
-from zero_jax._types import ConfigValue
+from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 
 class FlagHolder:
@@ -18,6 +19,7 @@ class FlagHolder:
         self,
         name: str = "flag",
         default: ConfigValue = None,
+        *,
         id: ConfigValue = None,
         value: ConfigValue = None,
     ) -> None:
@@ -40,15 +42,16 @@ class Config:
 
     def __init__(
         self,
+        *,
         id: ConfigValue = None,
-        name: ConfigValue = None,
+        name: str = "jax_config",
         value: ConfigValue = None,
     ) -> None:
         """Initialize ``Config`` with default JAX configuration flags.
 
         Args:
             id: Optional identifier metadata.
-            name: Optional name metadata.
+            name: Configuration manager name.
             value: Optional value metadata.
         """
         self.id = id
@@ -78,7 +81,9 @@ class Config:
         self.values[key] = val
         self.values[name] = val
         if key == "jax_enable_x64":
-            _compiler_config.default_float_dtype = "float64" if bool(val) else "float32"
+            enabled = bool(val)
+            _compiler_config.default_float_dtype = DType.Float64 if enabled else DType.Float32
+            _compiler_config.default_int_dtype = DType.Int64 if enabled else DType.Int32
 
     def read(self, name: str) -> ConfigValue:
         """Read the current value of configuration option ``name``.
@@ -101,9 +106,216 @@ class Config:
         """
         return bool(self.values.get("jax_enable_x64", False))
 
+    def __call__(self) -> Config:
+        """Return this :class:`Config` instance when invoked as a callable.
+
+        Returns:
+            Config: This configuration manager instance.
+        """
+        return self
+
 
 config = Config()
 flags = config
+
+
+class JitState:
+    """Global or thread-local JIT execution state."""
+
+    def __init__(
+        self,
+        disable_jit: bool = False,
+        enable_x64: bool = False,
+        default_device: str | None = None,
+        extra_jit_context: ConfigValue = None,
+    ) -> None:
+        """Initialize ``JitState``.
+
+        Args:
+            disable_jit: Whether JIT compilation is disabled.
+            enable_x64: Whether 64-bit precision is enabled.
+            default_device: Default execution device name.
+            extra_jit_context: Optional extra JIT cache key context.
+        """
+        self.disable_jit: bool = bool(disable_jit)
+        self.enable_x64: bool = bool(enable_x64)
+        self.default_device: str | None = default_device
+        self.extra_jit_context: ConfigValue = extra_jit_context
+
+
+class PyArgSignature:
+    """Static argument signature descriptor for JIT cache lookup."""
+
+    def __init__(
+        self,
+        dtype: str = "float32",
+        shape: tuple[int, ...] = (),
+        weak_type: bool = False,
+    ) -> None:
+        """Initialize ``PyArgSignature``.
+
+        Args:
+            dtype: Element dtype string.
+            shape: Static shape tuple.
+            weak_type: Whether the argument has a weak scalar type.
+        """
+        self.dtype: str = str(dtype)
+        self.shape: tuple[int, ...] = tuple(shape)
+        self.weak_type: bool = bool(weak_type)
+
+
+_GLOBAL_JIT_STATE = JitState()
+_THREAD_LOCAL_JIT_STATE = JitState()
+_THREAD_LOCAL_INIT_CALLBACK: ArrayLikeSpec = None
+
+
+def get_enable_x64() -> bool:
+    """Return whether 64-bit mode is enabled.
+
+    Returns:
+        bool: ``True`` when ``jax_enable_x64`` is active.
+    """
+    return config.jax_enable_x64
+
+
+def global_jit_state() -> JitState:
+    """Return the global :class:`JitState` instance.
+
+    Returns:
+        JitState: Global JIT state object.
+    """
+    _GLOBAL_JIT_STATE.enable_x64 = config.jax_enable_x64
+    return _GLOBAL_JIT_STATE
+
+
+def thread_local_jit_state() -> JitState:
+    """Return the thread-local :class:`JitState` instance.
+
+    Returns:
+        JitState: Thread-local JIT state object.
+    """
+    return _THREAD_LOCAL_JIT_STATE
+
+
+def set_thread_local_state_initialization_callback(callback: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Register a callback invoked when thread-local JIT state is initialized.
+
+    Args:
+        callback: Initialization callable or ``None``.
+
+    Returns:
+        ArrayLikeSpec: Registered callback.
+    """
+    global _THREAD_LOCAL_INIT_CALLBACK
+    _THREAD_LOCAL_INIT_CALLBACK = callback
+    return callback
+
+
+def swap_thread_local_state_disable_jit(val: bool | None = False) -> bool:
+    """Swap the thread-local ``disable_jit`` flag and return its previous value.
+
+    Args:
+        val: New boolean state for ``disable_jit``.
+
+    Returns:
+        bool: Previous ``disable_jit`` state.
+    """
+    prev = _THREAD_LOCAL_JIT_STATE.disable_jit
+    _THREAD_LOCAL_JIT_STATE.disable_jit = bool(val)
+    return prev
+
+
+_DEBUG_LOGGERS_ENABLED: dict[str, bool] = {}
+
+
+def enable_debug_logging(logger_name: str = "jax") -> str:
+    """Enable debug logging for ``logger_name``.
+
+    Args:
+        logger_name: Name of the logger to configure.
+
+    Returns:
+        str: Configured logger name.
+    """
+    _DEBUG_LOGGERS_ENABLED[logger_name] = True
+    return logger_name
+
+
+def disable_all_debug_logging() -> bool:
+    """Disable all debug loggers previously enabled via :func:`enable_debug_logging`.
+
+    Returns:
+        bool: ``False`` indicating debug logging is disabled.
+    """
+    _DEBUG_LOGGERS_ENABLED.clear()
+    return False
+
+
+class TransferGuardLevel:
+    """Enumeration of device transfer guard enforcement levels."""
+
+    ALLOW: str = "allow"
+    LOG: str = "log"
+    DISALLOW: str = "disallow"
+    LOG_EXPLICIT: str = "log_explicit"
+    DISALLOW_EXPLICIT: str = "disallow_explicit"
+
+    def __init__(self, level: str = "allow") -> None:
+        """Initialize ``TransferGuardLevel``.
+
+        Args:
+            level: Guard level identifier string.
+        """
+        self.level: str = str(level)
+
+
+class TransferGuardState:
+    """Global or thread-local device transfer guard state."""
+
+    def __init__(
+        self,
+        host_to_device: str = "allow",
+        device_to_device: str = "allow",
+        device_to_host: str = "allow",
+        explicit_device_put: bool = False,
+        explicit_device_get: bool = False,
+    ) -> None:
+        """Initialize ``TransferGuardState``.
+
+        Args:
+            host_to_device: Transfer guard level for host-to-device transfers.
+            device_to_device: Transfer guard level for device-to-device transfers.
+            device_to_host: Transfer guard level for device-to-host transfers.
+            explicit_device_put: Whether inside an explicit ``device_put`` scope.
+            explicit_device_get: Whether inside an explicit ``device_get`` scope.
+        """
+        self.host_to_device: str = host_to_device
+        self.device_to_device: str = device_to_device
+        self.device_to_host: str = device_to_host
+        self.explicit_device_put: bool = bool(explicit_device_put)
+        self.explicit_device_get: bool = bool(explicit_device_get)
+
+
+_GLOBAL_TRANSFER_GUARD_STATE = TransferGuardState()
+_THREAD_LOCAL_TRANSFER_GUARD_STATE = TransferGuardState()
+
+
+def global_transfer_guard_state() -> TransferGuardState:
+    """Return the global :class:`TransferGuardState`.
+
+    Returns:
+        TransferGuardState: Global transfer guard state.
+    """
+    return _GLOBAL_TRANSFER_GUARD_STATE
+
+
+def thread_local_transfer_guard_state() -> TransferGuardState:
+    """Return the thread-local :class:`TransferGuardState`.
+
+    Returns:
+        TransferGuardState: Thread-local transfer guard state.
+    """
+    return _THREAD_LOCAL_TRANSFER_GUARD_STATE
 
 
 def bool_env(varname: str = "", default: bool = False) -> bool:
@@ -263,15 +475,28 @@ def transfer_guard(level: str = "allow") -> Iterator[None]:
 __all__ = [
     "Config",
     "FlagHolder",
+    "JitState",
+    "PyArgSignature",
+    "TransferGuardLevel",
+    "TransferGuardState",
     "bool_env",
     "config",
     "default_device",
     "default_matmul_precision",
+    "disable_all_debug_logging",
+    "enable_debug_logging",
     "enable_x64",
     "flags",
+    "get_enable_x64",
+    "global_jit_state",
+    "global_transfer_guard_state",
     "int_env",
     "numpy_dtype_promotion",
     "numpy_rank_promotion",
+    "set_thread_local_state_initialization_callback",
     "str_env",
+    "swap_thread_local_state_disable_jit",
+    "thread_local_jit_state",
+    "thread_local_transfer_guard_state",
     "transfer_guard",
 ]

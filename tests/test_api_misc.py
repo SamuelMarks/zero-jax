@@ -165,7 +165,7 @@ def test_even_more_misc() -> None:
     zero_jax.make_jaxpr(f)(1)
 
     assert zero_jax.make_array_from_single_device_arrays((1,), None, [array(1.0)]).shape == (1,)
-    assert zero_jax.make_array_from_callback((2,), None, lambda: None).shape == (2,)
+    assert zero_jax.make_array_from_callback((2,), None, lambda idx: 0.0).shape == (2,)
     assert zero_jax.device_put_sharded([array(1.0)], ["cpu"]).shape == (1,)
     assert zero_jax.block_until_ready(5) == 5
 
@@ -176,6 +176,6 @@ def test_phase5_stubs() -> None:
     import zero_jax.interpreters.partial_eval.config as pec
     import zero_jax.interpreters.traceback_util.config as tuc
 
-    assert pe.JaxprTrace is not None
-    assert pec.jax_jit is not None
-    assert tuc.xla_client is None or tuc.xla_client is not None
+    assert isinstance(pe.JaxprTrace(), pe.JaxprTrace)
+    assert pec.jax_jit is True
+    assert isinstance(tuc.Config(), tuc.Config)

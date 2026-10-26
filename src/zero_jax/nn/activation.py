@@ -73,13 +73,18 @@ def logsumexp(
         ArrayLikeSpec: The logsumexp of the inputs. If `return_sign` is True, returns a tuple containing the logsumexp and its sign.
     """
     a_t = _to_tensor(a)
+    if where is not None:
+        a_t = ops.where(_to_tensor(where), a_t, creation.full_like(a_t, -float("inf")))
     amax = ops.max(a_t, axis=axis, keepdims=True)
     a_shifted = ops.subtract(a_t, amax)
-    a_shifted = ops.multiply(ops.exp(a_shifted), _to_tensor(b)) if b is not None else ops.exp(a_shifted)
+    terms = ops.multiply(ops.exp(a_shifted), _to_tensor(b)) if b is not None else ops.exp(a_shifted)
+    if where is not None:
+        terms = ops.where(_to_tensor(where), terms, creation.zeros_like(terms))
 
     # sum
-    sum_exp = ops.sum(a_shifted, axis=axis, keepdims=keepdims)
-    log_sum_exp = ops.log(sum_exp)
+    sum_exp = ops.sum(terms, axis=axis, keepdims=keepdims)
+    sign = ops.sign(sum_exp)
+    log_sum_exp = ops.log(ops.abs(sum_exp) if return_sign else sum_exp)
 
     if not keepdims:
         amax = ops.squeeze(amax, dims=[axis] if isinstance(axis, int) else axis) if axis is not None else ops.squeeze(amax)
@@ -87,8 +92,6 @@ def logsumexp(
     res = ops.add(log_sum_exp, amax)
 
     if return_sign:
-        # dummy sign
-        sign = ops.sign(res)
         return _wrap(res), _wrap(sign)
     return _wrap(res)
 

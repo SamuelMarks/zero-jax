@@ -2,57 +2,60 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32, floor, where, zeros_like
 from zero_jax.scipy.special import gammaincc, gammaln, xlogy
 
 
-def logpmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpmf(k: ArrayLikeSpec, mu: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
     """Poisson log probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``k``, ``mu``, ``loc=0``).
-        **kwargs: Input parameter ``kwargs``.
+        k: Event count quantiles.
+        mu: Expected rate parameter.
+        loc: Location offset parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability mass.
     """
-    if len(args) >= 2:
-        k = asarray(args[0], dtype=float32) - asarray(args[2] if len(args) > 2 else kwargs.get("loc", 0.0), dtype=float32)
-        mu = asarray(args[1], dtype=float32)
-        val = xlogy(k, mu) - gammaln(k + 1.0) - mu
-        return where(k >= 0.0, val, float("-inf"))
-    return _ops.logpmf(*args, **kwargs)
+    k_arr = asarray(k, dtype=float32) - asarray(loc, dtype=float32)
+    mu_arr = asarray(mu, dtype=float32)
+    val = xlogy(k_arr, mu_arr) - gammaln(k_arr + 1.0) - mu_arr
+    return where(k_arr >= 0.0, val, float("-inf"))
 
 
-def pmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pmf(k: ArrayLikeSpec, mu: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
     """Poisson probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``k``, ``mu``, ``loc=0``).
-        **kwargs: Input parameter ``kwargs``.
+        k: Event count quantiles.
+        mu: Expected rate parameter.
+        loc: Location offset parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability mass.
     """
-    if len(args) >= 2:
-        return exp(logpmf(*args, **kwargs))
-    return _ops.pmf(*args, **kwargs)
+    return exp(logpmf(k, mu, loc))
 
 
-def cdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def cdf(k: ArrayLikeSpec, mu: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0) -> ArrayLikeSpec:
     """Poisson cumulative distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``k``, ``mu``, ``loc=0``).
-        **kwargs: Input parameter ``kwargs``.
+        k: Event count quantiles.
+        mu: Expected rate parameter.
+        loc: Location offset parameter.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated cumulative distribution.
     """
-    if len(args) >= 2:
-        k = floor(asarray(args[0], dtype=float32) - asarray(args[2] if len(args) > 2 else kwargs.get("loc", 0.0), dtype=float32))
-        mu = asarray(args[1], dtype=float32)
-        return where(k < 0.0, zeros_like(k), gammaincc(k + 1.0, mu))
-    return _ops.cdf(*args, **kwargs)
+    k_arr = floor(asarray(k, dtype=float32) - asarray(loc, dtype=float32))
+    mu_arr = asarray(mu, dtype=float32)
+    return where(k_arr < 0.0, zeros_like(k_arr), gammaincc(k_arr + 1.0, mu_arr))
+
+
+__all__ = [
+    "cdf",
+    "logpmf",
+    "pmf",
+]

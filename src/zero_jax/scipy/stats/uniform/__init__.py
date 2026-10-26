@@ -2,76 +2,79 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32, log, ones_like, where, zeros_like
 
 
-def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Uniform log probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Lower endpoint of the uniform interval.
+        scale: Width of the uniform interval.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability density.
     """
-    if args:
-        x = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return where((x >= loc) & (x <= loc + scale), -log(scale) * ones_like(x), float("-inf"))
-    return _ops.logpdf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return where((x_arr >= loc_arr) & (x_arr <= loc_arr + scale_arr), -log(scale_arr) * ones_like(x_arr), float("-inf"))
 
 
-def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Uniform probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Lower endpoint of the uniform interval.
+        scale: Width of the uniform interval.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability density.
     """
-    if args:
-        return exp(logpdf(*args, **kwargs))
-    return _ops.pdf(*args, **kwargs)
+    return exp(logpdf(x, loc, scale))
 
 
-def cdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def cdf(x: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Uniform cumulative distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input quantiles.
+        loc: Lower endpoint of the uniform interval.
+        scale: Width of the uniform interval.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated cumulative distribution.
     """
-    if args:
-        x = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        z = (x - loc) / scale
-        return where(z < 0.0, zeros_like(z), where(z > 1.0, ones_like(z), z))
-    return _ops.cdf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    z = (x_arr - loc_arr) / scale_arr
+    return where(z < 0.0, zeros_like(z), where(z > 1.0, ones_like(z), z))
 
 
-def ppf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def ppf(q: ArrayLikeSpec, loc: ArrayLikeSpec = 0.0, scale: ArrayLikeSpec = 1.0) -> ArrayLikeSpec:
     """Uniform distribution percent point function.
 
     Args:
-        *args: Input parameter ``args`` (``q``, ``loc=0.0``, ``scale=1.0``).
-        **kwargs: Input parameter ``kwargs``.
+        q: Lower tail probability.
+        loc: Lower endpoint of the uniform interval.
+        scale: Width of the uniform interval.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Quantile corresponding to ``q``.
     """
-    if args:
-        q = asarray(args[0], dtype=float32)
-        loc = asarray(args[1] if len(args) > 1 else kwargs.get("loc", 0.0), dtype=float32)
-        scale = asarray(args[2] if len(args) > 2 else kwargs.get("scale", 1.0), dtype=float32)
-        return where((q >= 0.0) & (q <= 1.0), loc + q * scale, float("nan"))
-    return _ops.ppf(*args, **kwargs)
+    q_arr = asarray(q, dtype=float32)
+    loc_arr = asarray(loc, dtype=float32)
+    scale_arr = asarray(scale, dtype=float32)
+    return where((q_arr >= 0.0) & (q_arr <= 1.0), loc_arr + q_arr * scale_arr, float("nan"))
+
+
+__all__ = [
+    "cdf",
+    "logpdf",
+    "pdf",
+    "ppf",
+]

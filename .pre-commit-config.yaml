@@ -72,7 +72,7 @@ repos:
 
       - id: pytest-coverage
         name: Run Pytest 100% Line & Branch Coverage
-        entry: env PYTHONPATH=src:../ml-switcheroo-compiler/src pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-fail-under=100
+        entry: env PYTHONPATH=src pytest --cov=src/zero_jax --cov=scripts --cov-branch --cov-report=term-missing --cov-fail-under=100
         language: system
         types: [python]
         pass_filenames: false

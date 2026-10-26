@@ -2,41 +2,44 @@
 
 from __future__ import annotations
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, exp, float32
 from zero_jax.numpy.lax_numpy import sum as _sum
 from zero_jax.scipy.special import gammaln, xlogy
 
 
-def logpmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpmf(x: ArrayLikeSpec, n: ArrayLikeSpec, p: ArrayLikeSpec) -> ArrayLikeSpec:
     """Multinomial log probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``n``, ``p``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Category count vector.
+        n: Total number of trials.
+        p: Category probability vector.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability mass.
     """
-    if len(args) >= 3:
-        x = asarray(args[0], dtype=float32)
-        n = asarray(args[1], dtype=float32)
-        p = asarray(args[2], dtype=float32)
-        return gammaln(n + 1.0) + _sum(xlogy(x, p) - gammaln(x + 1.0), axis=-1)
-    return _ops.logpmf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    n_arr = asarray(n, dtype=float32)
+    p_arr = asarray(p, dtype=float32)
+    return gammaln(n_arr + 1.0) + _sum(xlogy(x_arr, p_arr) - gammaln(x_arr + 1.0), axis=-1)
 
 
-def pmf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pmf(x: ArrayLikeSpec, n: ArrayLikeSpec, p: ArrayLikeSpec) -> ArrayLikeSpec:
     """Multinomial probability mass function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``n``, ``p``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Category count vector.
+        n: Total number of trials.
+        p: Category probability vector.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability mass.
     """
-    if len(args) >= 3:
-        return exp(logpmf(*args, **kwargs))
-    return _ops.pmf(*args, **kwargs)
+    return exp(logpmf(x, n, p))
+
+
+__all__ = [
+    "logpmf",
+    "pmf",
+]

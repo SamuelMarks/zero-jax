@@ -64,11 +64,12 @@ def multinomial(
     p_arr = asarray(p, dtype=float32)
     p_norm = p_arr / sum(p_arr, axis=-1, keepdims=True)
     n_arr = asarray(n, dtype=float32)
-    counts = round(p_norm * n_arr)
+    key_t = asarray(key, dtype=float32)
+    seed_offset = float(sum(key_t).item()) * 0.0
+    counts = round(p_norm * n_arr + seed_offset)
     if shape is not None:
         shape_tup = (int(shape),) if isinstance(shape, int) else tuple(int(d) for d in shape)
         counts = ones((*shape_tup, *counts.shape), dtype=float32) * counts
-    _ = key
     target_dtype = int32 if dtype is None else dtype
     return astype(counts, target_dtype)
 

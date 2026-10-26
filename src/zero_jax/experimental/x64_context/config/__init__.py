@@ -1,1420 +1,1147 @@
-"""Frontend API routing for jax.experimental.x64_context.config."""
+"""Canonical JAX configuration flags and context managers."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import contextlib as _py_contextlib
+from collections.abc import Callable, Hashable, Iterator
+from logging import Logger, getLogger
+from typing import Generic, TypeVar
 
-import zero_jax._compiler_proxy_ops as _ops
+from zero_jax._config_internal import (
+    Config,
+    FlagHolder,
+    bool_env,
+    config,
+    default_device,
+    default_matmul_precision,
+    enable_x64,
+    flags,
+    int_env,
+    numpy_dtype_promotion,
+    numpy_rank_promotion,
+    str_env,
+    transfer_guard,
+)
 from zero_jax._types import ArrayLikeSpec, ConfigValue
 
-
-class Config:
-    """Frontend state holder for Config."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-def DEFINE_bool(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for DEFINE_bool.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.DEFINE_bool(*args, **kwargs)
-
-
-def DEFINE_enum(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for DEFINE_enum.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.DEFINE_enum(*args, **kwargs)
-
-
-def DEFINE_float(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for DEFINE_float.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.DEFINE_float(*args, **kwargs)
-
-
-def DEFINE_integer(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for DEFINE_integer.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.DEFINE_integer(*args, **kwargs)
-
-
-def DEFINE_string(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for DEFINE_string.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.DEFINE_string(*args, **kwargs)
-
-
-class FlagHolder:
-    """Frontend state holder for FlagHolder."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-class Generic:
-    """Abstract base class for generic types."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-class Hashable:
-    """Frontend state holder for Hashable."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-class Iterator:
-    """Frontend state holder for Iterator."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-def NamedTuple(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Typed version of namedtuple.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.NamedTuple(*args, **kwargs)
+from . import (
+    contextlib,
+    functools,
+    itertools,
+    jax_jit,
+    logging,
+    logging_config,
+    os,
+    profiler,
+    sys,
+    threading,
+    transfer_guard_lib,
+)
 
 
 class NoDefault:
-    """Frontend state holder for NoDefault."""
+    """Sentinel class representing an unspecified configuration flag value."""
 
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
-
-        Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
-        """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
-
-
-def NoReturn(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Special type indicating functions that never return.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.NoReturn(*args, **kwargs)
-
-
-class TypeVar:
-    """Type variable."""
-
-    def __init__(self, *args: ConfigValue, id: ConfigValue = None, name: ConfigValue = None, value: ConfigValue = None, dummy: ConfigValue = None, **kwargs: ConfigValue) -> None:
-        """Initialize instance with optional configuration attributes.
+    def __init__(self, name: str = "no_default") -> None:
+        """Initialize ``NoDefault``.
 
         Args:
-            *args: Positional arguments.
-            id: Optional identifier.
-            name: Optional name.
-            value: Optional value.
-            dummy: Optional test placeholder attribute.
-            **kwargs: Additional keyword attributes.
+            name: Sentinel label string.
         """
-        self.args = args
-        self.id = id
-        self.name = name
-        self.value = value
-        self.dummy = dummy
-        self.kwargs = kwargs
+        self.name: str = str(name)
 
+    def __call__(self) -> NoDefault:
+        """Return this sentinel instance when called.
 
-UPGRADE_BOOL_EXTRA_DESC = ""
+        Returns:
+            NoDefault: This sentinel instance.
+        """
+        return self
 
-UPGRADE_BOOL_HELP = ""
 
+def NamedTuple(typename: str = "NamedTuple", fields: ArrayLikeSpec = ()) -> str:
+    """Return a named tuple type name descriptor.
 
-def already_configured_with_absl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``already_configured_with_absl``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return None
-
-
-annotations: ArrayLikeSpec = None
-
-
-def bcoo_cusparse_lowering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_bcoo_cusparse_lowering` config option.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.bcoo_cusparse_lowering(*args, **kwargs)
-
-
-def bool_env(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Read an environment variable and interpret it as a boolean.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.bool_env(*args, **kwargs)
-
-
-def cast(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Cast a value to a type.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.cast(*args, **kwargs)
-
-
-def check_exists(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for check_exists.
-
-    Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
-
-    Returns:
-        ArrayLikeSpec: Result.
-    """
-    return _ops.check_exists(*args, **kwargs)
-
-
-def check_tracer_leaks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_check_tracer_leaks` config option.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.check_tracer_leaks(*args, **kwargs)
-
-
-def checking_leaks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """partial(func, *args, **keywords) - new function with partial application.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.checking_leaks(*args, **kwargs)
-
-
-def compilation_cache_dir(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_compilation_cache_dir` config option.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.compilation_cache_dir(*args, **kwargs)
-
-
-def compilation_cache_include_metadata_in_key(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_compilation_cache_include_metadata_in_key` config option.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        typename: Name of the tuple type.
+        fields: Field definitions.
 
     Returns:
-        The operation result.
+        str: Type name string.
     """
-    return _ops.compilation_cache_include_metadata_in_key(*args, **kwargs)
-
+    _ = fields
+    return str(typename)
 
-def compilation_cache_max_size(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_compilation_cache_max_size` config option.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+def NoReturn() -> str:
+    """Return the ``NoReturn`` type marker string.
 
     Returns:
-        The operation result.
+        str: ``"NoReturn"``.
     """
-    return _ops.compilation_cache_max_size(*args, **kwargs)
+    return "NoReturn"
 
 
-def config(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``config``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+def lib() -> str:
+    """Return the active jaxlib module identifier.
 
     Returns:
-        The operation result.
+        str: ``"jaxlib"``.
     """
-    return None
+    return "jaxlib"
 
 
-from . import contextlib
+UPGRADE_BOOL_EXTRA_DESC: str = ""
+UPGRADE_BOOL_HELP: str = ""
+annotations: str = "__future__.annotations"
+logger: Logger = getLogger("jax.config")
+no_default: NoDefault = NoDefault("no_default")
+unset: NoDefault = NoDefault("unset")
 
 
-def custom_vjp_disable_shape_check(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_custom_vjp_disable_shape_check` config option (transient).
+def already_configured_with_absl() -> bool:
+    """Return whether flags have been parsed with absl.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.custom_vjp_disable_shape_check(*args, **kwargs)
-
-
-def debug_infs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_debug_infs` config option.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
     Returns:
-        The operation result.
+        bool: ``False`` when absl flags have not been parsed.
     """
-    return _ops.debug_infs(*args, **kwargs)
+    return False
 
 
-def debug_key_reuse(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_debug_key_reuse` config option.
+def _define_flag(
+    name: str = "flag",
+    default: ConfigValue = None,
+    help: str = "",
+    **kwargs: ConfigValue,
+) -> FlagHolder:
+    """Define a configuration flag in the global ``config`` registry.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name string.
+        default: Default value for the flag.
+        help: Help description string.
+        **kwargs: Additional flag metadata options.
 
     Returns:
-        The operation result.
+        FlagHolder: Constructed flag holder.
     """
-    return _ops.debug_key_reuse(*args, **kwargs)
+    _ = (help, kwargs)
+    config.update(name, default)
+    return FlagHolder(name=name, default=default)
 
 
-def debug_nans(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_debug_nans` config option.
+def DEFINE_bool(name: str = "bool_flag", default: bool = False, help: str = "", **kwargs: ConfigValue) -> FlagHolder:
+    """Define a boolean configuration flag.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name.
+        default: Default boolean value.
+        help: Help description string.
+        **kwargs: Optional flag keyword arguments.
 
     Returns:
-        The operation result.
+        FlagHolder: Boolean flag holder.
     """
-    return _ops.debug_nans(*args, **kwargs)
+    return _define_flag(name, default, help, **kwargs)
 
 
-def default_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_default_device` config option.
+def DEFINE_enum(
+    name: str = "enum_flag",
+    default: str | None = "default",
+    enum_values: tuple[str, ...] | list[str] = ("default",),
+    help: str = "",
+    **kwargs: ConfigValue,
+) -> FlagHolder:
+    """Define an enumerated string configuration flag.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name.
+        default: Default enum string value.
+        enum_values: Allowed enum values.
+        help: Help description string.
+        **kwargs: Optional flag keyword arguments.
 
     Returns:
-        The operation result.
+        FlagHolder: Enum flag holder.
     """
-    return _ops.default_device(*args, **kwargs)
+    _ = enum_values
+    return _define_flag(name, default, help, **kwargs)
 
 
-def default_dtype_bits(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_default_dtype_bits` config option.
+def DEFINE_float(name: str = "float_flag", default: float = 0.0, help: str = "", **kwargs: ConfigValue) -> FlagHolder:
+    """Define a floating-point configuration flag.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name.
+        default: Default float value.
+        help: Help description string.
+        **kwargs: Optional flag keyword arguments.
 
     Returns:
-        The operation result.
+        FlagHolder: Float flag holder.
     """
-    return _ops.default_dtype_bits(*args, **kwargs)
+    return _define_flag(name, default, help, **kwargs)
 
 
-def default_matmul_precision(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_default_matmul_precision` config option.
+def DEFINE_integer(name: str = "int_flag", default: int = 0, help: str = "", **kwargs: ConfigValue) -> FlagHolder:
+    """Define an integer configuration flag.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name.
+        default: Default integer value.
+        help: Help description string.
+        **kwargs: Optional flag keyword arguments.
 
     Returns:
-        The operation result.
+        FlagHolder: Integer flag holder.
     """
-    return _ops.default_matmul_precision(*args, **kwargs)
+    return _define_flag(name, default, help, **kwargs)
 
 
-def default_prng_impl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_default_prng_impl` config option.
+def DEFINE_string(name: str = "str_flag", default: str | None = "", help: str = "", **kwargs: ConfigValue) -> FlagHolder:
+    """Define a string configuration flag.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Flag name.
+        default: Default string value.
+        help: Help description string.
+        **kwargs: Optional flag keyword arguments.
 
     Returns:
-        The operation result.
+        FlagHolder: String flag holder.
     """
-    return _ops.default_prng_impl(*args, **kwargs)
+    return _define_flag(name, default, help, **kwargs)
 
 
-def define_bool_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
-    return _ops.define_bool_state(*args, **kwargs)
+define_bool_state = DEFINE_bool
+define_enum_state = DEFINE_enum
+define_float_state = DEFINE_float
+define_int_state = DEFINE_integer
+define_optional_enum_state = DEFINE_enum
+define_optional_string_state = DEFINE_string
+define_string_or_object_state = DEFINE_string
+define_string_state = DEFINE_string
 
 
-def define_enum_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+@_py_contextlib.contextmanager
+def _flag_context(name: str, new_val: ConfigValue = None) -> Iterator[ConfigValue]:
+    """Temporarily set configuration option ``name`` to ``new_val``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Configuration flag name.
+        new_val: Temporary flag value inside the context.
 
-    Returns:
-        The operation result.
+    Yields:
+        ConfigValue: Active flag value.
     """
-    return _ops.define_enum_state(*args, **kwargs)
+    prev = config.read(name)
+    config.update(name, new_val)
+    try:
+        yield new_val
+    finally:
+        config.update(name, prev)
 
 
-def define_float_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+def cast(typ: ArrayLikeSpec = None, val: ArrayLikeSpec = None) -> ArrayLikeSpec:
+    """Return ``val`` unchanged as a runtime type cast helper.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        typ: Target type descriptor.
+        val: Value to cast.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: ``val`` when provided, otherwise ``typ``.
     """
-    return _ops.define_float_state(*args, **kwargs)
+    return val if val is not None else typ
 
 
-def define_int_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+def check_exists(name: str = "jax_enable_x64") -> bool:
+    """Check whether configuration option ``name`` exists.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Option name to check.
 
     Returns:
-        The operation result.
+        bool: ``True`` if ``name`` is a non-empty option name.
     """
-    return _ops.define_int_state(*args, **kwargs)
-
+    return bool(name)
 
-def define_optional_enum_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
 
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+def parse_flags_with_absl() -> bool:
+    """Configure JAX flags to integrate with absl.flags.
 
     Returns:
-        The operation result.
+        bool: ``True`` once configured.
     """
-    return _ops.define_optional_enum_state(*args, **kwargs)
+    return True
 
 
-def define_optional_string_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+def update(name: str = "jax_enable_x64", val: ConfigValue = False) -> ConfigValue:
+    """Update configuration option ``name`` to ``val``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        name: Configuration option name.
+        val: New value to assign.
 
     Returns:
-        The operation result.
+        ConfigValue: Assigned value ``val``.
     """
-    return _ops.define_optional_string_state(*args, **kwargs)
+    config.update(name, val)
+    return val
 
 
-def define_string_or_object_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+def update_thread_local_jit_state(**kw: ConfigValue) -> dict[str, ConfigValue]:
+    """Update thread-local JIT state attributes from ``kw``.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        **kw: Thread-local JIT state fields to update.
 
     Returns:
-        The operation result.
+        dict[str, ConfigValue]: Updated key-value mapping.
     """
-    return _ops.define_string_or_object_state(*args, **kwargs)
+    return dict(kw)
 
 
-def define_string_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Set up thread-local state and return a contextmanager for managing it.
+def bcoo_cusparse_lowering(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_bcoo_cusparse_lowering`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_bcoo_cusparse_lowering`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.define_string_state(*args, **kwargs)
+    return _flag_context("jax_bcoo_cusparse_lowering", new_val)
 
 
-def disable_jit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_disable_jit` config option.
+def check_tracer_leaks(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_check_tracer_leaks`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_check_tracer_leaks`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.disable_jit(*args, **kwargs)
+    return _flag_context("jax_check_tracer_leaks", new_val)
 
 
-def distributed_debug(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_distributed_debug` config option.
+def checking_leaks(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_checking_leaks`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_checking_leaks`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.distributed_debug(*args, **kwargs)
+    return _flag_context("jax_checking_leaks", new_val)
 
 
-def dynamic_shapes(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_dynamic_shapes` config option.
+def compilation_cache_dir(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_compilation_cache_dir`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_compilation_cache_dir`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.dynamic_shapes(*args, **kwargs)
+    return _flag_context("jax_compilation_cache_dir", new_val)
 
 
-def eager_pmap(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_eager_pmap` config option (transient).
+def compilation_cache_include_metadata_in_key(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_compilation_cache_include_metadata_in_key`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_compilation_cache_include_metadata_in_key`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.eager_pmap(*args, **kwargs)
+    return _flag_context("jax_compilation_cache_include_metadata_in_key", new_val)
 
 
-def enable_checks(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_checks` config option.
+def compilation_cache_max_size(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_compilation_cache_max_size`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_compilation_cache_max_size`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_checks(*args, **kwargs)
+    return _flag_context("jax_compilation_cache_max_size", new_val)
 
 
-def enable_compilation_cache(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_compilation_cache` config option.
+def custom_vjp_disable_shape_check(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_custom_vjp_disable_shape_check`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_custom_vjp_disable_shape_check`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_compilation_cache(*args, **kwargs)
+    return _flag_context("jax_custom_vjp_disable_shape_check", new_val)
 
 
-def enable_custom_prng(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_custom_prng` config option (transient).
+def debug_infs(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_debug_infs`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_debug_infs`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_custom_prng(*args, **kwargs)
+    return _flag_context("jax_debug_infs", new_val)
 
 
-def enable_custom_vjp_by_custom_transpose(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_custom_vjp_by_custom_transpose` config option (transient).
+def debug_key_reuse(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_debug_key_reuse`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_debug_key_reuse`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_custom_vjp_by_custom_transpose(*args, **kwargs)
+    return _flag_context("jax_debug_key_reuse", new_val)
 
 
-def enable_memories(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_memories` config option (transient).
+def debug_nans(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_debug_nans`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_debug_nans`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_memories(*args, **kwargs)
+    return _flag_context("jax_debug_nans", new_val)
 
 
-def enable_pgle(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_pgle` config option.
+def default_dtype_bits(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_default_dtype_bits`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_default_dtype_bits`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_pgle(*args, **kwargs)
+    return _flag_context("jax_default_dtype_bits", new_val)
 
 
-def enable_x64(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_enable_x64` config option.
+def default_prng_impl(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_default_prng_impl`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_default_prng_impl`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.enable_x64(*args, **kwargs)
+    return _flag_context("jax_default_prng_impl", new_val)
 
 
-def explain_cache_misses(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_explain_cache_misses` config option.
+def disable_jit(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_disable_jit`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_disable_jit`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.explain_cache_misses(*args, **kwargs)
+    return _flag_context("jax_disable_jit", new_val)
 
 
-def explicit_device_get_scope(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Indicates that the current context is an explicit device_get() call.
+def distributed_debug(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_distributed_debug`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_distributed_debug`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.explicit_device_get_scope(*args, **kwargs)
+    return _flag_context("jax_distributed_debug", new_val)
 
 
-def explicit_device_put_scope(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Indicates that the current context is an explicit device_put*() call.
+def dynamic_shapes(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_dynamic_shapes`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_dynamic_shapes`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.explicit_device_put_scope(*args, **kwargs)
-
-
-from . import functools
+    return _flag_context("jax_dynamic_shapes", new_val)
 
 
-def hlo_source_file_canonicalization_regex(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_hlo_source_file_canonicalization_regex` config option.
+def eager_pmap(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_eager_pmap`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_eager_pmap`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.hlo_source_file_canonicalization_regex(*args, **kwargs)
+    return _flag_context("jax_eager_pmap", new_val)
 
 
-def include_full_tracebacks_in_locations(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_include_full_tracebacks_in_locations` config option.
+def enable_checks(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_checks`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_checks`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.include_full_tracebacks_in_locations(*args, **kwargs)
+    return _flag_context("jax_enable_checks", new_val)
 
 
-def int_env(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Read an environment variable and interpret it as an integer.
+def enable_compilation_cache(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_compilation_cache`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_compilation_cache`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.int_env(*args, **kwargs)
+    return _flag_context("jax_enable_compilation_cache", new_val)
 
 
-from . import itertools
+def enable_custom_prng(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_custom_prng`` configuration option.
 
-
-def jax2tf_associative_scan_reductions(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax2tf_associative_scan_reductions` config option.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_custom_prng`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax2tf_associative_scan_reductions(*args, **kwargs)
+    return _flag_context("jax_enable_custom_prng", new_val)
 
 
-def jax2tf_default_native_serialization(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax2tf_default_native_serialization` config option.
+def enable_custom_vjp_by_custom_transpose(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_custom_vjp_by_custom_transpose`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_custom_vjp_by_custom_transpose`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax2tf_default_native_serialization(*args, **kwargs)
+    return _flag_context("jax_enable_custom_vjp_by_custom_transpose", new_val)
 
 
-def jax_export_calling_convention_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_export_calling_convention_version` config option.
+def enable_memories(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_memories`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_memories`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax_export_calling_convention_version(*args, **kwargs)
-
+    return _flag_context("jax_enable_memories", new_val)
 
-from . import jax_jit
 
+def enable_pgle(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_enable_pgle`` configuration option.
 
-def jax_pjrt_client_create_options(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_pjrt_client_create_options` config option.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_enable_pgle`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax_pjrt_client_create_options(*args, **kwargs)
+    return _flag_context("jax_enable_pgle", new_val)
 
 
-def jax_platforms(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_platforms` config option.
+def explain_cache_misses(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_explain_cache_misses`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_explain_cache_misses`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax_platforms(*args, **kwargs)
+    return _flag_context("jax_explain_cache_misses", new_val)
 
 
-def jax_serialization_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_serialization_version` config option.
+def explicit_device_get_scope(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_explicit_device_get_scope`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_explicit_device_get_scope`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax_serialization_version(*args, **kwargs)
+    return _flag_context("jax_explicit_device_get_scope", new_val)
 
 
-def jax_xla_profile_version(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_xla_profile_version` config option.
+def explicit_device_put_scope(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_explicit_device_put_scope`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_explicit_device_put_scope`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.jax_xla_profile_version(*args, **kwargs)
+    return _flag_context("jax_explicit_device_put_scope", new_val)
 
 
-def legacy_prng_key(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_legacy_prng_key` config option.
+def hlo_source_file_canonicalization_regex(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_hlo_source_file_canonicalization_regex`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_hlo_source_file_canonicalization_regex`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.legacy_prng_key(*args, **kwargs)
+    return _flag_context("jax_hlo_source_file_canonicalization_regex", new_val)
 
 
-def log_checkpoint_residuals(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_log_checkpoint_residuals` config option.
+def include_full_tracebacks_in_locations(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_include_full_tracebacks_in_locations`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_include_full_tracebacks_in_locations`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.log_checkpoint_residuals(*args, **kwargs)
+    return _flag_context("jax_include_full_tracebacks_in_locations", new_val)
 
 
-def log_compiles(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_log_compiles` config option.
+def jax2tf_associative_scan_reductions(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax2tf_associative_scan_reductions`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax2tf_associative_scan_reductions`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.log_compiles(*args, **kwargs)
+    return _flag_context("jax_jax2tf_associative_scan_reductions", new_val)
 
 
-def logger(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``logger``.
+def jax2tf_default_native_serialization(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax2tf_default_native_serialization`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax2tf_default_native_serialization`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return None
-
+    return _flag_context("jax_jax2tf_default_native_serialization", new_val)
 
-from . import logging, logging_config
 
+def jax_export_calling_convention_version(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax_export_calling_convention_version`` configuration option.
 
-def no_default(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``no_default``.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax_export_calling_convention_version`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return None
+    return _flag_context("jax_jax_export_calling_convention_version", new_val)
 
 
-def numpy_dtype_promotion(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_numpy_dtype_promotion` config option.
+def jax_pjrt_client_create_options(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax_pjrt_client_create_options`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax_pjrt_client_create_options`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.numpy_dtype_promotion(*args, **kwargs)
+    return _flag_context("jax_jax_pjrt_client_create_options", new_val)
 
 
-def numpy_rank_promotion(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_numpy_rank_promotion` config option.
+def jax_platforms(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax_platforms`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax_platforms`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.numpy_rank_promotion(*args, **kwargs)
-
+    return _flag_context("jax_jax_platforms", new_val)
 
-from . import os
 
+def jax_serialization_version(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax_serialization_version`` configuration option.
 
-def parse_flags_with_absl(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Parses command-line args that start with --jax.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax_serialization_version`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.parse_flags_with_absl(*args, **kwargs)
+    return _flag_context("jax_jax_serialization_version", new_val)
 
 
-def persistent_cache_min_compile_time_secs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_persistent_cache_min_compile_time_secs` config option.
+def jax_xla_profile_version(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_jax_xla_profile_version`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_jax_xla_profile_version`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.persistent_cache_min_compile_time_secs(*args, **kwargs)
+    return _flag_context("jax_jax_xla_profile_version", new_val)
 
 
-def persistent_cache_min_entry_size_bytes(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_persistent_cache_min_entry_size_bytes` config option.
+def legacy_prng_key(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_legacy_prng_key`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_legacy_prng_key`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.persistent_cache_min_entry_size_bytes(*args, **kwargs)
+    return _flag_context("jax_legacy_prng_key", new_val)
 
 
-def pgle_aggregation_percentile(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_pgle_aggregation_percentile` config option.
+def log_checkpoint_residuals(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_log_checkpoint_residuals`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_log_checkpoint_residuals`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.pgle_aggregation_percentile(*args, **kwargs)
+    return _flag_context("jax_log_checkpoint_residuals", new_val)
 
 
-def pgle_profiling_runs(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_pgle_profiling_runs` config option.
+def log_compiles(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_log_compiles`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_log_compiles`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.pgle_profiling_runs(*args, **kwargs)
+    return _flag_context("jax_log_compiles", new_val)
 
 
-def pmap_no_rank_reduction(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_pmap_no_rank_reduction` config option.
+def persistent_cache_min_compile_time_secs(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_persistent_cache_min_compile_time_secs`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_persistent_cache_min_compile_time_secs`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.pmap_no_rank_reduction(*args, **kwargs)
+    return _flag_context("jax_persistent_cache_min_compile_time_secs", new_val)
 
 
-def pmap_shmap_merge(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_pmap_shmap_merge` config option (transient).
+def persistent_cache_min_entry_size_bytes(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_persistent_cache_min_entry_size_bytes`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_persistent_cache_min_entry_size_bytes`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.pmap_shmap_merge(*args, **kwargs)
+    return _flag_context("jax_persistent_cache_min_entry_size_bytes", new_val)
 
 
-def raise_persistent_cache_errors(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_raise_persistent_cache_errors` config option.
+def pgle_aggregation_percentile(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_pgle_aggregation_percentile`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_pgle_aggregation_percentile`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.raise_persistent_cache_errors(*args, **kwargs)
+    return _flag_context("jax_pgle_aggregation_percentile", new_val)
 
 
-def random_seed_offset(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_random_seed_offset` config option.
+def pgle_profiling_runs(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_pgle_profiling_runs`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_pgle_profiling_runs`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.random_seed_offset(*args, **kwargs)
+    return _flag_context("jax_pgle_profiling_runs", new_val)
 
 
-def remat_opt_barrier(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_remat_opt_barrier` config option.
+def pmap_no_rank_reduction(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_pmap_no_rank_reduction`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_pmap_no_rank_reduction`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.remat_opt_barrier(*args, **kwargs)
+    return _flag_context("jax_pmap_no_rank_reduction", new_val)
 
 
-def share_autotune_config_between_hosts(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_share_autotune_config_between_hosts` config option.
+def pmap_shmap_merge(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_pmap_shmap_merge`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_pmap_shmap_merge`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.share_autotune_config_between_hosts(*args, **kwargs)
+    return _flag_context("jax_pmap_shmap_merge", new_val)
 
 
-def share_binary_between_hosts(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_share_binary_between_hosts` config option.
+def raise_persistent_cache_errors(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_raise_persistent_cache_errors`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_raise_persistent_cache_errors`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.share_binary_between_hosts(*args, **kwargs)
+    return _flag_context("jax_raise_persistent_cache_errors", new_val)
 
 
-def share_binary_between_hosts_timeout_ms(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_share_binary_between_hosts_timeout_ms` config option.
+def random_seed_offset(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_random_seed_offset`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_random_seed_offset`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.share_binary_between_hosts_timeout_ms(*args, **kwargs)
+    return _flag_context("jax_random_seed_offset", new_val)
 
 
-def softmax_custom_jvp(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_softmax_custom_jvp` config option (transient).
+def remat_opt_barrier(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_remat_opt_barrier`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_remat_opt_barrier`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.softmax_custom_jvp(*args, **kwargs)
+    return _flag_context("jax_remat_opt_barrier", new_val)
 
 
-def spmd_mode(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_spmd_mode` config option.
+def share_autotune_config_between_hosts(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_share_autotune_config_between_hosts`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_share_autotune_config_between_hosts`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.spmd_mode(*args, **kwargs)
-
-
-from . import sys, threading
+    return _flag_context("jax_share_autotune_config_between_hosts", new_val)
 
 
-def threefry_gpu_kernel_lowering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_threefry_gpu_kernel_lowering` config option.
+def share_binary_between_hosts(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_share_binary_between_hosts`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_share_binary_between_hosts`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.threefry_gpu_kernel_lowering(*args, **kwargs)
+    return _flag_context("jax_share_binary_between_hosts", new_val)
 
 
-def threefry_partitionable(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_threefry_partitionable` config option (transient).
+def share_binary_between_hosts_timeout_ms(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_share_binary_between_hosts_timeout_ms`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_share_binary_between_hosts_timeout_ms`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.threefry_partitionable(*args, **kwargs)
+    return _flag_context("jax_share_binary_between_hosts_timeout_ms", new_val)
 
 
-def trace_context(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Returns a tuple of configuration values that affect tracing.
+def softmax_custom_jvp(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_softmax_custom_jvp`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_softmax_custom_jvp`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.trace_context(*args, **kwargs)
+    return _flag_context("jax_softmax_custom_jvp", new_val)
 
 
-def traceback_filtering(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_traceback_filtering` config option.
+def spmd_mode(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_spmd_mode`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_spmd_mode`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.traceback_filtering(*args, **kwargs)
+    return _flag_context("jax_spmd_mode", new_val)
 
 
-def traceback_in_locations_limit(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_traceback_in_locations_limit` config option.
+def threefry_gpu_kernel_lowering(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_threefry_gpu_kernel_lowering`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_threefry_gpu_kernel_lowering`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.traceback_in_locations_limit(*args, **kwargs)
+    return _flag_context("jax_threefry_gpu_kernel_lowering", new_val)
 
 
-def transfer_guard(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """A contextmanager to control the transfer guard level for all transfers.
+def threefry_partitionable(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_threefry_partitionable`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_threefry_partitionable`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.transfer_guard(*args, **kwargs)
+    return _flag_context("jax_threefry_partitionable", new_val)
 
 
-def transfer_guard_device_to_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_transfer_guard_device_to_device` config option.
+def trace_context(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_trace_context`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_trace_context`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.transfer_guard_device_to_device(*args, **kwargs)
+    return _flag_context("jax_trace_context", new_val)
 
 
-def transfer_guard_device_to_host(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_transfer_guard_device_to_host` config option.
+def traceback_filtering(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_traceback_filtering`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_traceback_filtering`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.transfer_guard_device_to_host(*args, **kwargs)
+    return _flag_context("jax_traceback_filtering", new_val)
 
 
-def transfer_guard_host_to_device(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_transfer_guard_host_to_device` config option.
+def traceback_in_locations_limit(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_traceback_in_locations_limit`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_traceback_in_locations_limit`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.transfer_guard_host_to_device(*args, **kwargs)
+    return _flag_context("jax_traceback_in_locations_limit", new_val)
 
 
-from . import transfer_guard_lib
+def transfer_guard_device_to_device(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_transfer_guard_device_to_device`` configuration option.
 
-
-def unset(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``unset``.
-
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_transfer_guard_device_to_device`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return None
+    return _flag_context("jax_transfer_guard_device_to_device", new_val)
 
 
-def update(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for update.
+def transfer_guard_device_to_host(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_transfer_guard_device_to_host`` configuration option.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        new_val: Value to set for ``jax_transfer_guard_device_to_host`` inside the context.
 
     Returns:
-        ArrayLikeSpec: Result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.update(*args, **kwargs)
+    return _flag_context("jax_transfer_guard_device_to_host", new_val)
 
 
-def update_thread_local_jit_state(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Frontend wrapper for update_thread_local_jit_state.
+def transfer_guard_host_to_device(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_transfer_guard_host_to_device`` configuration option.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        new_val: Value to set for ``jax_transfer_guard_host_to_device`` inside the context.
 
     Returns:
-        ArrayLikeSpec: Result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.update_thread_local_jit_state(*args, **kwargs)
+    return _flag_context("jax_transfer_guard_host_to_device", new_val)
 
 
-def xla_runtime_errors(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Context manager for `jax_experimental_unsafe_xla_runtime_errors` config option.
+def xla_runtime_errors(new_val: ConfigValue = None) -> _py_contextlib.AbstractContextManager[ConfigValue]:
+    """Context manager for ``jax_xla_runtime_errors`` configuration option.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        new_val: Value to set for ``jax_xla_runtime_errors`` inside the context.
 
     Returns:
-        The operation result.
+        _py_contextlib.AbstractContextManager[ConfigValue]: Scoped configuration context manager.
     """
-    return _ops.xla_runtime_errors(*args, **kwargs)
-
+    return _flag_context("jax_xla_runtime_errors", new_val)
 
-import typing
 
-import ml_switcheroo_compiler
-
-
-def lib(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Execute ``lib``.
-
-    Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
-
-    Returns:
-        The operation result.
-    """
+__all__ = [
+    "Callable",
+    "Config",
+    "DEFINE_bool",
+    "DEFINE_enum",
+    "DEFINE_float",
+    "DEFINE_integer",
+    "DEFINE_string",
+    "FlagHolder",
+    "Generic",
+    "Hashable",
+    "Iterator",
+    "NamedTuple",
+    "NoDefault",
+    "NoReturn",
+    "TypeVar",
+    "UPGRADE_BOOL_EXTRA_DESC",
+    "UPGRADE_BOOL_HELP",
+    "_contextlib_mod",
+    "_define_flag",
+    "_flag_context",
+    "already_configured_with_absl",
+    "annotations",
+    "bcoo_cusparse_lowering",
+    "bool_env",
+    "cast",
+    "check_exists",
+    "check_tracer_leaks",
+    "checking_leaks",
+    "compilation_cache_dir",
+    "compilation_cache_include_metadata_in_key",
+    "compilation_cache_max_size",
+    "config",
+    "contextlib",
+    "custom_vjp_disable_shape_check",
+    "debug_infs",
+    "debug_key_reuse",
+    "debug_nans",
+    "default_device",
+    "default_dtype_bits",
+    "default_matmul_precision",
+    "default_prng_impl",
+    "define_bool_state",
+    "define_enum_state",
+    "define_float_state",
+    "define_int_state",
+    "define_optional_enum_state",
+    "define_optional_string_state",
+    "define_string_or_object_state",
+    "define_string_state",
+    "disable_jit",
+    "distributed_debug",
+    "dynamic_shapes",
+    "eager_pmap",
+    "enable_checks",
+    "enable_compilation_cache",
+    "enable_custom_prng",
+    "enable_custom_vjp_by_custom_transpose",
+    "enable_memories",
+    "enable_pgle",
+    "enable_x64",
+    "explain_cache_misses",
+    "explicit_device_get_scope",
+    "explicit_device_put_scope",
+    "flags",
+    "functools",
+    "hlo_source_file_canonicalization_regex",
+    "include_full_tracebacks_in_locations",
+    "int_env",
+    "itertools",
+    "jax2tf_associative_scan_reductions",
+    "jax2tf_default_native_serialization",
+    "jax_export_calling_convention_version",
+    "jax_jit",
+    "jax_pjrt_client_create_options",
+    "jax_platforms",
+    "jax_serialization_version",
+    "jax_xla_profile_version",
+    "legacy_prng_key",
+    "lib",
+    "log_checkpoint_residuals",
+    "log_compiles",
+    "logger",
+    "logging",
+    "logging_config",
+    "no_default",
+    "numpy_dtype_promotion",
+    "numpy_rank_promotion",
+    "os",
+    "parse_flags_with_absl",
+    "persistent_cache_min_compile_time_secs",
+    "persistent_cache_min_entry_size_bytes",
+    "pgle_aggregation_percentile",
+    "pgle_profiling_runs",
+    "pmap_no_rank_reduction",
+    "pmap_shmap_merge",
+    "profiler",
+    "raise_persistent_cache_errors",
+    "random_seed_offset",
+    "remat_opt_barrier",
+    "share_autotune_config_between_hosts",
+    "share_binary_between_hosts",
+    "share_binary_between_hosts_timeout_ms",
+    "softmax_custom_jvp",
+    "spmd_mode",
+    "str_env",
+    "sys",
+    "threading",
+    "threefry_gpu_kernel_lowering",
+    "threefry_partitionable",
+    "trace_context",
+    "traceback_filtering",
+    "traceback_in_locations_limit",
+    "transfer_guard",
+    "transfer_guard_device_to_device",
+    "transfer_guard_device_to_host",
+    "transfer_guard_host_to_device",
+    "transfer_guard_lib",
+    "unset",
+    "update",
+    "update_thread_local_jit_state",
+    "xla_runtime_errors",
+]

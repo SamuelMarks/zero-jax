@@ -2,4 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from types import CodeType, FrameType, ModuleType, TracebackType
+
+__all__ = [
+    "CodeType",
+    "FrameType",
+    "ModuleType",
+    "TracebackType",
+]

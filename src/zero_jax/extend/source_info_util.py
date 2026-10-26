@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from zero_jax._types import ArrayLikeSpec
 
-
-def stub(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
-    """Stub function.
+def stub(source: str = "<unknown>") -> str:
+    """Return a formatted source info frame label.
 
     Args:
-        *args: Input parameter ``args``.
-        **kwargs: Input parameter ``kwargs``.
+        source: Source file or frame description.
 
     Returns:
-        The operation result.
+        str: Source info label.
     """
-    return None
+    return source
 
 
 __all__ = ["stub"]

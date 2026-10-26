@@ -2,25 +2,120 @@
 
 from __future__ import annotations
 
-import typing
+from .missing_funcs import (
+    Key,
+    ball,
+    beta,
+    binomial,
+    bits,
+    cauchy,
+    chisquare,
+    clone,
+    dirichlet,
+    double_sided_maxwell,
+    exponential,
+    f,
+    gamma,
+    generalized_normal,
+    geometric,
+    gumbel,
+    key,
+    key_data,
+    key_dtype,
+    key_impl,
+    laplace,
+    loggamma,
+    logistic,
+    lognormal,
+    maxwell,
+    multinomial,
+    multivariate_normal,
+    orthogonal,
+    pareto,
+    poisson,
+    rademacher,
+    rayleigh,
+    t,
+    triangular,
+    wald,
+    weibull_min,
+    wrap_key_data,
+)
+from .prng import (
+    PRNGKey,
+    bernoulli,
+    categorical,
+    choice,
+    fold_in,
+    normal,
+    permutation,
+    randint,
+    split,
+    truncated_normal,
+    uniform,
+)
 
-import ml_switcheroo_compiler
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ConfigValue
-
-from .missing_funcs import *
-from .prng import *
-
-
-def random_gamma_p(*args: ConfigValue, **kwargs: ConfigValue) -> ConfigValue:
-    """Stub function for random_gamma_p.
+def random_gamma_p(name: str = "random_gamma") -> str:
+    """Return the primitive identifier for ``random_gamma_p``.
 
     Args:
-        *args: Positional arguments.
-        **kwargs: Keyword arguments.
+        name: Primitive name.
 
     Returns:
-        ConfigValue: None stub return value.
+        str: Primitive identifier string.
     """
-    return None
+    return name
+
+
+__all__ = [
+    "Key",
+    "PRNGKey",
+    "ball",
+    "bernoulli",
+    "beta",
+    "binomial",
+    "bits",
+    "categorical",
+    "cauchy",
+    "chisquare",
+    "choice",
+    "clone",
+    "dirichlet",
+    "double_sided_maxwell",
+    "exponential",
+    "f",
+    "fold_in",
+    "gamma",
+    "generalized_normal",
+    "geometric",
+    "gumbel",
+    "key",
+    "key_data",
+    "key_dtype",
+    "key_impl",
+    "laplace",
+    "loggamma",
+    "logistic",
+    "lognormal",
+    "maxwell",
+    "multinomial",
+    "multivariate_normal",
+    "normal",
+    "orthogonal",
+    "pareto",
+    "permutation",
+    "poisson",
+    "rademacher",
+    "randint",
+    "random_gamma_p",
+    "rayleigh",
+    "split",
+    "t",
+    "triangular",
+    "truncated_normal",
+    "uniform",
+    "wald",
+    "weibull_min",
+    "wrap_key_data",
+]

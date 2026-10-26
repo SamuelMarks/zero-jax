@@ -1,49 +1,37 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats.logistic."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
-
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats.logistic as mod
+from tests.conftest import assert_allclose
 
 
 def test_cdf() -> None:
     """Test cdf."""
-    with patch("zero_jax._compiler_proxy_ops.cdf", create=True) as mock_op:
-        mod.cdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.cdf(jnp.array([0.0])), [0.5], atol=1e-5)
 
 
 def test_isf() -> None:
     """Test isf."""
-    with patch("zero_jax._compiler_proxy_ops.isf", create=True) as mock_op:
-        mod.isf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.isf(jnp.array([0.5])), [0.0], atol=1e-5)
 
 
 def test_logpdf() -> None:
     """Test logpdf."""
-    with patch("zero_jax._compiler_proxy_ops.logpdf", create=True) as mock_op:
-        mod.logpdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logpdf(jnp.array([0.0])), [jnp.log(0.25)], atol=1e-5)
 
 
 def test_pdf() -> None:
     """Test pdf."""
-    with patch("zero_jax._compiler_proxy_ops.pdf", create=True) as mock_op:
-        mod.pdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.pdf(jnp.array([0.0])), [0.25], atol=1e-5)
 
 
 def test_ppf() -> None:
     """Test ppf."""
-    with patch("zero_jax._compiler_proxy_ops.ppf", create=True) as mock_op:
-        mod.ppf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.ppf(jnp.array([0.5])), [0.0], atol=1e-5)
 
 
 def test_sf() -> None:
     """Test sf."""
-    with patch("zero_jax._compiler_proxy_ops.sf", create=True) as mock_op:
-        mod.sf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.sf(jnp.array([0.0])), [0.5], atol=1e-5)

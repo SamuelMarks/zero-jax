@@ -16,4 +16,4 @@ def test_class_RegularGridInterpolator() -> None:
     assert_allclose(res, [5.0, 15.0])
 
     empty_interp = mod.RegularGridInterpolator()
-    assert empty_interp(jnp.array([1.0])).shape == (1,)
+    assert_allclose(empty_interp(jnp.array([1.0])), [1.0])

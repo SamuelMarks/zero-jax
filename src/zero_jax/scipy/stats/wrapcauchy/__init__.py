@@ -4,38 +4,39 @@ from __future__ import annotations
 
 import math
 
-import zero_jax._compiler_proxy_ops as _ops
-from zero_jax._types import ArrayLikeSpec, ConfigValue
+from zero_jax._types import ArrayLikeSpec
 from zero_jax.numpy.lax_numpy import asarray, cos, exp, float32, log
 
 
-def logpdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def logpdf(x: ArrayLikeSpec, c: ArrayLikeSpec) -> ArrayLikeSpec:
     """Wrapped Cauchy log probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``c``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input angle quantiles in radians.
+        c: Shape concentration parameter in ``(0, 1)``.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated log probability density.
     """
-    if len(args) >= 2:
-        x = asarray(args[0], dtype=float32)
-        c = asarray(args[1], dtype=float32)
-        return log(1.0 - c * c) - math.log(2.0 * math.pi) - log(1.0 + c * c - 2.0 * c * cos(x))
-    return _ops.logpdf(*args, **kwargs)
+    x_arr = asarray(x, dtype=float32)
+    c_arr = asarray(c, dtype=float32)
+    return log(1.0 - c_arr * c_arr) - math.log(2.0 * math.pi) - log(1.0 + c_arr * c_arr - 2.0 * c_arr * cos(x_arr))
 
 
-def pdf(*args: ArrayLikeSpec, **kwargs: ArrayLikeSpec) -> ArrayLikeSpec:
+def pdf(x: ArrayLikeSpec, c: ArrayLikeSpec) -> ArrayLikeSpec:
     """Wrapped Cauchy probability distribution function.
 
     Args:
-        *args: Input parameter ``args`` (``x``, ``c``).
-        **kwargs: Input parameter ``kwargs``.
+        x: Input angle quantiles in radians.
+        c: Shape concentration parameter in ``(0, 1)``.
 
     Returns:
-        The operation result.
+        ArrayLikeSpec: Evaluated probability density.
     """
-    if len(args) >= 2:
-        return exp(logpdf(*args, **kwargs))
-    return _ops.pdf(*args, **kwargs)
+    return exp(logpdf(x, c))
+
+
+__all__ = [
+    "logpdf",
+    "pdf",
+]

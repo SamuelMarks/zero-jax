@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 
 from ml_switcheroo_compiler.ops.registry import get_op
 
-from zero_jax._types import ArrayLikeSpec, VariadicCallable
-from zero_jax.numpy.lax_numpy import _to_tensor, _wrap
+from zero_jax._types import ArrayLike, VariadicCallable
+from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, ndarray
 
 
 class OptimizeResults(typing.NamedTuple):
@@ -26,25 +26,25 @@ class OptimizeResults(typing.NamedTuple):
         nit: Number of iterations performed by the optimizer.
     """
 
-    x: ArrayLikeSpec
-    success: ArrayLikeSpec
-    status: ArrayLikeSpec
-    fun: ArrayLikeSpec
-    jac: ArrayLikeSpec
-    hess_inv: ArrayLikeSpec
-    nfev: ArrayLikeSpec
-    njev: ArrayLikeSpec
-    nit: ArrayLikeSpec
+    x: ndarray
+    success: ndarray
+    status: ndarray
+    fun: ndarray
+    jac: ndarray
+    hess_inv: ndarray
+    nfev: ndarray
+    njev: ndarray
+    nit: ndarray
 
 
 def minimize(
-    fun: VariadicCallable[ArrayLikeSpec],
-    x0: ArrayLikeSpec,
-    args: tuple[ArrayLikeSpec, ...] = (),
+    fun: VariadicCallable[ArrayLike],
+    x0: ArrayLike,
+    args: tuple[ArrayLike, ...] = (),
     *,
     method: str,
     tol: float | None = None,
-    options: Mapping[str, ArrayLikeSpec] | None = None,
+    options: Mapping[str, float | int] | None = None,
 ) -> OptimizeResults:
     """Minimization of scalar function of one or more variables.
 

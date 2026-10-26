@@ -1,21 +1,19 @@
-"""Tests for zero_jax module."""
+"""Tests for zero_jax.scipy.stats.wrapcauchy."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
+import math
 
+import zero_jax.numpy as jnp
 import zero_jax.scipy.stats.wrapcauchy as mod
+from tests.conftest import assert_allclose
 
 
 def test_logpdf() -> None:
     """Test logpdf."""
-    with patch("zero_jax._compiler_proxy_ops.logpdf", create=True) as mock_op:
-        mod.logpdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.logpdf(jnp.array([0.0]), 0.5), [math.log(3.0 / (2.0 * math.pi))], atol=1e-5)
 
 
 def test_pdf() -> None:
     """Test pdf."""
-    with patch("zero_jax._compiler_proxy_ops.pdf", create=True) as mock_op:
-        mod.pdf()
-        mock_op.assert_called_once_with()
+    assert_allclose(mod.pdf(jnp.array([0.0]), 0.5), [3.0 / (2.0 * math.pi)], atol=1e-5)

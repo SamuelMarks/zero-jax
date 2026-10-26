@@ -413,10 +413,8 @@ def test_jnp_added_funcs_eager() -> None:
 
     A = jnp.eye(2) * 2
     B = jnp.eye(3) * 3
-    try:
-        jnp.block([[A, jnp.zeros((2, 3))], [jnp.zeros((3, 2)), B]])
-    except NotImplementedError:
-        pass
+    blk = jnp.block([[A, jnp.zeros((2, 3))], [jnp.zeros((3, 2)), B]])
+    assert blk.shape == (5, 5)
 
 
 def test_jnp_batch2_eager() -> None:
