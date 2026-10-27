@@ -15,6 +15,14 @@ from zero_jax._types import (
     T,
     VariadicCallable,
 )
+from zero_jax.ad_checkpoint import (
+    _CheckpointPoliciesNamespace as _CheckpointPolicies,
+)
+from zero_jax.ad_checkpoint import (
+    checkpoint,
+    checkpoint_policies,
+    remat,
+)
 from zero_jax.api.core import ShapeDtypeStruct
 from zero_jax.nn import softmax as _nn_softmax
 from zero_jax.numpy import asarray, stack, zeros
@@ -111,50 +119,6 @@ def named_scope(name: str) -> contextlib.AbstractContextManager[None]:
         yield
 
     return _scope()
-
-
-def remat(
-    fun: VariadicCallable[R] | None = None,
-    *,
-    prevent_cse: bool = True,
-    policy: str | VariadicCallable[bool] | None = None,
-    static_argnums: int | Sequence[int] = (),
-    static_argnames: str | Sequence[str] = (),
-) -> VariadicCallable[R]:
-    """Recompute ``fun`` during the backward pass instead of storing intermediates.
-
-    Supports both direct decoration (``@jax.checkpoint``) and parameterized
-    decoration (``@jax.checkpoint(prevent_cse=False, policy=...)``).
-
-    Args:
-        fun: Function to rematerialize, or ``None`` when used with keyword arguments.
-        prevent_cse: Whether to prevent common subexpression elimination across the boundary.
-        policy: Optional rematerialization policy callable.
-        static_argnums: Optional positional argument indices treated as static.
-        static_argnames: Optional keyword argument names treated as static.
-
-    Returns:
-        VariadicCallable[R]: The rematerialized function or decorator.
-    """
-    _ = (prevent_cse, policy, static_argnums, static_argnames)
-    if fun is None:
-
-        def _decorator(inner_fun: VariadicCallable[R]) -> VariadicCallable[R]:
-            """Decorate ``inner_fun`` with rematerialization.
-
-            Args:
-                inner_fun: Target callable.
-
-            Returns:
-                VariadicCallable[R]: Rematerialized callable.
-            """
-            return inner_fun
-
-        return _decorator
-    return fun
-
-
-checkpoint = remat
 
 
 def ensure_compile_time_eval(fun: VariadicCallable[R] | None = None) -> VariadicCallable[R] | contextlib.AbstractContextManager[None]:
@@ -377,18 +341,6 @@ def threefry_partitionable(enable: bool = True) -> Iterator[None]:
     """
     _ = enable
     yield
-
-
-class _CheckpointPolicies:
-    """Namespace holder for rematerialization checkpoint policies."""
-
-    everything_saveable = "everything_saveable"
-    nothing_saveable = "nothing_saveable"
-    dots_saveable = "dots_saveable"
-    dots_with_no_batch_dims_saveable = "dots_with_no_batch_dims_saveable"
-
-
-checkpoint_policies = _CheckpointPolicies()
 
 
 @contextlib.contextmanager

@@ -68,6 +68,7 @@ class Config:
             "jax_debug_infs": False,
             "jax_check_tracer_leaks": False,
             "jax_disable_jit": False,
+            "jax_host_device_count": 1,
         }
 
     def update(self, name: str, val: ConfigValue) -> None:
@@ -472,6 +473,56 @@ def transfer_guard(level: str = "allow") -> Iterator[None]:
         config.update("jax_transfer_guard", prev)
 
 
+class _HostDeviceCountContext(contextlib.AbstractContextManager[None]):
+    """Context manager and immediate setter for host CPU device count."""
+
+    def __init__(self, prev_count: int) -> None:
+        """Initialize ``_HostDeviceCountContext``.
+
+        Args:
+            prev_count: Previous host device count to restore on exit.
+        """
+        self._prev_count = prev_count
+
+    def __enter__(self) -> None:
+        """Enter the host device count context."""
+        return
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: ConfigValue,
+    ) -> None:
+        """Restore the previous host device count on context exit.
+
+        Args:
+            exc_type: Exception type if raised.
+            exc_val: Exception instance if raised.
+            exc_tb: Traceback if raised.
+        """
+        _ = (exc_type, exc_val, exc_tb)
+        config.update("jax_host_device_count", self._prev_count)
+
+
+def set_host_device_count(n: int) -> _HostDeviceCountContext:
+    """Configure the number of host CPU devices visible to ``zero_jax``.
+
+    Updates ``jax_host_device_count`` immediately and returns a context manager
+    that restores the previous count when exited.
+
+    Args:
+        n: Number of host devices (must be >= 1).
+
+    Returns:
+        _HostDeviceCountContext: Context manager restoring the prior device count on exit.
+    """
+    prev_raw = config.read("jax_host_device_count")
+    prev_count = int(prev_raw) if isinstance(prev_raw, int) else 1
+    config.update("jax_host_device_count", max(1, int(n)))
+    return _HostDeviceCountContext(prev_count)
+
+
 __all__ = [
     "Config",
     "FlagHolder",
@@ -479,6 +530,7 @@ __all__ = [
     "PyArgSignature",
     "TransferGuardLevel",
     "TransferGuardState",
+    "_HostDeviceCountContext",
     "bool_env",
     "config",
     "default_device",
@@ -493,6 +545,7 @@ __all__ = [
     "int_env",
     "numpy_dtype_promotion",
     "numpy_rank_promotion",
+    "set_host_device_count",
     "set_thread_local_state_initialization_callback",
     "str_env",
     "swap_thread_local_state_disable_jit",

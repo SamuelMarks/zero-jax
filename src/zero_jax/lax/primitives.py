@@ -1142,6 +1142,12 @@ def pmean(x: ArrayLikeSpec, axis_name: ArrayLikeSpec, axis_index_groups: ArrayLi
     Returns:
         ArrayLikeSpec: The result.
     """
+    _ = axis_index_groups
+    from zero_jax.lax.control_flow import apply_axis_collective
+
+    coll = apply_axis_collective("pmean", x, axis_name)
+    if coll is not None:
+        return coll
     return _wrap(ops.pmean(_to_tensor(x), axis_name=axis_name))
 
 
@@ -1156,6 +1162,12 @@ def psum(x: ArrayLikeSpec, axis_name: ArrayLikeSpec, axis_index_groups: ArrayLik
     Returns:
         ArrayLikeSpec: The result.
     """
+    _ = axis_index_groups
+    from zero_jax.lax.control_flow import apply_axis_collective
+
+    coll = apply_axis_collective("psum", x, axis_name)
+    if coll is not None:
+        return coll
     return _wrap(ops.psum(_to_tensor(x), axis_name=axis_name))
 
 

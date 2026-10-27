@@ -2,10 +2,176 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Callable, Iterable, Sequence
 from typing import Protocol, runtime_checkable
 
-from zero_jax._types import ArrayLikeSpec, ConfigValue, PyTree
+from zero_jax._types import (
+    ArrayLikeSpec,
+    ConfigValue,
+    CustomStateMappingProtocol,
+    CustomVariableProtocol,
+    MappableDataclassProtocol,
+    PyTree,
+    RecordProtocol,
+)
+
+
+class DictKey:
+    """Key path entry representing a dictionary lookup key."""
+
+    def __init__(self, key: ArrayLikeSpec) -> None:
+        """Initialize ``DictKey``.
+
+        Args:
+            key: Dictionary key value.
+        """
+        self.key = key
+
+    def __eq__(self, other: ConfigValue) -> bool:
+        """Check equality with another key entry.
+
+        Args:
+            other: Comparison target.
+
+        Returns:
+            bool: ``True`` if both are ``DictKey`` with equal keys.
+        """
+        return isinstance(other, DictKey) and self.key == other.key
+
+    def __hash__(self) -> int:
+        """Return hash of the ``DictKey``.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash(("DictKey", self.key))
+
+    def __repr__(self) -> str:
+        """Return string representation in JAX key path format.
+
+        Returns:
+            str: Formatted key string.
+        """
+        return f"[{self.key!r}]"
+
+
+class SequenceKey:
+    """Key path entry representing an integer index in a tuple or list."""
+
+    def __init__(self, idx: ArrayLikeSpec) -> None:
+        """Initialize ``SequenceKey``.
+
+        Args:
+            idx: Integer sequence index.
+        """
+        self.idx = idx
+
+    def __eq__(self, other: ConfigValue) -> bool:
+        """Check equality with another key entry.
+
+        Args:
+            other: Comparison target.
+
+        Returns:
+            bool: ``True`` if both are ``SequenceKey`` with equal indices.
+        """
+        return isinstance(other, SequenceKey) and self.idx == other.idx
+
+    def __hash__(self) -> int:
+        """Return hash of the ``SequenceKey``.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash(("SequenceKey", self.idx))
+
+    def __repr__(self) -> str:
+        """Return string representation in JAX key path format.
+
+        Returns:
+            str: Formatted index string.
+        """
+        return f"[{self.idx!r}]"
+
+
+class GetAttrKey:
+    """Key path entry representing an attribute access on a dataclass or custom node."""
+
+    def __init__(self, name: ArrayLikeSpec) -> None:
+        """Initialize ``GetAttrKey``.
+
+        Args:
+            name: Attribute name string.
+        """
+        self.name = name
+        self.key = name
+
+    def __eq__(self, other: ConfigValue) -> bool:
+        """Check equality with another key entry.
+
+        Args:
+            other: Comparison target.
+
+        Returns:
+            bool: ``True`` if both are ``GetAttrKey`` with equal attribute names.
+        """
+        return isinstance(other, GetAttrKey) and self.name == other.name
+
+    def __hash__(self) -> int:
+        """Return hash of the ``GetAttrKey``.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash(("GetAttrKey", self.name))
+
+    def __repr__(self) -> str:
+        """Return string representation in JAX key path format.
+
+        Returns:
+            str: Formatted attribute string.
+        """
+        return f".{self.name}"
+
+
+class FlattenedIndexKey:
+    """Key path entry representing a flattened index in a custom PyTree node."""
+
+    def __init__(self, key: ArrayLikeSpec) -> None:
+        """Initialize ``FlattenedIndexKey``.
+
+        Args:
+            key: Flattened index integer.
+        """
+        self.key = key
+
+    def __eq__(self, other: ConfigValue) -> bool:
+        """Check equality with another key entry.
+
+        Args:
+            other: Comparison target.
+
+        Returns:
+            bool: ``True`` if both are ``FlattenedIndexKey`` with equal keys.
+        """
+        return isinstance(other, FlattenedIndexKey) and self.key == other.key
+
+    def __hash__(self) -> int:
+        """Return hash of the ``FlattenedIndexKey``.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash(("FlattenedIndexKey", self.key))
+
+    def __repr__(self) -> str:
+        """Return string representation in JAX key path format.
+
+        Returns:
+            str: Formatted index string.
+        """
+        return f"[<flat index {self.key!r}>]"
 
 
 @runtime_checkable
@@ -88,6 +254,24 @@ def _is_namedtuple_instance(x: PyTree) -> bool:
     return isinstance(x, tuple) and type(x) is not tuple and isinstance(x, _HasFieldsProtocol)
 
 
+def _extract_key_child_pairs(pairs: Iterable[ArrayLikeSpec]) -> list[tuple[ArrayLikeSpec, ArrayLikeSpec]]:
+    """Normalize an iterable of keyed or plain children into ``(key, child)`` pairs.
+
+    Args:
+        pairs: Iterable of ``(key, child)`` tuples or plain child values.
+
+    Returns:
+        list[tuple[ArrayLikeSpec, ArrayLikeSpec]]: Normalized ``(key, child)`` pairs.
+    """
+    normalized: list[tuple[ArrayLikeSpec, ArrayLikeSpec]] = []
+    for idx, item in enumerate(pairs):
+        if isinstance(item, tuple) and len(item) == 2:
+            normalized.append((item[0], item[1]))
+        else:
+            normalized.append((FlattenedIndexKey(idx), item))
+    return normalized
+
+
 def register_pytree_node(nodetype: type, flatten_func: FlattenFunc, unflatten_func: UnflattenFunc) -> None:
     """Register a custom container type with the PyTree registry.
 
@@ -142,10 +326,7 @@ def register_pytree_with_keys(
                 tuple[list[ArrayLikeSpec], ArrayLikeSpec]: ``(children, aux)``.
             """
             pairs, aux = flatten_with_keys(obj)
-            items = list(pairs)
-            if items and isinstance(items[0], tuple) and len(items[0]) == 2:
-                return [child for _, child in items], aux
-            return items, aux
+            return [child for _, child in _extract_key_child_pairs(pairs)], aux
 
         resolved_flatten: FlattenFunc = _plain_flatten
     else:
@@ -203,7 +384,20 @@ class PyTreeDef:
             int: Total number of leaf nodes.
         """
         if not self.children_defs:
-            return 0 if (self.node_type in (tuple, list, dict) or issubclass(self.node_type, tuple)) else 1
+            is_empty_container = (
+                self.node_type in (tuple, list, dict)
+                or self.node_type in _pytree_registry
+                or issubclass(
+                    self.node_type,
+                    (
+                        tuple,
+                        MappableDataclassProtocol,
+                        CustomStateMappingProtocol,
+                        _TreeFlattenWithKeysProtocol,
+                    ),
+                )
+            )
+            return 0 if is_empty_container else 1
         return sum(c.num_leaves for c in self.children_defs)
 
     @property
@@ -229,6 +423,142 @@ class PyTreeDef:
         return self.node_type == other.node_type and self.metadata == other.metadata and self.children_defs == other.children_defs
 
 
+def _flatten_with_path_recursive(
+    tree: ArrayLikeSpec,
+    prefix: tuple[ArrayLikeSpec, ...],
+    is_leaf: ArrayLikeSpec = None,
+) -> tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]:
+    """Recursively flatten a PyTree while recording exact key paths to each leaf.
+
+    Args:
+        tree: Subtree to flatten.
+        prefix: Accumulated key path tuple.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]: Path-leaf pairs and ``PyTreeDef``.
+    """
+    if is_leaf is not None and callable(is_leaf) and is_leaf(tree):
+        return [(prefix, tree)], PyTreeDef(type(None), [])
+
+    node_type = type(tree)
+    if node_type in _pytree_with_keys_registry:
+        flatten_with_keys, _ = _pytree_with_keys_registry[node_type]
+        key_children, aux = flatten_with_keys(tree)
+        path_leaves: list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]] = []
+        children_defs: list[PyTreeDef] = []
+        for k, child in _extract_key_child_pairs(key_children):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, k), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
+
+    if node_type in _pytree_registry:
+        flatten_func, _ = _pytree_registry[node_type]
+        children, aux = flatten_func(tree)
+        path_leaves = []
+        children_defs = []
+        for idx, child in enumerate(children):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, FlattenedIndexKey(idx)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
+
+    if isinstance(tree, _TreeFlattenWithKeysProtocol):
+        key_children, aux = tree.tree_flatten_with_keys()
+        path_leaves = []
+        children_defs = []
+        for k, child in _extract_key_child_pairs(key_children):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, k), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
+
+    if isinstance(tree, CustomVariableProtocol):
+        c_leaves, c_def = _flatten_with_path_recursive(tree.value, (*prefix, GetAttrKey("value")), is_leaf=is_leaf)
+        return c_leaves, PyTreeDef(node_type, [c_def], metadata=tree)
+
+    if isinstance(tree, MappableDataclassProtocol):
+        fields = tuple(tree.__chex_mappable_fields__())
+        values = tuple(tree.__chex_field_values__())
+        path_leaves = []
+        children_defs = []
+        for field_name, child in zip(fields, values):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, GetAttrKey(field_name)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs, metadata=fields)
+
+    if isinstance(tree, RecordProtocol) and dataclasses.is_dataclass(tree):
+        c_leaves, c_def = _flatten_with_path_recursive(tree.data, (*prefix, GetAttrKey("data")), is_leaf=is_leaf)
+        return c_leaves, PyTreeDef(node_type, [c_def], metadata=tree)
+
+    if _is_namedtuple_instance(tree) and isinstance(tree, _HasFieldsProtocol):
+        path_leaves = []
+        children_defs = []
+        for field_name, child in zip(tree._fields, tree):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, GetAttrKey(field_name)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs)
+
+    if isinstance(tree, tuple):
+        path_leaves = []
+        children_defs = []
+        for idx, child in enumerate(tree):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, SequenceKey(idx)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(tuple, children_defs)
+
+    if isinstance(tree, list):
+        path_leaves = []
+        children_defs = []
+        for idx, child in enumerate(tree):
+            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, SequenceKey(idx)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(list, children_defs)
+
+    if type(tree) is dict:
+        path_leaves = []
+        children_defs = []
+        keys = sorted(tree.keys())
+        for k in keys:
+            c_leaves, c_def = _flatten_with_path_recursive(tree[k], (*prefix, DictKey(k)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(dict, children_defs, metadata=keys)
+
+    if isinstance(tree, CustomStateMappingProtocol):
+        path_leaves = []
+        children_defs = []
+        keys = sorted(tree.keys())
+        for k in keys:
+            c_leaves, c_def = _flatten_with_path_recursive(tree[k], (*prefix, DictKey(k)), is_leaf=is_leaf)
+            path_leaves.extend(c_leaves)
+            children_defs.append(c_def)
+        return path_leaves, PyTreeDef(node_type, children_defs, metadata=keys)
+
+    return [(prefix, tree)], PyTreeDef(type(None), [])
+
+
+def tree_flatten_with_path(
+    tree: ArrayLikeSpec,
+    is_leaf: ArrayLikeSpec = None,
+) -> tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]:
+    """Flatten a PyTree into ``(key_path, leaf)`` pairs and a :class:`PyTreeDef`.
+
+    Args:
+        tree: PyTree to flatten.
+        is_leaf: Optional leaf predicate.
+
+    Returns:
+        tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]: ``(path_leaves, treedef)``.
+    """
+    return _flatten_with_path_recursive(tree, (), is_leaf=is_leaf)
+
+
 def tree_flatten(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> tuple[list[ArrayLikeSpec], PyTreeDef]:
     """Flatten a PyTree into a list of leaves and a :class:`PyTreeDef` structure.
 
@@ -239,53 +569,8 @@ def tree_flatten(tree: ArrayLikeSpec, is_leaf: ArrayLikeSpec = None) -> tuple[li
     Returns:
         tuple[list[ArrayLikeSpec], PyTreeDef]: ``(leaves, treedef)``.
     """
-    if is_leaf is not None and callable(is_leaf) and is_leaf(tree):
-        return [tree], PyTreeDef(type(None), [])
-    node_type = type(tree)
-    if node_type in _pytree_registry:
-        flatten_func, _ = _pytree_registry[node_type]
-        children, aux = flatten_func(tree)
-        leaves: list[ArrayLikeSpec] = []
-        children_defs: list[PyTreeDef] = []
-        for child in children:
-            child_leaves, child_def = tree_flatten(child, is_leaf=is_leaf)
-            leaves.extend(child_leaves)
-            children_defs.append(child_def)
-        return leaves, PyTreeDef(node_type, children_defs, metadata=aux)
-    if _is_namedtuple_instance(tree):
-        leaves = []
-        children_defs = []
-        for child in tree:
-            child_leaves, child_def = tree_flatten(child, is_leaf=is_leaf)
-            leaves.extend(child_leaves)
-            children_defs.append(child_def)
-        return leaves, PyTreeDef(node_type, children_defs)
-    if isinstance(tree, tuple):
-        leaves = []
-        children_defs = []
-        for child in tree:
-            child_leaves, child_def = tree_flatten(child, is_leaf=is_leaf)
-            leaves.extend(child_leaves)
-            children_defs.append(child_def)
-        return leaves, PyTreeDef(tuple, children_defs)
-    if isinstance(tree, list):
-        leaves = []
-        children_defs = []
-        for child in tree:
-            child_leaves, child_def = tree_flatten(child, is_leaf=is_leaf)
-            leaves.extend(child_leaves)
-            children_defs.append(child_def)
-        return leaves, PyTreeDef(list, children_defs)
-    if isinstance(tree, dict):
-        leaves = []
-        children_defs = []
-        keys = sorted(tree.keys())
-        for k in keys:
-            child_leaves, child_def = tree_flatten(tree[k], is_leaf=is_leaf)
-            leaves.extend(child_leaves)
-            children_defs.append(child_def)
-        return leaves, PyTreeDef(dict, children_defs, metadata=keys)
-    return [tree], PyTreeDef(type(None), [])
+    path_leaves, treedef = _flatten_with_path_recursive(tree, (), is_leaf=is_leaf)
+    return [leaf for _, leaf in path_leaves], treedef
 
 
 def _unflatten_from_iter(treedef: PyTreeDef, leaf_list: list[ArrayLikeSpec]) -> ArrayLikeSpec:
@@ -302,6 +587,19 @@ def _unflatten_from_iter(treedef: PyTreeDef, leaf_list: list[ArrayLikeSpec]) -> 
         _, unflatten_func = _pytree_registry[treedef.node_type]
         children = [_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs]
         return unflatten_func(treedef.metadata, children)
+    if issubclass(treedef.node_type, _TreeFlattenWithKeysProtocol):
+        children = [_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs]
+        return treedef.node_type.tree_unflatten(treedef.metadata, children)
+    if isinstance(treedef.metadata, CustomVariableProtocol):
+        child_val = _unflatten_from_iter(treedef.children_defs[0], leaf_list)
+        return treedef.metadata.replace(value=child_val)
+    if issubclass(treedef.node_type, MappableDataclassProtocol):
+        children = [_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs]
+        fields = treedef.metadata if isinstance(treedef.metadata, (tuple, list)) else ()
+        return treedef.node_type(**dict(zip(fields, children)))
+    if isinstance(treedef.metadata, RecordProtocol):
+        child_val = _unflatten_from_iter(treedef.children_defs[0], leaf_list)
+        return treedef.node_type(metadata=treedef.metadata.metadata, data=child_val)
     if treedef.node_type is tuple:
         return tuple(_unflatten_from_iter(child_def, leaf_list) for child_def in treedef.children_defs)
     if issubclass(treedef.node_type, tuple):
@@ -314,6 +612,12 @@ def _unflatten_from_iter(treedef: PyTreeDef, leaf_list: list[ArrayLikeSpec]) -> 
         for k, child_def in zip(keys, treedef.children_defs):
             children_dict[k] = _unflatten_from_iter(child_def, leaf_list)
         return children_dict
+    if issubclass(treedef.node_type, CustomStateMappingProtocol):
+        custom_dict: dict[ArrayLikeSpec, ArrayLikeSpec] = {}
+        keys = treedef.metadata if treedef.metadata is not None else []
+        for k, child_def in zip(keys, treedef.children_defs):
+            custom_dict[k] = _unflatten_from_iter(child_def, leaf_list)
+        return treedef.node_type(custom_dict)
     return leaf_list.pop(0)
 
 
@@ -414,11 +718,17 @@ def _patch_pytreedef() -> None:
 
 
 __all__ = [
+    "DictKey",
     "FlattenFunc",
+    "FlattenedIndexKey",
+    "GetAttrKey",
     "PyTreeDef",
+    "SequenceKey",
     "UnflattenFunc",
     "_HasFieldsProtocol",
     "_TreeFlattenWithKeysProtocol",
+    "_extract_key_child_pairs",
+    "_flatten_with_path_recursive",
     "_is_namedtuple_instance",
     "_patch_pytreedef",
     "_pytree_registry",
@@ -431,6 +741,7 @@ __all__ = [
     "tree_all",
     "tree_any",
     "tree_flatten",
+    "tree_flatten_with_path",
     "tree_leaves",
     "tree_map",
     "tree_structure",

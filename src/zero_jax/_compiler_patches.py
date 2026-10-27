@@ -16,8 +16,10 @@ from ml_switcheroo_compiler.backends.eager_registry import (
 )
 from ml_switcheroo_compiler.backends.numpy.eager import as_ndarray
 from ml_switcheroo_compiler.backends.protocols import BackendModuleProtocol
+from ml_switcheroo_compiler.transforms.autodiff import _VJP_REGISTRY, UnconnectedGradients, get_vjp
+from ml_switcheroo_ir import DType, LogicalGraph, LogicalNode
 
-from zero_jax._types import SliceSpec
+from zero_jax._types import ArrayProtocol, SliceSpec
 
 
 def _seed_from_key(backend_module: BackendModuleProtocol, key_arg: EagerValue) -> int:
@@ -296,8 +298,108 @@ def _np_scatter_add(backend_module: BackendModuleProtocol, *args: EagerValue, **
     return as_ndarray(operand)
 
 
+def _np_cast(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
+    """Evaluate ``Cast`` on ``args[0]`` with target dtype ``args[1]`` or ``kwargs['dtype']``.
+
+    Args:
+        backend_module: Active backend module.
+        *args: Positional arguments ``(x, dtype)``.
+        **kwargs: Optional ``dtype`` keyword argument.
+
+    Returns:
+        EagerValue: Cast array.
+    """
+    raw_dt = args[1] if len(args) > 1 else kwargs.get("dtype", "float32")
+    if isinstance(raw_dt, type):
+        return as_ndarray(backend_module.asarray(args[0]).astype(raw_dt))
+    dt_str = str(raw_dt.value) if isinstance(raw_dt, DType) else (str(backend_module.asarray(raw_dt).reshape(-1)[0]) if isinstance(raw_dt, ArrayProtocol) else str(raw_dt))
+    dt_clean = dt_str.lower().removeprefix("dtype.")
+    if "bfloat" in dt_clean or "float8" in dt_clean:
+        dt_clean = "float32"
+    elif "int4" in dt_clean:
+        dt_clean = "int8"
+    return as_ndarray(backend_module.asarray(args[0]).astype(dt_clean))
+
+
+def _np_checkpoint_name(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
+    """Evaluate ``CheckpointName`` as an identity pass-through in eager/graph execution.
+
+    Args:
+        backend_module: Active backend module.
+        *args: Positional arguments where ``args[0]`` is the tagged tensor.
+        **kwargs: Checkpoint attributes (such as ``name`` and ``saveable``).
+
+    Returns:
+        EagerValue: Unchanged input array.
+    """
+    _ = (backend_module, kwargs)
+    return as_ndarray(args[0])
+
+
+_ORIG_DOT_VJP = get_vjp("Dot")
+_MATMUL_VJP = get_vjp("MatMul")
+_SUM_VJP = get_vjp("Sum")
+
+
+def _mean_vjp(graph: LogicalGraph, node: LogicalNode, adj_id: str) -> list[str]:
+    """Compute VJP for ``Mean`` by broadcasting upstream adjoint and dividing by element count.
+
+    Args:
+        graph: Active backward ``LogicalGraph``.
+        node: Forward ``Mean`` ``LogicalNode``.
+        adj_id: Upstream adjoint node identifier.
+
+    Returns:
+        list[str]: Adjoint node identifiers matching ``len(node.inputs)``.
+    """
+    sum_adjs = _SUM_VJP(graph, node, adj_id)
+    in0 = graph.nodes.get(node.inputs[0])
+    s0 = in0.shape_metadata if in0 is not None and in0.shape_metadata is not None else ()
+    nelem = float(math.prod(s0)) if s0 else 1.0
+    cst_id = f"cst_mean_{id(node)}"
+    graph.nodes[cst_id] = LogicalNode(id=cst_id, op_type="Constant", attributes={"value": nelem}, shape_metadata=s0)
+    div_id = f"div_mean_{id(node)}"
+    graph.nodes[div_id] = LogicalNode(id=div_id, op_type="TrueDivide", inputs=[sum_adjs[0], cst_id], shape_metadata=s0)
+    return [div_id, *[UnconnectedGradients.NONE for _ in node.inputs[1:]]]
+
+
+def _dot_vjp(graph: LogicalGraph, node: LogicalNode, adj_id: str) -> tuple[str, ...]:
+    """Compute VJP for ``Dot``, using matrix transpose contraction when operands are 2D+.
+
+    Args:
+        graph: Active backward ``LogicalGraph``.
+        node: Forward ``Dot`` ``LogicalNode``.
+        adj_id: Upstream adjoint node identifier.
+
+    Returns:
+        tuple[str, ...]: Adjoint node identifiers for both operands.
+    """
+    in0 = graph.nodes.get(node.inputs[0])
+    in1 = graph.nodes.get(node.inputs[1])
+    s0 = in0.shape_metadata if in0 is not None and in0.shape_metadata is not None else ()
+    s1 = in1.shape_metadata if in1 is not None and in1.shape_metadata is not None else ()
+    if len(s0) >= 2 or len(s1) >= 2:
+        return _MATMUL_VJP(graph, node, adj_id)
+    return _ORIG_DOT_VJP(graph, node, adj_id)
+
+
+def _identity_vjp(graph: LogicalGraph, node: LogicalNode, adj_id: str) -> list[str]:
+    """Propagate upstream adjoint ``adj_id`` unchanged through unary identity-like nodes.
+
+    Args:
+        graph: Active backward ``LogicalGraph``.
+        node: Forward ``LogicalNode`` (e.g. ``Cast`` or ``CheckpointName``).
+        adj_id: Upstream adjoint node identifier.
+
+    Returns:
+        list[str]: Adjoint list matching ``len(node.inputs)``.
+    """
+    _ = graph
+    return [adj_id, *[UnconnectedGradients.NONE for _ in node.inputs[1:]]]
+
+
 def register_compiler_patches() -> None:
-    """Register all eager fallback handlers into ``numpy_eager_registry``."""
+    """Register all eager fallback handlers into ``numpy_eager_registry`` and VJP rules."""
     numpy_eager_registry.register("Lgamma")(_np_lgamma)
     numpy_eager_registry.register("Lstsq")(_np_lstsq)
     numpy_eager_registry.register("MatrixNorm")(_np_matrix_norm)
@@ -311,12 +413,27 @@ def register_compiler_patches() -> None:
     numpy_eager_registry.register("DynamicUpdateIndexInDim")(_np_dynamic_update_index_in_dim)
     numpy_eager_registry.register("DynamicUpdateSliceInDim")(_np_dynamic_update_slice_in_dim)
     numpy_eager_registry.register("ScatterAdd")(_np_scatter_add)
+    numpy_eager_registry.register("Cast")(_np_cast)
+    numpy_eager_registry.register("CheckpointName")(_np_checkpoint_name)
+    _VJP_REGISTRY["Cast"] = _identity_vjp
+    _VJP_REGISTRY["CheckpointName"] = _identity_vjp
+    _VJP_REGISTRY["Dot"] = _dot_vjp
+    _VJP_REGISTRY["Mean"] = _mean_vjp
 
 
 register_compiler_patches()
 
 __all__ = [
+    "_MATMUL_VJP",
+    "_ORIG_DOT_VJP",
+    "_SUM_VJP",
+    "_VJP_REGISTRY",
+    "_dot_vjp",
+    "_identity_vjp",
     "_linalg_advanced",
+    "_mean_vjp",
+    "_np_cast",
+    "_np_checkpoint_name",
     "_np_dynamic_index_in_dim",
     "_np_dynamic_slice_in_dim",
     "_np_dynamic_update_index_in_dim",

@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import operator
 
 from zero_jax._types import ArrayLikeSpec, ConfigValue
 
 from .pytree import (
+    DictKey,
+    FlattenedIndexKey,
+    GetAttrKey,
     PyTreeDef,
+    SequenceKey,
+    _flatten_with_path_recursive,
     _HasFieldsProtocol,
     _is_namedtuple_instance,
     _pytree_registry,
@@ -18,166 +24,10 @@ from .pytree import (
     register_pytree_with_keys,
     register_pytree_with_keys_class,
     tree_flatten,
+    tree_flatten_with_path,
     tree_leaves,
     tree_unflatten,
 )
-
-
-class DictKey:
-    """Key path entry representing a dictionary lookup key."""
-
-    def __init__(self, key: ArrayLikeSpec) -> None:
-        """Initialize ``DictKey``.
-
-        Args:
-            key: Dictionary key value.
-        """
-        self.key = key
-
-    def __eq__(self, other: ConfigValue) -> bool:
-        """Check equality with another key entry.
-
-        Args:
-            other: Comparison target.
-
-        Returns:
-            bool: ``True`` if both are ``DictKey`` with equal keys.
-        """
-        return isinstance(other, DictKey) and self.key == other.key
-
-    def __hash__(self) -> int:
-        """Return hash of the ``DictKey``.
-
-        Returns:
-            int: Hash value.
-        """
-        return hash(("DictKey", self.key))
-
-    def __repr__(self) -> str:
-        """Return string representation in JAX key path format.
-
-        Returns:
-            str: Formatted key string.
-        """
-        return f"[{self.key!r}]"
-
-
-class SequenceKey:
-    """Key path entry representing an integer index in a tuple or list."""
-
-    def __init__(self, idx: ArrayLikeSpec) -> None:
-        """Initialize ``SequenceKey``.
-
-        Args:
-            idx: Integer sequence index.
-        """
-        self.idx = idx
-
-    def __eq__(self, other: ConfigValue) -> bool:
-        """Check equality with another key entry.
-
-        Args:
-            other: Comparison target.
-
-        Returns:
-            bool: ``True`` if both are ``SequenceKey`` with equal indices.
-        """
-        return isinstance(other, SequenceKey) and self.idx == other.idx
-
-    def __hash__(self) -> int:
-        """Return hash of the ``SequenceKey``.
-
-        Returns:
-            int: Hash value.
-        """
-        return hash(("SequenceKey", self.idx))
-
-    def __repr__(self) -> str:
-        """Return string representation in JAX key path format.
-
-        Returns:
-            str: Formatted index string.
-        """
-        return f"[{self.idx!r}]"
-
-
-class GetAttrKey:
-    """Key path entry representing an attribute access on a dataclass or custom node."""
-
-    def __init__(self, name: ArrayLikeSpec) -> None:
-        """Initialize ``GetAttrKey``.
-
-        Args:
-            name: Attribute name string.
-        """
-        self.name = name
-        self.key = name
-
-    def __eq__(self, other: ConfigValue) -> bool:
-        """Check equality with another key entry.
-
-        Args:
-            other: Comparison target.
-
-        Returns:
-            bool: ``True`` if both are ``GetAttrKey`` with equal attribute names.
-        """
-        return isinstance(other, GetAttrKey) and self.name == other.name
-
-    def __hash__(self) -> int:
-        """Return hash of the ``GetAttrKey``.
-
-        Returns:
-            int: Hash value.
-        """
-        return hash(("GetAttrKey", self.name))
-
-    def __repr__(self) -> str:
-        """Return string representation in JAX key path format.
-
-        Returns:
-            str: Formatted attribute string.
-        """
-        return f".{self.name}"
-
-
-class FlattenedIndexKey:
-    """Key path entry representing a flattened index in a custom PyTree node."""
-
-    def __init__(self, key: ArrayLikeSpec) -> None:
-        """Initialize ``FlattenedIndexKey``.
-
-        Args:
-            key: Flattened index integer.
-        """
-        self.key = key
-
-    def __eq__(self, other: ConfigValue) -> bool:
-        """Check equality with another key entry.
-
-        Args:
-            other: Comparison target.
-
-        Returns:
-            bool: ``True`` if both are ``FlattenedIndexKey`` with equal keys.
-        """
-        return isinstance(other, FlattenedIndexKey) and self.key == other.key
-
-    def __hash__(self) -> int:
-        """Return hash of the ``FlattenedIndexKey``.
-
-        Returns:
-            int: Hash value.
-        """
-        return hash(("FlattenedIndexKey", self.key))
-
-    def __repr__(self) -> str:
-        """Return string representation in JAX key path format.
-
-        Returns:
-            str: Formatted index string.
-        """
-        return f"[<flat index {self.key!r}>]"
 
 
 class Partial:
@@ -327,9 +177,8 @@ def register_dataclass(
         Returns:
             tuple[list[tuple[GetAttrKey, ArrayLikeSpec]], tuple[tuple[str, ArrayLikeSpec], ...]]: Keyed children and static metadata.
         """
-        obj_map = dataclasses.asdict(obj) if dataclasses.is_dataclass(obj) else {}
-        key_children = [(GetAttrKey(f), obj_map[f]) for f in resolved_data if f in obj_map]
-        meta = tuple((f, obj_map[f]) for f in resolved_meta if f in obj_map)
+        key_children = [(GetAttrKey(f), operator.attrgetter(f)(obj)) for f in resolved_data]
+        meta = tuple((f, operator.attrgetter(f)(obj)) for f in resolved_meta)
         return key_children, meta
 
     def _unflatten(meta: tuple[tuple[str, ArrayLikeSpec], ...], children: list[ArrayLikeSpec]) -> ArrayLikeSpec:
@@ -363,107 +212,6 @@ def register_static(cls: type) -> type:
     if isinstance(cls, type):
         register_pytree_node(cls, lambda obj: ((), obj), lambda obj, _: obj)
     return cls
-
-
-def _flatten_with_path_recursive(
-    tree: ArrayLikeSpec,
-    prefix: tuple[ArrayLikeSpec, ...],
-    is_leaf: ArrayLikeSpec = None,
-) -> tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]:
-    """Recursively flatten a PyTree while recording exact key paths to each leaf.
-
-    Args:
-        tree: Subtree to flatten.
-        prefix: Accumulated key path tuple.
-        is_leaf: Optional leaf predicate.
-
-    Returns:
-        tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]: Path-leaf pairs and ``PyTreeDef``.
-    """
-    if is_leaf is not None and callable(is_leaf) and is_leaf(tree):
-        return [(prefix, tree)], PyTreeDef(type(None), [])
-
-    node_type = type(tree)
-    if node_type in _pytree_with_keys_registry:
-        flatten_with_keys, _ = _pytree_with_keys_registry[node_type]
-        key_children, aux = flatten_with_keys(tree)
-        path_leaves: list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]] = []
-        children_defs: list[PyTreeDef] = []
-        for idx, item in enumerate(key_children):
-            if isinstance(item, tuple) and len(item) == 2:
-                k, child = item
-            else:
-                k, child = FlattenedIndexKey(idx), item
-            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, k), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
-
-    if node_type in _pytree_registry:
-        flatten_func, _ = _pytree_registry[node_type]
-        children, aux = flatten_func(tree)
-        path_leaves = []
-        children_defs = []
-        for idx, child in enumerate(children):
-            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, FlattenedIndexKey(idx)), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(node_type, children_defs, metadata=aux)
-
-    if _is_namedtuple_instance(tree) and isinstance(tree, _HasFieldsProtocol):
-        path_leaves = []
-        children_defs = []
-        for field_name, child in zip(tree._fields, tree):
-            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, GetAttrKey(field_name)), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(node_type, children_defs)
-
-    if isinstance(tree, tuple):
-        path_leaves = []
-        children_defs = []
-        for idx, child in enumerate(tree):
-            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, SequenceKey(idx)), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(tuple, children_defs)
-
-    if isinstance(tree, list):
-        path_leaves = []
-        children_defs = []
-        for idx, child in enumerate(tree):
-            c_leaves, c_def = _flatten_with_path_recursive(child, (*prefix, SequenceKey(idx)), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(list, children_defs)
-
-    if isinstance(tree, dict):
-        path_leaves = []
-        children_defs = []
-        keys = sorted(tree.keys())
-        for k in keys:
-            c_leaves, c_def = _flatten_with_path_recursive(tree[k], (*prefix, DictKey(k)), is_leaf=is_leaf)
-            path_leaves.extend(c_leaves)
-            children_defs.append(c_def)
-        return path_leaves, PyTreeDef(dict, children_defs, metadata=keys)
-
-    return [(prefix, tree)], PyTreeDef(type(None), [])
-
-
-def tree_flatten_with_path(
-    tree: ArrayLikeSpec,
-    is_leaf: ArrayLikeSpec = None,
-) -> tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]:
-    """Flatten a PyTree into ``(key_path, leaf)`` pairs and a :class:`PyTreeDef`.
-
-    Args:
-        tree: PyTree to flatten.
-        is_leaf: Optional leaf predicate.
-
-    Returns:
-        tuple[list[tuple[tuple[ArrayLikeSpec, ...], ArrayLikeSpec]], PyTreeDef]: ``(path_leaves, treedef)``.
-    """
-    return _flatten_with_path_recursive(tree, (), is_leaf=is_leaf)
 
 
 def tree_leaves_with_path(

@@ -268,13 +268,28 @@ class ndarray:
     standard arithmetic, comparison, and array-manipulation magic methods.
     """
 
-    def __init__(self, tensor: Tensor) -> None:
+    def __init__(self, tensor: Tensor, sharding: ConfigValue = None) -> None:
         """Initialize the object.
 
         Args:
             tensor: The underlying tensor data.
+            sharding: Optional sharding specification attached to this array.
         """
         self._tensor: Tensor = tensor
+        self._sharding: ConfigValue = sharding
+
+    @property
+    def sharding(self) -> ConfigValue:
+        """Return the sharding specification associated with this array.
+
+        Returns:
+            ConfigValue: Active ``Sharding`` instance (defaults to ``SingleDeviceSharding``).
+        """
+        if self._sharding is None:
+            from zero_jax.sharding import SingleDeviceSharding
+
+            return SingleDeviceSharding(self._tensor.device)
+        return self._sharding
 
     @property
     def at(self) -> _IndexUpdateHelper:

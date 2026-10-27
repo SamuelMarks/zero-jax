@@ -55,6 +55,7 @@ from . import (
     util,
     version,
 )
+from ._config_internal import set_host_device_count
 from .api import (
     NamedSharding,
     ShapeDtypeStruct,
@@ -130,6 +131,7 @@ from .api import (
     vjp,
     vmap,
 )
+from .api.core import Device
 
 
 def jax(version: str | None = None) -> None:
@@ -145,22 +147,6 @@ def jax(version: str | None = None) -> None:
     return
 
 
-class Device:
-    """Represents a logical computational device.
-
-    Attributes:
-        platform: The target execution platform name (e.g. ``"cpu"``).
-    """
-
-    def __init__(self, platform: str = "cpu") -> None:
-        """Initialize a ``Device`` instance.
-
-        Args:
-            platform: Platform identifier string.
-        """
-        self.platform = platform
-
-
 def devices(backend: str | None = None) -> list[Device]:
     """Return a list of all available devices for the given backend.
 
@@ -171,7 +157,7 @@ def devices(backend: str | None = None) -> list[Device]:
         list[Device]: List of available devices.
     """
     b = backend or config.backend
-    return [Device(platform=b)]
+    return [Device(platform=b, id=i) for i in range(device_count(b))]
 
 
 def local_devices(backend: str | None = None) -> list[Device]:
@@ -184,7 +170,7 @@ def local_devices(backend: str | None = None) -> list[Device]:
         list[Device]: List of local devices.
     """
     b = backend or config.backend
-    return [Device(platform=b)]
+    return [Device(platform=b, id=i) for i in range(local_device_count(b))]
 
 
 def device_get(x: T) -> T:
@@ -303,6 +289,7 @@ __all__ = [
     "random",
     "remat",
     "scipy",
+    "set_host_device_count",
     "sharding",
     "softmax_custom_jvp",
     "spmd_mode",

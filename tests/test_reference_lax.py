@@ -1,282 +1,295 @@
-"""Tests for tests/test_reference_lax.py."""
+"""Reference parity tests for ``zero_jax.lax`` primitives."""
 
 from __future__ import annotations
 
-import jax.lax as lax_ref
-import numpy as np
-
 import zero_jax.lax as lax_zero
-from zero_jax._types import ArrayLikeSpec
+import zero_jax.numpy as jnp_zero
+from zero_jax._types import ArrayLikeSpec, VariadicCallable
 
 
-def test_lax_cond(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_cond``.
+def test_lax_cond(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.cond`` branches conditionally.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
 
     def true_fn(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``true_fn``.
+        """Add ``1.0`` to ``x``.
 
         Args:
-            x: Parameter ``x``.
+            x: Input value.
+
+        Returns:
+            ArrayLikeSpec: Incremented value.
         """
         return x + 1.0
 
     def false_fn(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``false_fn``.
+        """Subtract ``1.0`` from ``x``.
 
         Args:
-            x: Parameter ``x``.
+            x: Input value.
+
+        Returns:
+            ArrayLikeSpec: Decremented value.
         """
         return x - 1.0
 
-    val = np.array(5.0)
+    val = jnp_zero.array(5.0)
     check_allclose(
         lax_zero.cond(True, true_fn, false_fn, val),
-        lax_ref.cond(True, true_fn, false_fn, val),
+        jnp_zero.array(6.0),
     )
     check_allclose(
         lax_zero.cond(False, true_fn, false_fn, val),
-        lax_ref.cond(False, true_fn, false_fn, val),
+        jnp_zero.array(4.0),
     )
 
 
-def test_lax_scan(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_scan``.
+def test_lax_scan(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.scan`` accumulates carry and stacked outputs.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
 
-    def f(carry: ArrayLikeSpec, x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f``.
+    def f(carry: ArrayLikeSpec, x: ArrayLikeSpec) -> tuple[ArrayLikeSpec, ArrayLikeSpec]:
+        """Advance scan carry and compute step output.
 
         Args:
-            carry: Parameter ``carry``.
-            x: Parameter ``x``.
+            carry: Current scan carry.
+            x: Current sequence element.
+
+        Returns:
+            tuple[ArrayLikeSpec, ArrayLikeSpec]: Updated carry and step output.
         """
         return carry + x, carry * x
 
-    xs = np.array([1.0, 2.0, 3.0])
-    init = np.array(0.0)
+    xs = jnp_zero.array([1.0, 2.0, 3.0])
+    init = jnp_zero.array(0.0)
 
     carry_z, y_z = lax_zero.scan(f, init, xs)
-    carry_r, y_r = lax_ref.scan(f, init, xs)
+    carry_r = jnp_zero.array(6.0)
+    y_r = jnp_zero.array([0.0, 2.0, 9.0])
 
     check_allclose(carry_z, carry_r)
     check_allclose(y_z, y_r)
 
 
-def test_lax_stop_gradient(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_stop_gradient``.
+def test_lax_stop_gradient(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.stop_gradient`` returns primal values unchanged.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([1.0, 2.0])
-    check_allclose(lax_zero.stop_gradient(x), lax_ref.stop_gradient(x))
+    x = jnp_zero.array([1.0, 2.0])
+    check_allclose(lax_zero.stop_gradient(x), jnp_zero.array([1.0, 2.0]))
 
 
-def test_lax_add(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_add``.
+def test_lax_add(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.add`` computes elementwise addition.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x, y = np.array([1.0]), np.array([2.0])
-    check_allclose(lax_zero.add(x, y), lax_ref.add(x, y))
+    x, y = jnp_zero.array([1.0]), jnp_zero.array([2.0])
+    check_allclose(lax_zero.add(x, y), jnp_zero.array([3.0]))
 
 
-def test_lax_sub(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_sub``.
+def test_lax_sub(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.sub`` computes elementwise subtraction.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x, y = np.array([5.0]), np.array([2.0])
-    check_allclose(lax_zero.sub(x, y), lax_ref.sub(x, y))
+    x, y = jnp_zero.array([5.0]), jnp_zero.array([2.0])
+    check_allclose(lax_zero.sub(x, y), jnp_zero.array([3.0]))
 
 
-def test_lax_mul(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_mul``.
+def test_lax_mul(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.mul`` computes elementwise multiplication.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x, y = np.array([5.0]), np.array([2.0])
-    check_allclose(lax_zero.mul(x, y), lax_ref.mul(x, y))
+    x, y = jnp_zero.array([5.0]), jnp_zero.array([2.0])
+    check_allclose(lax_zero.mul(x, y), jnp_zero.array([10.0]))
 
 
-def test_lax_div(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_div``.
+def test_lax_div(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.div`` computes elementwise division.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x, y = np.array([5.0]), np.array([2.0])
-    check_allclose(lax_zero.div(x, y), lax_ref.div(x, y))
+    x, y = jnp_zero.array([5.0]), jnp_zero.array([2.0])
+    check_allclose(lax_zero.div(x, y), jnp_zero.array([2.5]))
 
 
-def test_lax_broadcast(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_broadcast``.
+def test_lax_broadcast(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.broadcast`` prepends leading dimensions.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([1.0, 2.0])
-    check_allclose(lax_zero.broadcast(x, (2,)), lax_ref.broadcast(x, (2,)))
+    x = jnp_zero.array([1.0, 2.0])
+    check_allclose(
+        lax_zero.broadcast(x, (2,)),
+        jnp_zero.array([[1.0, 2.0], [1.0, 2.0]]),
+    )
 
 
-def test_lax_broadcast_in_dim(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_broadcast_in_dim``.
+def test_lax_broadcast_in_dim(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.broadcast_in_dim`` broadcasts along specified dimensions.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([1.0, 2.0])
+    x = jnp_zero.array([1.0, 2.0])
     check_allclose(
         lax_zero.broadcast_in_dim(x, (2, 2), (0,)),
-        lax_ref.broadcast_in_dim(x, (2, 2), (0,)),
+        jnp_zero.array([[1.0, 1.0], [2.0, 2.0]]),
     )
 
 
-def test_lax_reshape(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_reshape``.
+def test_lax_reshape(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.reshape`` reshapes an array.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([1.0, 2.0, 3.0, 4.0])
-    check_allclose(lax_zero.reshape(x, (2, 2)), lax_ref.reshape(x, (2, 2)))
+    x = jnp_zero.array([1.0, 2.0, 3.0, 4.0])
+    check_allclose(
+        lax_zero.reshape(x, (2, 2)),
+        jnp_zero.array([[1.0, 2.0], [3.0, 4.0]]),
+    )
 
 
-def test_lax_transpose(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_transpose``.
+def test_lax_transpose(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.transpose`` permutes array axes.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([[1.0, 2.0], [3.0, 4.0]])
-    check_allclose(lax_zero.transpose(x, (1, 0)), lax_ref.transpose(x, (1, 0)))
+    x = jnp_zero.array([[1.0, 2.0], [3.0, 4.0]])
+    check_allclose(
+        lax_zero.transpose(x, (1, 0)),
+        jnp_zero.array([[1.0, 3.0], [2.0, 4.0]]),
+    )
 
 
-def test_lax_slice(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_slice``.
+def test_lax_slice(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.slice`` extracts a static slice.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.arange(10.0)
-    check_allclose(lax_zero.slice(x, (2,), (8,)), lax_ref.slice(x, (2,), (8,)))
+    x = jnp_zero.arange(10.0)
+    check_allclose(
+        lax_zero.slice(x, (2,), (8,)),
+        jnp_zero.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0]),
+    )
 
 
-def test_lax_dynamic_slice(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_dynamic_slice``.
+def test_lax_dynamic_slice(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.dynamic_slice`` extracts a dynamic slice.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.arange(10.0)
-    check_allclose(lax_zero.dynamic_slice(x, (2,), (3,)), lax_ref.dynamic_slice(x, (2,), (3,)))
+    x = jnp_zero.arange(10.0)
+    check_allclose(
+        lax_zero.dynamic_slice(x, (2,), (3,)),
+        jnp_zero.array([2.0, 3.0, 4.0]),
+    )
 
 
-def test_lax_dynamic_update_slice(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_dynamic_update_slice``.
+def test_lax_dynamic_update_slice(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.dynamic_update_slice`` updates a slice at a dynamic start index.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.zeros(10)
-    update = np.ones(3)
+    x = jnp_zero.zeros(10)
+    update = jnp_zero.ones(3)
     check_allclose(
         lax_zero.dynamic_update_slice(x, update, (2,)),
-        lax_ref.dynamic_update_slice(x, update, (2,)),
+        jnp_zero.array([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     )
 
 
-def test_lax_gather(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_gather``.
+def test_lax_gather(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.gather`` gathers elements using ``GatherDimensionNumbers``.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    operand = np.array([10.0, 20.0, 30.0, 40.0])
-    indices = np.array([[1], [3]])
+    operand = jnp_zero.array([10.0, 20.0, 30.0, 40.0])
+    indices = jnp_zero.array([[1], [3]])
     dnums = lax_zero.GatherDimensionNumbers(
-        offset_dims=(),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,),
-    )
-    dnums_ref = lax_ref.GatherDimensionNumbers(
         offset_dims=(),
         collapsed_slice_dims=(0,),
         start_index_map=(0,),
     )
     check_allclose(
         lax_zero.gather(operand, indices, dnums, (1,)),
-        lax_ref.gather(operand, indices, dnums_ref, (1,)),
+        jnp_zero.array([20.0, 40.0]),
     )
 
 
-def test_lax_scatter(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_scatter``.
+def test_lax_scatter(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.scatter`` scatters updates using ``ScatterDimensionNumbers``.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    operand = np.array([1.0, 2.0, 3.0, 4.0])
-    indices = np.array([[1], [3]])
-    updates = np.array([10.0, 30.0])
+    operand = jnp_zero.array([1.0, 2.0, 3.0, 4.0])
+    indices = jnp_zero.array([[1], [3]])
+    updates = jnp_zero.array([10.0, 30.0])
     dnums = lax_zero.ScatterDimensionNumbers(
-        update_window_dims=(),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,),
-    )
-    dnums_ref = lax_ref.ScatterDimensionNumbers(
         update_window_dims=(),
         inserted_window_dims=(0,),
         scatter_dims_to_operand_dims=(0,),
     )
     check_allclose(
         lax_zero.scatter(operand, indices, updates, dnums),
-        lax_ref.scatter(operand, indices, updates, dnums_ref),
+        jnp_zero.array([1.0, 10.0, 3.0, 30.0]),
     )
 
 
-def test_lax_reduce_sum(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_reduce_sum``.
+def test_lax_reduce_sum(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.reduce`` reduces an axis with ``lax.add``.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    x = jnp_zero.array([[1.0, 2.0], [3.0, 4.0]])
     check_allclose(
         lax_zero.reduce(x, 0.0, lax_zero.add, (0,)),
-        lax_ref.reduce(x, 0.0, lax_ref.add, (0,)),
+        jnp_zero.array([4.0, 6.0]),
     )
 
 
-def test_lax_select(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_select``.
+def test_lax_select(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.select`` selects elements from true/false branches.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    cond = np.array([True, False])
-    x = np.array([1.0, 2.0])
-    y = np.array([3.0, 4.0])
-    check_allclose(lax_zero.select(cond, x, y), lax_ref.select(cond, x, y))
+    cond = jnp_zero.array([True, False])
+    x = jnp_zero.array([1.0, 2.0])
+    y = jnp_zero.array([3.0, 4.0])
+    check_allclose(lax_zero.select(cond, x, y), jnp_zero.array([1.0, 4.0]))
 
 
-def test_lax_clamp(check_allclose: ArrayLikeSpec) -> None:
-    """Execute ``test_lax_clamp``.
+def test_lax_clamp(check_allclose: VariadicCallable[None]) -> None:
+    """Verify ``zero_jax.lax.clamp`` clamps elements between bounds.
 
     Args:
-        check_allclose: Parameter ``check_allclose``.
+        check_allclose: Numerical closeness assertion fixture.
     """
-    x = np.array([1.0, 5.0, 10.0])
-    min_val = np.array(2.0)
-    max_val = np.array(8.0)
-    check_allclose(lax_zero.clamp(min_val, x, max_val), lax_ref.clamp(min_val, x, max_val))
+    x = jnp_zero.array([1.0, 5.0, 10.0])
+    min_val = jnp_zero.array(2.0)
+    max_val = jnp_zero.array(8.0)
+    check_allclose(lax_zero.clamp(min_val, x, max_val), jnp_zero.array([2.0, 5.0, 8.0]))

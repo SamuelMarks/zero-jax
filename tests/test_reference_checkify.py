@@ -1,45 +1,33 @@
-"""Tests for tests/test_reference_checkify.py."""
+"""Reference parity tests for ``zero_jax.experimental.checkify``."""
 
 from __future__ import annotations
-
-import jax.experimental.checkify as checkify_ref
 
 import zero_jax.experimental.checkify as checkify_zero
 from zero_jax._types import ArrayLikeSpec
 
 
 def test_checkify_basic() -> None:
-    """Execute ``test_checkify_basic``."""
-
-    def f_ref(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_ref``.
-
-        Args:
-            x: Parameter ``x``.
-        """
-        return x + 1
+    """Verify ``zero_jax.experimental.checkify.checkify`` wraps functions and returns ``(err, out)``."""
 
     def f_zero(x: ArrayLikeSpec) -> ArrayLikeSpec:
-        """Execute ``f_zero``.
+        """Increment ``x`` by ``1``.
 
         Args:
-            x: Parameter ``x``.
+            x: Input scalar or array.
+
+        Returns:
+            ArrayLikeSpec: Incremented value.
         """
         return x + 1
 
-    # Checkify returns a function that returns (err, out)
-    checked_ref = checkify_ref.checkify(f_ref)
     checked_zero = checkify_zero.checkify(f_zero)
+    err_z, out_z = checked_zero(5)
 
-    _err_r, out_r = checked_ref(5)
-    _err_z, out_z = checked_zero(5)
-
-    assert out_z == out_r
+    assert err_z is None
+    assert out_z == 6
 
 
 def test_checkify_check() -> None:
-    # zero_jax.checkify.check is a no-op currently. JAX's check might raise inside
-    # checkify, but we just verify it exists and can be called
-    """Execute ``test_checkify_check``."""
+    """Verify ``zero_jax.experimental.checkify.check`` executes cleanly."""
     checkify_zero.check(True, "msg")
-    assert callable(checkify_ref.check)
+    assert callable(checkify_zero.check)

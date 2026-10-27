@@ -2,15 +2,62 @@
 
 from __future__ import annotations
 
-import typing
 from collections.abc import Sequence
 
-from zero_jax._types import ArrayLikeSpec, DTypeSpec, IndexSpec, ShapeTuple, T
+from zero_jax._config_internal import config as _internal_config
+from zero_jax._types import ArrayLikeSpec, ConfigValue, DTypeSpec, IndexSpec, ShapeTuple, T
 from zero_jax.numpy.lax_numpy import ndarray
-from zero_jax.sharding import NamedSharding, Sharding
+from zero_jax.sharding import NamedSharding, Sharding, SingleDeviceSharding
+from zero_jax.tree_util import tree_map
 
-if typing.TYPE_CHECKING:
-    from zero_jax import Device
+
+class Device:
+    """Represents a logical computational device.
+
+    Attributes:
+        platform: The target execution platform name (e.g. ``"cpu"``).
+        id: Logical device index.
+    """
+
+    def __init__(self, platform: str = "cpu", id: int = 0) -> None:
+        """Initialize a ``Device`` instance.
+
+        Args:
+            platform: Platform identifier string.
+            id: Logical integer device identifier.
+        """
+        self.platform = platform
+        self.device_kind = platform
+        self.id = id
+        self.process_index = 0
+        self.host_id = 0
+
+    def __eq__(self, other: ConfigValue) -> bool:
+        """Compare two ``Device`` instances for equality.
+
+        Args:
+            other: Comparison target.
+
+        Returns:
+            bool: ``True`` if platform and id match.
+        """
+        return isinstance(other, Device) and self.platform == other.platform and self.id == other.id
+
+    def __hash__(self) -> int:
+        """Return hash of the ``Device`` instance.
+
+        Returns:
+            int: Hash value.
+        """
+        return hash((self.platform, self.id))
+
+    def __repr__(self) -> str:
+        """Return canonical string representation of this device.
+
+        Returns:
+            str: Formatted device string.
+        """
+        return f"{self.platform}:{self.id}"
 
 
 class ShapeDtypeStruct:
@@ -86,13 +133,13 @@ def default_device() -> Device:
     Returns:
         Device: A ``Device`` object representing the default device.
     """
-    from zero_jax import Device
-
     return Device("cpu")
 
 
 def device_count(backend: str | None = None) -> int:
     """Return the total number of devices available.
+
+    Synchronized with ``jax_host_device_count`` and ``zero_chex.set_n_cpu_devices``.
 
     Args:
         backend: Optional backend name.
@@ -100,7 +147,9 @@ def device_count(backend: str | None = None) -> int:
     Returns:
         int: Total number of devices.
     """
-    return 1
+    _ = backend
+    raw = _internal_config.read("jax_host_device_count")
+    return max(1, int(raw)) if isinstance(raw, int) else 1
 
 
 def local_device_count(backend: str | None = None) -> int:
@@ -112,7 +161,7 @@ def local_device_count(backend: str | None = None) -> int:
     Returns:
         int: Number of local devices.
     """
-    return 1
+    return device_count(backend=backend)
 
 
 def process_count() -> int:
@@ -161,16 +210,33 @@ def host_ids() -> list[int]:
 
 
 def device_put(x: T, device: Device | Sharding | str | None = None) -> T:
-    """Transfer data to the specified device.
+    """Transfer data to the specified device or sharding specification.
 
     Args:
         x: The array or PyTree of arrays to transfer.
-        device: Optional target device.
+        device: Optional target device or :class:`Sharding`.
 
     Returns:
-        T: The transferred value.
+        T: The transferred value with sharding metadata attached when ``device`` is provided.
     """
-    return x
+    if device is None:
+        return x
+    resolved_sharding = device if isinstance(device, Sharding) else SingleDeviceSharding(device)
+
+    def _put_leaf(leaf: ConfigValue) -> ConfigValue:
+        """Attach ``resolved_sharding`` to an ``ndarray`` leaf.
+
+        Args:
+            leaf: Input PyTree leaf.
+
+        Returns:
+            ConfigValue: Leaf with updated sharding metadata.
+        """
+        if isinstance(leaf, ndarray):
+            return ndarray(leaf._tensor, sharding=resolved_sharding)
+        return leaf
+
+    return tree_map(_put_leaf, x)
 
 
 def device_put_replicated(x: T, devices: Sequence[Device | str | None]) -> list[T]:
@@ -197,11 +263,14 @@ def device_put_sharded(shards: Sequence[ArrayLikeSpec], devices: Sequence[Device
         ndarray: Stacked array constructed from ``shards``.
     """
     from zero_jax.numpy import stack
+    from zero_jax.sharding import PositionalSharding
 
-    return stack(shards)
+    stacked = stack(shards)
+    return ndarray(stacked._tensor, sharding=PositionalSharding(tuple(devices)))
 
 
 __all__ = [
+    "Device",
     "NamedSharding",
     "ShapeDtypeStruct",
     "Shard",

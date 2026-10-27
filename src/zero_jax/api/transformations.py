@@ -19,9 +19,21 @@ from ml_switcheroo_ir import DType, LogicalGraph, LogicalNode
 
 import zero_jax._compiler_proxy_ops as ops
 from zero_jax._config_internal import config as _internal_config
-from zero_jax._types import ArrayProtocol, AxisSpec, PyTree, ShapeTuple, StatefulProtocol, VariadicCallable
-from zero_jax.lax.control_flow import get_stop_gradient_sources
-from zero_jax.numpy import moveaxis, ones_like, tensor_utils, zeros
+from zero_jax._types import (
+    ArrayProtocol,
+    AxisSpec,
+    CustomStateMappingProtocol,
+    PyTree,
+    ShapeTuple,
+    StatefulProtocol,
+    VariadicCallable,
+)
+from zero_jax.lax.control_flow import (
+    _ACTIVE_AXIS_FRAMES,
+    _CollectiveAxisFrame,
+    get_stop_gradient_sources,
+)
+from zero_jax.numpy import moveaxis, ones_like, stack, tensor_utils, zeros
 from zero_jax.numpy.lax_numpy import _to_tensor, _wrap, array, ndarray
 from zero_jax.sharding import Sharding
 from zero_jax.stages import Lowered, Traced
@@ -49,7 +61,9 @@ class ShapedArray:
 
 
 class _JitWrapped:
-    """Callable wrapper produced by :func:`jit` supporting ``.trace()`` and ``.lower()``."""
+    """Callable wrapper produced by :func:`jit` supporting ``.trace()``, ``.lower()``, and trace hooks."""
+
+    _trace_hooks: list[Callable[[VariadicCallable[PyTree], PyTree], None]] = []
 
     def __init__(
         self,
@@ -64,7 +78,32 @@ class _JitWrapped:
         """
         self._fun = fun
         self._exec_fn = exec_fn
+        self.trace_count: int = 0
         functools.update_wrapper(self, fun)
+
+    @classmethod
+    def register_trace_hook(cls, hook: Callable[[VariadicCallable[PyTree], PyTree], None]) -> None:
+        """Register a callback invoked whenever a JIT-wrapped function traces a new signature.
+
+        Args:
+            hook: Callback taking ``(fun, cache_key)``.
+        """
+        cls._trace_hooks.append(hook)
+
+    @classmethod
+    def clear_trace_hooks(cls) -> None:
+        """Remove all registered JIT trace notification callbacks."""
+        cls._trace_hooks.clear()
+
+    def _notify_trace(self, cache_key: PyTree) -> None:
+        """Increment ``self.trace_count`` and notify all registered trace hooks.
+
+        Args:
+            cache_key: Abstract signature key that triggered compilation.
+        """
+        self.trace_count += 1
+        for hook in self._trace_hooks:
+            hook(self._fun, cache_key)
 
     def __call__(self, *args: PyTree, **kwargs: PyTree) -> PyTree:
         """Execute the JIT-compiled function.
@@ -107,6 +146,51 @@ class _JitWrapped:
         return Lowered(fun=self._exec_fn)
 
 
+def _reduce_grad_to_shape(grad_arr: ndarray, target_shape: ShapeTuple) -> ndarray:
+    """Sum out any broadcasted dimensions of ``grad_arr`` so its shape matches ``target_shape``.
+
+    Args:
+        grad_arr: Raw gradient array from backward evaluation.
+        target_shape: Shape of the primal input leaf.
+
+    Returns:
+        ndarray: Gradient array matching ``target_shape``.
+    """
+    while len(grad_arr.shape) > len(target_shape):
+        grad_arr = grad_arr.sum(axis=0)
+    for ax, (g_dim, t_dim) in enumerate(zip(grad_arr.shape, target_shape)):
+        if t_dim == 1 and g_dim > 1:
+            grad_arr = grad_arr.sum(axis=ax, keepdims=True)
+    return grad_arr
+
+
+def _resolve_leaf_axes(tree: PyTree, axes_spec: PyTree) -> list[int | None]:
+    """Resolve per-leaf axis specifications for ``tree`` given a scalar, sequence, or PyTree ``axes_spec``.
+
+    Args:
+        tree: Input or output PyTree.
+        axes_spec: Axis specification (`int`, `None`, tuple/list, or mapping/State PyTree).
+
+    Returns:
+        list[int | None]: Flat list of axis specs aligned with ``tree_flatten(tree)[0]``.
+    """
+    if axes_spec is None or isinstance(axes_spec, int):
+        return [axes_spec for _ in tree_flatten(tree)[0]]
+    if isinstance(axes_spec, (tuple, list)) and isinstance(tree, (tuple, list)):
+        seq_axes: list[int | None] = []
+        for sub_t, sub_a in zip(tree, axes_spec):
+            seq_axes.extend(_resolve_leaf_axes(sub_t, sub_a))
+        return seq_axes
+    if isinstance(axes_spec, CustomStateMappingProtocol) and isinstance(tree, CustomStateMappingProtocol):
+        map_axes: list[int | None] = []
+        spec_keys = set(axes_spec.keys())
+        for k in sorted(tree.keys()):
+            sub_ax = axes_spec[k] if k in spec_keys else 0
+            map_axes.extend(_resolve_leaf_axes(tree[k], sub_ax))
+        return map_axes
+    return [0 for _ in tree_flatten(tree)[0]]
+
+
 def jit(
     fun: VariadicCallable[PyTree],
     in_shardings: Sharding | Sequence[Sharding | None] | None = None,
@@ -147,6 +231,7 @@ def jit(
     static_nums = {static_argnums} if isinstance(static_argnums, int) else set(static_argnums or ())
     static_names = {static_argnames} if isinstance(static_argnames, str) else set(static_argnames or ())
     cache: dict[tuple[tuple[str, ...], tuple[tuple[ShapeTuple, str], ...]], tuple[LogicalGraph, list[str], list[str], PyTreeDef]] = {}
+    jit_wrapper_holder: list[_JitWrapped] = []
 
     @functools.wraps(fun)
     def wrapped(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -173,6 +258,7 @@ def jit(
         key = (static_key, tuple((t.shape, t.dtype.value) for t in t_args))
 
         if key not in cache:
+            jit_wrapper_holder[0]._notify_trace(key)
             prev_graph = _tracer.active_graph
             is_tracing = _tracer.is_tracing
             graph = _tracer.start_tracing(name="jit_fun")
@@ -227,7 +313,9 @@ def jit(
         flat_res = [array(res[out_id]) for out_id in out_ids]
         return tree_unflatten(out_tree_def, flat_res)
 
-    return _JitWrapped(fun, wrapped)
+    jit_wrapper = _JitWrapped(fun, wrapped)
+    jit_wrapper_holder.append(jit_wrapper)
+    return jit_wrapper
 
 
 def grad(
@@ -348,14 +436,14 @@ def grad(
         res = evaluate_graph(bwd_graph, inputs)
 
         flat_grads: list[PyTree] = []
-        for i_id in input_ids:
+        for leaf_arg, i_id in zip(t_args, input_ids):
             if i_id is None:
                 flat_grads.append(0.0)
             else:
                 idx = valid_input_ids.index(i_id)
                 grad_node_id = bwd_graph.outputs[idx]
                 grad_val = res.get(grad_node_id, 0.0)
-                flat_grads.append(array(grad_val))
+                flat_grads.append(_reduce_grad_to_shape(array(grad_val), leaf_arg.shape))
 
         grad_pos_args, _ = tree_unflatten(in_tree, flat_grads)
         selected_grad = grad_pos_args[argnums] if isinstance(argnums, int) else tuple(grad_pos_args[i] for i in argnums)
@@ -413,14 +501,19 @@ def value_and_grad(
 
 def vmap(
     fun: VariadicCallable[PyTree],
-    in_axes: int | Sequence[AxisSpec] | dict[str, AxisSpec] | None = 0,
+    in_axes: int | Sequence[AxisSpec] | dict[str, AxisSpec] | PyTree | None = 0,
     axis_name: str | None = None,
     axis_size: int | None = None,
-    out_axes: AxisSpec = 0,
+    out_axes: AxisSpec | PyTree = 0,
     spmd_axis_name: str | tuple[str, ...] | None = None,
     sum_match: bool = False,
 ) -> VariadicCallable[PyTree]:
     """Create a function which maps ``fun`` over argument axes.
+
+    Supports scalar, sequence, and structured PyTree ``in_axes`` / ``out_axes``
+    (including ``zero_flax.nnx.State`` axis trees and ``None`` unmapped axes)
+    as well as ``axis_name`` bindings for collective primitives (``lax.psum``,
+    ``lax.pmean``, ``lax.all_gather``).
 
     Args:
         fun: The function to be mapped over argument axes.
@@ -434,7 +527,7 @@ def vmap(
     Returns:
         VariadicCallable[PyTree]: A vectorized version of ``fun``.
     """
-    _ = (axis_name, axis_size, spmd_axis_name, sum_match)
+    _ = (spmd_axis_name, sum_match)
 
     @functools.wraps(fun)
     def wrapped(*args: PyTree, **kwargs: PyTree) -> PyTree:
@@ -447,61 +540,99 @@ def vmap(
         Returns:
             PyTree: The vectorized output PyTree.
         """
-        norm_args = list(args)
-        if isinstance(in_axes, int) and in_axes != 0:
-            norm_args = [tree_map(lambda x: moveaxis(x, in_axes, 0) if isinstance(x, ArrayProtocol) and x.ndim > 0 else x, a) for a in norm_args]
-        elif isinstance(in_axes, (list, tuple)):
-            for idx, ax in enumerate(in_axes):
-                if idx < len(norm_args) and isinstance(ax, int) and ax != 0:
-                    norm_args[idx] = tree_map(lambda x, _a=ax: moveaxis(x, _a, 0) if isinstance(x, ArrayProtocol) and x.ndim > 0 else x, norm_args[idx])
+        per_arg_axes = [_resolve_leaf_axes(a, ax) for a, ax in zip(args, in_axes)] if isinstance(in_axes, (tuple, list)) and len(in_axes) == len(args) else [_resolve_leaf_axes(a, in_axes) for a in args]
+        flat_in_axes = [ax for sub in per_arg_axes for ax in sub] + [0 for _ in tree_flatten(kwargs)[0]]
 
-        flat_args, in_tree = tree_flatten((tuple(norm_args), kwargs))
+        raw_flat_args, in_tree = tree_flatten((args, kwargs))
+        batch_n = (
+            int(axis_size)
+            if axis_size is not None
+            else next(
+                (leaf.shape[ax] for leaf, ax in zip(raw_flat_args, flat_in_axes) if isinstance(ax, int) and isinstance(leaf, ArrayProtocol) and len(leaf.shape) > 0),
+                0,
+            )
+        )
+
+        flat_args: list[PyTree] = []
+        for leaf, ax in zip(raw_flat_args, flat_in_axes):
+            if isinstance(ax, int) and ax != 0 and isinstance(leaf, ArrayProtocol) and len(leaf.shape) > 0:
+                flat_args.append(moveaxis(leaf, ax, 0))
+            elif ax is None and batch_n > 0 and not (callable(leaf) or isinstance(leaf, StatefulProtocol)):
+                flat_args.append(stack([leaf for _ in range(batch_n)]))
+            else:
+                flat_args.append(leaf)
+
         t_args = [a if callable(a) or isinstance(a, StatefulProtocol) else _to_tensor(a) for a in flat_args]
 
-        unflattened_args_orig, unflattened_kwargs_orig = tree_unflatten(in_tree, flat_args)
-        dummy_res_orig = fun(*unflattened_args_orig, **unflattened_kwargs_orig)
-        dummy_flat_res, out_tree = tree_flatten(dummy_res_orig)
-
-        def inner_fun(*inner_args: Tensor) -> tuple[Tensor, ...]:
-            """Evaluate ``fun`` on a single unbatched slice.
-
-            Args:
-                *inner_args: Unbatched tensor arguments.
-
-            Returns:
-                tuple[Tensor, ...]: Flattened output tensors.
-            """
-            wrapped_args = [ndarray(a) for a in inner_args]
-            unflattened_args, unflattened_kwargs = tree_unflatten(in_tree, wrapped_args)
-            res = fun(*unflattened_args, **unflattened_kwargs)
-            flat_res, _ = tree_flatten(res)
-            return tuple(_to_tensor(r) for r in flat_res)
-
         if any(not a.shape for a in t_args if not (callable(a) or isinstance(a, StatefulProtocol))):
-            out_flat = list(inner_fun(*t_args))
+            wrapped_scalars = [a if callable(a) or isinstance(a, StatefulProtocol) else ndarray(a) for a in t_args]
+            unflattened_args, unflattened_kwargs = tree_unflatten(in_tree, wrapped_scalars)
+            return fun(*unflattened_args, **unflattened_kwargs)
+
+        if axis_name is not None and batch_n > 0:
+            frame = _CollectiveAxisFrame(axis_name, batch_n)
+            _ACTIVE_AXIS_FRAMES[axis_name] = frame
+            for b in range(batch_n):
+                frame.call_idx = 0
+                slice_args = [a if callable(a) or isinstance(a, StatefulProtocol) else ndarray(a)[b] for a in t_args]
+                u_args_b, u_kwargs_b = tree_unflatten(in_tree, slice_args)
+                res_b = fun(*u_args_b, **u_kwargs_b)
+                if b == 0:
+                    dummy_res_orig = res_b
+            frame.collecting = False
         else:
-            out_flat = []
-            for i in range(len(dummy_flat_res)):
+            unflattened_args_orig, unflattened_kwargs_orig = tree_unflatten(in_tree, flat_args)
+            dummy_res_orig = fun(*unflattened_args_orig, **unflattened_kwargs_orig)
 
-                def ith_inner(*inner_args: Tensor, idx: int = i) -> Tensor:
-                    """Evaluate the ``idx``-th output leaf of ``fun``.
+        dummy_flat_res, out_tree = tree_flatten(dummy_res_orig)
+        flat_out_axes = _resolve_leaf_axes(dummy_res_orig, out_axes)
 
-                    Args:
-                        *inner_args: Unbatched tensor arguments.
-                        idx: Output leaf index.
+        try:
+            if axis_name is not None and batch_n > 0 and _ACTIVE_AXIS_FRAMES[axis_name].recorded_slices:
+                replica_flat_outputs: list[list[PyTree]] = []
+                for b in range(batch_n):
+                    _ACTIVE_AXIS_FRAMES[axis_name].call_idx = 0
+                    slice_args = [a if callable(a) or isinstance(a, StatefulProtocol) else ndarray(a)[b] for a in t_args]
+                    u_args_b, u_kwargs_b = tree_unflatten(in_tree, slice_args)
+                    res_b = fun(*u_args_b, **u_kwargs_b)
+                    replica_flat_outputs.append(tree_flatten(res_b)[0])
+                dummy_flat_res, out_tree = tree_flatten(res_b)
+                flat_out_axes = _resolve_leaf_axes(res_b, out_axes)
+                out_flat = [_to_tensor(stack([rep[i] for rep in replica_flat_outputs])) for i in range(len(dummy_flat_res))]
+            else:
+                out_flat = []
+                for i in range(len(dummy_flat_res)):
 
-                    Returns:
-                        Tensor: The ``idx``-th output tensor.
-                    """
-                    wrapped_args = [ndarray(a) for a in inner_args]
-                    unflattened_args, unflattened_kwargs = tree_unflatten(in_tree, wrapped_args)
-                    res = fun(*unflattened_args, **unflattened_kwargs)
-                    flat_res, _ = tree_flatten(res)
-                    return _to_tensor(flat_res[idx])
+                    def ith_inner(*inner_args: Tensor, idx: int = i) -> Tensor:
+                        """Evaluate the ``idx``-th output leaf of ``fun``.
 
-                out_flat.append(cf.vmap(ith_inner)(*t_args))
+                        Args:
+                            *inner_args: Unbatched tensor arguments.
+                            idx: Output leaf index.
 
-        wrapped_out = [moveaxis(_wrap(o), 0, out_axes) if isinstance(out_axes, int) and out_axes != 0 else _wrap(o) for o in out_flat]
+                        Returns:
+                            Tensor: The ``idx``-th output tensor.
+                        """
+                        wrapped_args = [ndarray(a) for a in inner_args]
+                        unflattened_args, unflattened_kwargs = tree_unflatten(in_tree, wrapped_args)
+                        res = fun(*unflattened_args, **unflattened_kwargs)
+                        flat_res, _ = tree_flatten(res)
+                        return _to_tensor(flat_res[idx])
+
+                    out_flat.append(cf.vmap(ith_inner)(*t_args))
+        finally:
+            if axis_name is not None:
+                _ACTIVE_AXIS_FRAMES.pop(axis_name, None)
+
+        wrapped_out: list[PyTree] = []
+        for o, out_ax in zip(out_flat, flat_out_axes):
+            w_o = _wrap(o)
+            if out_ax is None:
+                wrapped_out.append(w_o[0])
+            elif isinstance(out_ax, int) and out_ax != 0:
+                wrapped_out.append(moveaxis(w_o, 0, out_ax))
+            else:
+                wrapped_out.append(w_o)
         return tree_unflatten(out_tree, wrapped_out)
 
     return wrapped

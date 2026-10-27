@@ -32,6 +32,33 @@ class Sharding:
         self.memory_kind: str | None = memory_kind
 
     @property
+    def devices(self) -> tuple[ConfigValue, ...]:
+        """Return the ordered tuple of devices referenced by this sharding.
+
+        Returns:
+            tuple[ConfigValue, ...]: Ordered device tuple.
+        """
+        return self._devices
+
+    @property
+    def mesh(self) -> Mesh | None:
+        """Return the :class:`Mesh` associated with this sharding, if any.
+
+        Returns:
+            Mesh | None: Associated mesh or ``None``.
+        """
+        return None
+
+    @property
+    def spec(self) -> PartitionSpec | None:
+        """Return the :class:`PartitionSpec` associated with this sharding, if any.
+
+        Returns:
+            PartitionSpec | None: Associated partition spec or ``None``.
+        """
+        return None
+
+    @property
     def device_set(self) -> set[ConfigValue]:
         """Return the set of devices referenced by this sharding.
 
@@ -89,6 +116,24 @@ class PartitionSpec(Sharding):
         super().__init__()
         self._partitions: tuple[str | tuple[str, ...] | None, ...] = tuple(partitions)
 
+    @property
+    def axes(self) -> tuple[str | tuple[str, ...] | None, ...]:
+        """Return the per-dimension partition axis specifications.
+
+        Returns:
+            tuple[str | tuple[str, ...] | None, ...]: Partition axis tuple.
+        """
+        return self._partitions
+
+    @property
+    def spec(self) -> PartitionSpec:
+        """Return this :class:`PartitionSpec` instance.
+
+        Returns:
+            PartitionSpec: Self reference.
+        """
+        return self
+
     def __len__(self) -> int:
         """Return the number of partitioned dimensions.
 
@@ -145,11 +190,19 @@ class Mesh(Sharding):
             _cached_device_list: Optional cached flat device list.
         """
         super().__init__(devices=devices)
-        self.devices: tuple[ConfigValue, ...] = tuple(devices)
         self.axis_names: tuple[str, ...] = tuple(axis_names)
         self.axis_types: tuple[ConfigValue, ...] | None = tuple(axis_types) if axis_types is not None else None
-        self.size: int = size if size is not None else len(self.devices)
+        self.size: int = size if size is not None else len(self._devices)
         self._cached_device_list: Sequence[ConfigValue] | None = _cached_device_list
+
+    @property
+    def mesh(self) -> Mesh:
+        """Return this :class:`Mesh` instance.
+
+        Returns:
+            Mesh: Self reference.
+        """
+        return self
 
     @property
     def shape(self) -> dict[str, int]:
@@ -186,9 +239,27 @@ class NamedSharding(Sharding):
         resolved_mesh = mesh if isinstance(mesh, Mesh) else Mesh()
         resolved_spec = spec if isinstance(spec, PartitionSpec) else PartitionSpec()
         super().__init__(devices=resolved_mesh.devices, memory_kind=memory_kind)
-        self.mesh: Mesh = resolved_mesh
-        self.spec: PartitionSpec = resolved_spec
+        self._mesh: Mesh = resolved_mesh
+        self._spec: PartitionSpec = resolved_spec
         self._logical_device_ids: tuple[int, ...] | None = _logical_device_ids
+
+    @property
+    def mesh(self) -> Mesh:
+        """Return the :class:`Mesh` associated with this ``NamedSharding``.
+
+        Returns:
+            Mesh: Target device mesh.
+        """
+        return self._mesh
+
+    @property
+    def spec(self) -> PartitionSpec:
+        """Return the :class:`PartitionSpec` associated with this ``NamedSharding``.
+
+        Returns:
+            PartitionSpec: Target partition specification.
+        """
+        return self._spec
 
     @property
     def is_fully_replicated(self) -> bool:
@@ -197,7 +268,7 @@ class NamedSharding(Sharding):
         Returns:
             bool: ``True`` if all spec entries are ``None`` or empty.
         """
-        return all(p is None for p in self.spec._partitions)
+        return all(p is None for p in self._spec._partitions)
 
 
 class SingleDeviceSharding(Sharding):
@@ -260,7 +331,6 @@ class PmapSharding(Sharding):
             sharding_spec: Optional sharding specification.
         """
         super().__init__(devices=devices)
-        self.devices: tuple[ConfigValue, ...] = tuple(devices)
         self.sharding_spec: ConfigValue = sharding_spec
 
 

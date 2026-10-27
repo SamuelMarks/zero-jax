@@ -21,18 +21,12 @@ ALLOWED_INTERNAL_SRC: set[str] = {
     "ml_switcheroo_ir",
     "ml_ecosystem_snapshots",
     "zero_jax",
+    "zero_flax",
+    "zero_chex",
+    "zero_grain",
+    "zero_optax",
+    "zero_orbax",
 }
-PARITY_TEST_FILES: frozenset[str] = frozenset(
-    {
-        "test_reference_api.py",
-        "test_reference_checkify.py",
-        "test_reference_jnp.py",
-        "test_reference_lax.py",
-        "test_reference_nn.py",
-        "test_reference_random.py",
-        "test_reference_tree_util.py",
-    }
-)
 
 EXCLUDED_SIGNATURE_NAMES: set[str] = {
     "Any",
@@ -155,14 +149,11 @@ def check_file_imports(filepath: str) -> bool:
     filename = parts[-1]
     is_script = "scripts" in parts
     is_test = "tests" in parts
-    is_parity_test = is_test and filename in PARITY_TEST_FILES
 
     if is_script:
         allowed_all.add("scripts")
     elif is_test:
         allowed_all.update({"pytest", "tests", "scripts", "conftest", "fuzz_utils"})
-        if is_parity_test:
-            allowed_all.update({"jax", "numpy"})
 
     def _is_allowed_module(base_mod: str) -> bool:
         """Check whether a top-level module name is permitted for the current file.
@@ -854,6 +845,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     p_typing = subparsers.add_parser("check_strict_typing")
     p_typing.add_argument("files", nargs="*")
 
+    p_no_any = subparsers.add_parser("check_no_any")
+    p_no_any.add_argument("files", nargs="*")
+
     p_docs = subparsers.add_parser("check_docstrings")
     p_docs.add_argument("files", nargs="*")
 
@@ -865,6 +859,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "enforce_all_list": cmd_enforce_all_list,
         "update_badges": cmd_update_badges,
         "check_strict_typing": cmd_check_strict_typing,
+        "check_no_any": cmd_check_strict_typing,
         "check_docstrings": cmd_check_docstrings,
     }
     dispatch[args.command](args)

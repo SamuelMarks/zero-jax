@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import typing
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Protocol, TypeVar, runtime_checkable
 
 from ml_switcheroo_compiler.core.shape import TensorOrScalar
@@ -37,6 +37,119 @@ class ArrayProtocol(Protocol):
             DType | str: The data type.
         """
         ...
+
+
+@runtime_checkable
+class ToListProtocol(Protocol):
+    """Protocol for serialized or custom array objects exposing ``tolist()``, ``shape``, and ``dtype``."""
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Return the shape of the array.
+
+        Returns:
+            tuple[int, ...]: The shape tuple.
+        """
+        ...
+
+    @property
+    def dtype(self) -> DType | str:
+        """Return the data type of the array.
+
+        Returns:
+            DType | str: The data type.
+        """
+        ...
+
+    def tolist(self) -> PyTree:
+        """Return the nested Python list or scalar representation of the array.
+
+        Returns:
+            PyTree: Nested Python list or scalar value.
+        """
+        ...
+
+
+@runtime_checkable
+class MappableDataclassProtocol(Protocol):
+    """Protocol for mappable dataclasses exposing ``__chex_mappable_fields__`` and ``__chex_field_values__``."""
+
+    def __chex_mappable_fields__(self) -> tuple[str, ...]:
+        """Return the ordered tuple of field names for PyTree traversal.
+
+        Returns:
+            tuple[str, ...]: Ordered field names.
+        """
+        ...
+
+    def __chex_field_values__(self) -> tuple[PyTree, ...]:
+        """Return the ordered tuple of field values matching ``__chex_mappable_fields__``.
+
+        Returns:
+            tuple[PyTree, ...]: Ordered field values.
+        """
+        ...
+
+
+@runtime_checkable
+class CustomStateMappingProtocol(Protocol):
+    """Protocol for custom state mappings such as ``zero_flax.nnx.State`` and ``zero_flax.core.FrozenDict``."""
+
+    def keys(self) -> Iterable[str]:
+        """Return an iterable of mapping keys.
+
+        Returns:
+            Iterable[str]: Mapping keys.
+        """
+        ...
+
+    def __getitem__(self, key: str) -> PyTree:
+        """Retrieve the entry associated with ``key``.
+
+        Args:
+            key: Mapping key string.
+
+        Returns:
+            PyTree: Associated value.
+        """
+        ...
+
+
+@runtime_checkable
+class CustomVariableProtocol(Protocol):
+    """Protocol for variable containers such as ``zero_flax.nnx.Variable`` preserving metadata across PyTree ops."""
+
+    value: PyTree
+    metadata: Mapping[str, ConfigValue]
+
+    @property
+    def var_type(self) -> str:
+        """Return the variable container class name.
+
+        Returns:
+            str: Variable type name.
+        """
+        ...
+
+    def replace(self, value: PyTree = None, **metadata: ConfigValue) -> CustomVariableProtocol:
+        """Return a new variable container of the same type with an updated value and metadata.
+
+        Args:
+            value: Updated inner value.
+            **metadata: Additional or updated metadata key-value pairs.
+
+        Returns:
+            CustomVariableProtocol: Updated variable instance.
+        """
+        ...
+
+
+@runtime_checkable
+class RecordProtocol(Protocol):
+    """Protocol for dataset record containers pairing ``metadata`` with payload ``data``."""
+
+    metadata: ConfigValue
+    data: PyTree
 
 
 @runtime_checkable
@@ -142,6 +255,8 @@ __all__ = [
     "BoolConfigValue",
     "Callable",
     "ConfigValue",
+    "CustomStateMappingProtocol",
+    "CustomVariableProtocol",
     "DType",
     "DTypeLike",
     "DTypeName",
@@ -150,8 +265,10 @@ __all__ = [
     "IndexElement",
     "IndexSpec",
     "IntConfigValue",
+    "Iterable",
     "LogicalGraph",
     "LogicalMesh",
+    "MappableDataclassProtocol",
     "NamedProtocol",
     "NumericScalar",
     "OptionalArrayInput",
@@ -165,6 +282,7 @@ __all__ = [
     "PyTreeLeaf",
     "R",
     "RealScalar",
+    "RecordProtocol",
     "ScalarNumeric",
     "ShapeSpec",
     "ShapeTuple",
@@ -175,6 +293,7 @@ __all__ = [
     "T_co",
     "Tensor",
     "TensorOrScalar",
+    "ToListProtocol",
     "VariadicCallable",
     "types",
     "typing",

@@ -9,6 +9,8 @@ import ml_switcheroo_compiler as _ml_switcheroo_compiler
 from ml_switcheroo_compiler import Tensor
 from ml_switcheroo_compiler.core.config import config
 from ml_switcheroo_compiler.core.tensor import TensorConfig as _TensorConfig
+from ml_switcheroo_compiler.tracing.state import global_tracing_state as _tracer
+from ml_switcheroo_compiler.tracing.tracer import ProxyTensor
 
 import zero_jax._compiler_proxy_ops as ops
 from zero_jax._types import (
@@ -263,7 +265,15 @@ def dot(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:
     Returns:
         ArrayLikeSpec: The result of the operation.
     """
-    return _wrap(ops.dot(_to_tensor(a), _to_tensor(b)))
+    t_a = _to_tensor(a)
+    t_b = _to_tensor(b)
+    res_t = ops.dot(t_a, t_b)
+    if isinstance(res_t.data, ProxyTensor) and (len(t_a.shape) >= 2 or len(t_b.shape) >= 2):
+        out_shape = (*t_a.shape[:-1],) if len(t_b.shape) == 1 else (*t_a.shape[:-1], *t_b.shape[:-2], t_b.shape[-1])
+        proxy = ProxyTensor(id=res_t.data.id, shape=out_shape, dtype=res_t.dtype.value)
+        _tracer.active_graph.nodes[res_t.data.id].shape_metadata = out_shape
+        res_t = Tensor(data=proxy, config=_TensorConfig(shape=out_shape, dtype=res_t.dtype, device=res_t.device))
+    return _wrap(res_t)
 
 
 def vdot(a: ArrayLikeSpec, b: ArrayLikeSpec) -> ArrayLikeSpec:

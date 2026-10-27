@@ -60,7 +60,12 @@ def all_gather(operand: ArrayLikeSpec, axis_name: str, tiled: bool = False) -> n
         ndarray: Gathered array.
     """
     _ = tiled
-    return _wrap(ops.all_gather(_to_tensor(operand), axis_name))
+    from zero_jax.lax.control_flow import apply_axis_collective
+
+    coll = apply_axis_collective("all_gather", operand, axis_name)
+    if coll is not None:
+        return coll
+    return _wrap(ops.all_gather(_to_tensor(operand), 0))
 
 
 def all_to_all(operand: ArrayLikeSpec, axis_name: str, split_axis: int, concat_axis: int) -> ndarray:
