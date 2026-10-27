@@ -169,7 +169,7 @@ def test_get_signatures_and_api_parity(tmp_path: Path) -> None:
         assert run_checks.verify_ecosystem_snapshot() is False
 
     snap_file = tmp_path / "api_snapshot.json"
-    with patch("os.path.join", return_value=str(snap_file)):
+    with patch("os.path.join", return_value=str(snap_file)), patch("scripts.run_checks.verify_ecosystem_snapshot", return_value=True):
         with pytest.raises(SystemExit) as exc_missing:
             run_checks.main(["check_api_parity"])
         assert exc_missing.value.code == 1

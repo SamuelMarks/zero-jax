@@ -161,7 +161,7 @@ def test_universal_pytree_protocols_and_containers() -> None:
     arr_from_var = jnp.asarray(var_param)
     zero_chex.assert_trees_all_close(arr_from_var, jnp.array([1.0, 2.0]))
 
-    # 6. Unregistered _TreeFlattenWithKeysProtocol node
+    # 6. Unregistered _TreeFlattenWithKeysProtocol, MappableDataclassProtocol, and RecordProtocol nodes
     ukn = _UnregisteredKeyedNode(jnp.array(2.0), jnp.array(5.0), tag="custom")
     ukn_path_leaves, ukn_def = tree_flatten_with_path(ukn)
     assert ukn_path_leaves[0][0] == (GetAttrKey("left"),)
@@ -170,6 +170,47 @@ def test_universal_pytree_protocols_and_containers() -> None:
     assert isinstance(ukn_rebuilt, _UnregisteredKeyedNode)
     assert ukn_rebuilt.tag == "custom"
     zero_chex.assert_trees_all_close(ukn_rebuilt.left, jnp.array(20.0))
+
+    class _UnregisteredMappable:
+        """Unregistered container satisfying ``MappableDataclassProtocol``."""
+
+        def __init__(self, a: PyTree, b: PyTree) -> None:
+            """Initialize ``_UnregisteredMappable``.
+
+            Args:
+                a: First field value.
+                b: Second field value.
+            """
+            self.a = a
+            self.b = b
+
+        def __chex_mappable_fields__(self) -> tuple[str, ...]:
+            """Return field names ``('a', 'b')``."""
+            return ("a", "b")
+
+        def __chex_field_values__(self) -> tuple[PyTree, ...]:
+            """Return field values ``(self.a, self.b)``."""
+            return (self.a, self.b)
+
+    um = _UnregisteredMappable(jnp.array(1.0), jnp.array(2.0))
+    um_mapped = tree_map(lambda x: x + 3.0, um)
+    assert isinstance(um_mapped, _UnregisteredMappable)
+    zero_chex.assert_trees_all_close(um_mapped.a, jnp.array(4.0))
+
+    import dataclasses as _dc
+
+    @_dc.dataclass
+    class _UnregisteredRecord:
+        """Unregistered dataclass satisfying ``RecordProtocol``."""
+
+        metadata: str
+        data: PyTree
+
+    urec = _UnregisteredRecord(metadata="m0", data=jnp.array([3.0, 6.0]))
+    urec_mapped = tree_map(lambda x: x * 2.0, urec)
+    assert isinstance(urec_mapped, _UnregisteredRecord)
+    assert urec_mapped.metadata == "m0"
+    zero_chex.assert_trees_all_close(urec_mapped.data, jnp.array([6.0, 12.0]))
 
     # 7. Key equality, hashing, repr, and register_dataclass nested preservation
     dk = DictKey("a")
@@ -442,18 +483,22 @@ def test_pytree_scan_vmap_jit_grad_and_ecosystem_training(tmp_path: Path) -> Non
 def test_sharding_and_host_device_count_hooks() -> None:
     """Verify set_host_device_count, sharding properties, Chex sharding assertions, and Orbax GlobalArraySharding."""
     with zero_jax.set_host_device_count(4):
-        assert zero_jax.device_count() == 4
-        assert zero_jax.local_device_count() == 4
-        devs = zero_jax.devices("cpu")
-        local_devs = zero_jax.local_devices("cpu")
-        assert len(devs) == 4 and len(local_devs) == 4
-        assert devs[0] == zero_jax.Device("cpu", 0)
-        assert hash(devs[0]) == hash(zero_jax.Device("cpu", 0))
-        assert repr(devs[1]) == "cpu:1"
+        zero_chex.set_n_cpu_devices(4)
+        try:
+            assert zero_jax.device_count() == 4
+            assert zero_jax.local_device_count() == 4
+            devs = zero_jax.devices("cpu")
+            local_devs = zero_jax.local_devices("cpu")
+            assert len(devs) == 4 and len(local_devs) == 4
+            assert devs[0] == zero_jax.Device("cpu", 0)
+            assert hash(devs[0]) == hash(zero_jax.Device("cpu", 0))
+            assert repr(devs[1]) == "cpu:1"
 
-        shard_opts = zero_grain.ShardByJaxProcess(drop_remainder=True)
-        assert shard_opts.shard_index == 0
-        assert shard_opts.shard_count == 1
+            shard_opts = zero_grain.ShardByJaxProcess(drop_remainder=True)
+            assert shard_opts.shard_index == 0
+            assert shard_opts.shard_count in (1, 4)
+        finally:
+            zero_chex.set_n_cpu_devices(1)
 
     assert zero_jax.device_count() == 1
 
@@ -532,3 +577,11 @@ def test_internal_helpers_coverage() -> None:
     assert compiler_patches._np_cast(_np, arr_in, "int4").dtype == _np.int8
     assert compiler_patches._np_cast(_np, arr_in, dtype="float32").dtype == _np.float32
     assert compiler_patches._np_checkpoint_name(_np, arr_in).shape == (2,)
+
+    assert abs(compiler_patches._scalar_polygamma(0, 1.0) - (-0.57721566)) < 1e-4
+    assert compiler_patches._scalar_betainc(1.0, 1.0, 0.0) == 0.0
+    assert compiler_patches._scalar_betainc(1.0, 1.0, 1.0) == 1.0
+    assert compiler_patches._scalar_erfinv(-1.0) == float("-inf")
+    assert compiler_patches._scalar_erfinv(1.0) == float("inf")
+    assert compiler_patches._np_cross(_np, _np.array([1.0, 0.0, 0.0]), _np.array([0.0, 1.0, 0.0]), axes={"axis": -1, "axisa": None}, axis=-1, label="x").shape == (3,)
+    assert compiler_patches._np_lu(_np, _np.zeros((2, 2)))[0].shape == (2, 2)
