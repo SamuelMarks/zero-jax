@@ -1328,17 +1328,19 @@ class ndarray:
         """
         return self._tensor.dtype
 
-    def __array__(self, dtype: DTypeSpec = None) -> ArrayLikeSpec:
+    def __array__(self, dtype: DTypeSpec = None, copy: builtins.bool | None = None) -> ArrayLikeSpec:
         """Convert to a host array representation, optionally cast to ``dtype``.
 
         Args:
             dtype: Optional dtype to convert to.
+            copy: Optional flag indicating whether a copy should be returned.
 
         Returns:
             ArrayLikeSpec: The result of the array operation.
         """
         from zero_jax.numpy._dtypes import astype
 
+        _ = copy
         if dtype is not None:
             return _to_tensor(astype(self, dtype)).__array__()
         return self._tensor.__array__()

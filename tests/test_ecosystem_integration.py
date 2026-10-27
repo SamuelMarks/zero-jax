@@ -212,6 +212,73 @@ def test_universal_pytree_protocols_and_containers() -> None:
     assert urec_mapped.metadata == "m0"
     zero_chex.assert_trees_all_close(urec_mapped.data, jnp.array([6.0, 12.0]))
 
+    class _UnregisteredVariable:
+        """Unregistered variable container satisfying ``CustomVariableProtocol``."""
+
+        def __init__(self, value: PyTree, metadata: dict[str, ConfigValue] | None = None) -> None:
+            """Initialize ``_UnregisteredVariable``.
+
+            Args:
+                value: Inner value.
+                metadata: Optional metadata dictionary.
+            """
+            self.value = value
+            self.metadata: dict[str, ConfigValue] = dict(metadata) if metadata is not None else {}
+
+        @property
+        def var_type(self) -> str:
+            """Return variable container class name."""
+            return "_UnregisteredVariable"
+
+        def replace(self, value: PyTree = None, **metadata: ConfigValue) -> _UnregisteredVariable:
+            """Return a new ``_UnregisteredVariable`` with updated value and metadata.
+
+            Args:
+                value: Updated inner value.
+                **metadata: Updated metadata entries.
+
+            Returns:
+                _UnregisteredVariable: Updated instance.
+            """
+            return _UnregisteredVariable(self.value if value is None else value, {**self.metadata, **metadata})
+
+    class _UnregisteredStateMapping:
+        """Unregistered mapping container satisfying ``CustomStateMappingProtocol``."""
+
+        def __init__(self, mapping: dict[str, PyTree]) -> None:
+            """Initialize ``_UnregisteredStateMapping``.
+
+            Args:
+                mapping: Backing dictionary.
+            """
+            self._mapping = dict(mapping)
+
+        def keys(self) -> Iterable[str]:
+            """Return mapping keys."""
+            return self._mapping.keys()
+
+        def __getitem__(self, key: str) -> PyTree:
+            """Retrieve value associated with ``key``.
+
+            Args:
+                key: Mapping key.
+
+            Returns:
+                PyTree: Associated value.
+            """
+            return self._mapping[key]
+
+    uvar = _UnregisteredVariable(jnp.array([2.0, 4.0]), {"tag": "uvar"})
+    uvar_mapped = tree_map(lambda x: x + 1.0, uvar)
+    assert isinstance(uvar_mapped, _UnregisteredVariable) and uvar_mapped.var_type == "_UnregisteredVariable"
+    zero_chex.assert_trees_all_close(uvar_mapped.value, jnp.array([3.0, 5.0]))
+
+    ustate = _UnregisteredStateMapping({"k": uvar})
+    ustate_mapped = tree_map(lambda x: x * 2.0, ustate)
+    assert isinstance(ustate_mapped, _UnregisteredStateMapping)
+    zero_chex.assert_trees_all_close(ustate_mapped["k"].value, jnp.array([4.0, 8.0]))
+    assert tree_structure(_UnregisteredStateMapping({})).num_leaves == 0
+
     # 7. Key equality, hashing, repr, and register_dataclass nested preservation
     dk = DictKey("a")
     sk = SequenceKey(0)

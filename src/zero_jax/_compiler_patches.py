@@ -565,7 +565,7 @@ def _np_zeta(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs:
 
 
 def _np_cross(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
-    """Evaluate vector cross product, unpacking dictionary ``axes`` metadata cleanly.
+    """Evaluate vector cross product, supporting 2D and 3D vectors and unpacking dictionary ``axes`` metadata.
 
     Args:
         backend_module: Active backend module.
@@ -584,7 +584,15 @@ def _np_cross(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs
     for k, v in kwargs.items():
         if isinstance(v, int):
             call_kwargs[k] = v
-    return as_ndarray(backend_module.cross(as_ndarray(args[0]), as_ndarray(args[1]), **call_kwargs))
+    a_arr = as_ndarray(args[0])
+    b_arr = as_ndarray(args[1])
+    axisa = call_kwargs.get("axis", call_kwargs.get("axisa", -1))
+    axisb = call_kwargs.get("axis", call_kwargs.get("axisb", -1))
+    a_moved = backend_module.moveaxis(a_arr, axisa, -1)
+    b_moved = backend_module.moveaxis(b_arr, axisb, -1)
+    if a_moved.shape[-1] == 2 and b_moved.shape[-1] == 2:
+        return as_ndarray(a_moved[..., 0] * b_moved[..., 1] - a_moved[..., 1] * b_moved[..., 0])
+    return as_ndarray(backend_module.cross(a_arr, b_arr, **call_kwargs))
 
 
 def _np_matrix_exponential(backend_module: BackendModuleProtocol, *args: EagerValue, **kwargs: EagerValue) -> EagerValue:
